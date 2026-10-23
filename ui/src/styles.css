@@ -1,0 +1,79 @@
+/* KI AffAIrs Designsystem – Lotse */
+:root {
+  --background: #1a1a1a;
+  --bg-deep: #141414;
+  --card: #212121;
+  --card-2: #1c1c1c;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --primary: #f97316;
+  --primary-soft: rgba(249, 115, 22, 0.14);
+  --secondary: #00f5ff;
+  --secondary-soft: rgba(0, 245, 255, 0.12);
+  --foreground: #f0f0f0;
+  --muted: #a6a6a6;
+  --dim: #6b6b6b;
+  --green: #22c55e;
+  --yellow: #f5b00b;
+  --red: #ef4444;
+  --radius: 14px;
+  --font-head: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "Consolas", "SF Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+
+.lvl-green { --lvl: var(--green); }
+.lvl-yellow { --lvl: var(--yellow); }
+.lvl-red { --lvl: var(--red); }
+
+.eyebrow {
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--secondary);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.25); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn.primary:hover { background: #ff8a3a; }
+.btn.ghost { border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--foreground); }
+.btn svg { width: 16px; height: 16px; flex: none; }
