@@ -4,6 +4,7 @@ use lotse_core::ghostty;
 use lotse_core::observe::{self, SystemInput};
 use lotse_core::procs::{self, ProcIndex};
 use lotse_core::{Observation, Settings};
+use std::io::Read;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
@@ -17,24 +18,43 @@ fn run(cmd: &str, args: &[&str], timeout: Duration) -> Result<String, String> {
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|e| e.to_string())?;
+    let mut stdout = child.stdout.take().ok_or_else(|| "stdout nicht verfügbar".to_string())?;
+    let mut stderr = child.stderr.take().ok_or_else(|| "stderr nicht verfügbar".to_string())?;
+    let stdout_reader = std::thread::spawn(move || {
+        let mut out = Vec::new();
+        let _ = stdout.read_to_end(&mut out);
+        out
+    });
+    let stderr_reader = std::thread::spawn(move || {
+        let mut out = Vec::new();
+        let _ = stderr.read_to_end(&mut out);
+        out
+    });
     let start = Instant::now();
-    loop {
+    let status = loop {
         match child.try_wait() {
-            Ok(Some(_)) => break,
+            Ok(Some(status)) => break status,
             Ok(None) if start.elapsed() > timeout => {
                 let _ = child.kill();
                 let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
                 return Err("Zeitüberschreitung".into());
             }
             Ok(None) => std::thread::sleep(Duration::from_millis(40)),
-            Err(e) => return Err(e.to_string()),
+            Err(e) => {
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return Err(e.to_string());
+            }
         }
-    }
-    let out = child.wait_with_output().map_err(|e| e.to_string())?;
-    if out.status.success() {
-        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    };
+    let stdout = stdout_reader.join().map_err(|_| "stdout-Leser abgebrochen".to_string())?;
+    let stderr = stderr_reader.join().map_err(|_| "stderr-Leser abgebrochen".to_string())?;
+    if status.success() {
+        Ok(String::from_utf8_lossy(&stdout).into_owned())
     } else {
-        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+        Err(String::from_utf8_lossy(&stderr).trim().to_string())
     }
 }
 
@@ -116,4 +136,20 @@ pub fn observe(settings: &Settings) -> Observation {
         settings,
         &std::env::var("HOME").unwrap_or_default(),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn run_reads_large_command_output_without_timeout() {
+        let output = run("/usr/bin/jot", &["50000"], Duration::from_millis(500));
+        assert!(
+            output.is_ok(),
+            "große Prozesslisten dürfen nicht am Pipe-Puffer blockieren: {output:?}"
+        );
+        assert!(output.unwrap().len() > 100_000);
+    }
 }

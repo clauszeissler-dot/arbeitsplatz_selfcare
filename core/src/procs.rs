@@ -50,6 +50,11 @@ const CLI_AGENTS: &[(&str, &str)] = &[
 /// Desktop-Apps, deren Aktivität (CPU) wir als „KI arbeitet gerade“ werten.
 pub const DESKTOP_APPS: &[(&str, &str)] = &[
     ("/Claude.app/", "Claude Desktop"),
+    (
+        "/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/",
+        "Codex App",
+    ),
+    ("/ChatGPT.app/Contents/Resources/codex-cli/", "Codex App"),
     ("/ChatGPT.app/", "ChatGPT"),
     ("/Codex.app/", "Codex App"),
 ];
@@ -306,6 +311,16 @@ mod tests {
         assert_eq!(
             agent_name("node /usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"),
             Some("Claude Code")
+        );
+    }
+
+    #[test]
+    fn recognizes_embedded_codex_desktop_components() {
+        assert_eq!(
+            desktop_app(
+                "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)"
+            ),
+            Some("Codex App")
         );
     }
 }
