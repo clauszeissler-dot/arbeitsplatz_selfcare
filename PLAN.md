@@ -29,14 +29,14 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 8 | A-005 | Lokale App neu bauen, Cockpit mit realen 8 Tabs sowie Claude/Codex prüfen und dokumentieren. | Schritt 7 | in Arbeit | Produktions-Build erfolgreich; neue Instanz läuft, Sichtprüfung offen |
 | 9 | A-006 | „Swopper“ im Haltungsmodell, Cockpit, Menü und Hinweisen durch „Bürostuhl“ ersetzen; bestehende Sitz-ID für gespeicherte Zustände beibehalten. | Nutzerkorrektur | erledigt | Technische Kennung unverändert; sichtbare Bezeichnung konsistent ersetzt |
 | 10 | A-006 | Standard und Wechselhinweis per Core-Test prüfen. | Schritt 9 | erledigt | `office_chair_is_the_default_and_prompts_a_posture_change` grün |
-| 11 | A-006 | Lokales Bundle bauen und die sichtbare Standardhaltung im Cockpit prüfen. | Schritte 9–10 | in Arbeit | Produktions-Build erstellt; neue Instanz läuft, verborgenes Cockpit muss manuell geöffnet werden |
+| 11 | A-006 | Lokales Bundle bauen und die sichtbare Standardhaltung im Cockpit prüfen. | Schritte 9–10 | erledigt | Produktions-Build erstellt; laufendes Cockpit zeigt Bürostuhl als Standardhaltung |
 | 12 | A-007 | Starres Drei-Haltungsmodell in eine lokal gespeicherte Haltungs-Liste mit vier Standards überführen; alte lokale Zustände migrieren. | Nutzerkorrektur | erledigt | `sitting` wird als Bürostuhl migriert; alte Intervalle werden übernommen |
 | 13 | A-007 | Cockpit und Wechselhinweise aus der gespeicherten Haltungs-Liste erzeugen. | Schritt 12 | erledigt | Auswahl und Hint-Aktionen entstehen dynamisch aus der Liste |
 | 14 | A-007 | Im Einstellungsbereich Hinzufügen, Intervalldauer und Entfernen implementieren. | Schritt 12 | erledigt | lokale Liste mit Mindestanzahl eins umgesetzt |
-| 15 | A-007 | Core-Tests, lokales Bundle und sichtbare Cockpit-Prüfung durchführen. | Schritte 12–14 | in Arbeit | 30 Tests grün; Tauri-Bundle und DMG erstellt, neue Projekt-App läuft; Cockpit-Prüfung offen |
+| 15 | A-007 | Core-Tests, lokales Bundle und sichtbare Cockpit-Prüfung durchführen. | Schritte 12–14 | erledigt | 30 Tests grün; Tauri-Bundle und DMG erstellt; laufende Einstellungen zeigen vier Haltungen, Hinzufügen und Entfernen |
 | 16 | A-008 | Vorhandenes Original-Logo als passende lokale Quelle prüfen und in die Kopfzeile einbinden. | Nutzerwunsch | erledigt | KI-AffAIrs-Banner enthält das Original-Logo |
 | 17 | A-008 | Kopfzeilen-Layout mit kompakter Logo-Marke und „Lotse“ gestalten. | Schritt 16 | erledigt | Original-Bildmarke als dezenter lokaler Ausschnitt eingebunden |
-| 18 | A-008 | Lokales Tauri-Bundle erstellen und Kopfzeile sichtbar prüfen. | Schritt 17 | in Arbeit | Produktions-Bundle und DMG erstellt; neue Instanz läuft, Cockpit-Prüfung offen |
+| 18 | A-008 | Lokales Tauri-Bundle erstellen und Kopfzeile sichtbar prüfen. | Schritt 17 | erledigt | Produktions-Bundle und DMG erstellt; laufendes Cockpit zeigt die Original-Bildmarke neben „Lotse“ |
 
 ## Blockaden und Entscheidungen
 
@@ -50,16 +50,16 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 ## Aktueller Zielabgleich
 
-- Arbeitsbeginn / letzter Abgleich: 2026-10-28 14:05 CET / 2026-10-28 14:25 CET
-- Nächster Abgleich spätestens: nach der sichtbaren Cockpit-Prüfung.
-- Zum sichtbaren Ergebnis fehlt: Original-Logo in der Kopfzeile des neu gebauten Cockpits bestätigen.
-- Laufender Schritt notwendig wegen: A-005 bis A-008.
-- Kürzester zulässiger nächster Schritt: Im Lotse-Menü „Cockpit öffnen“ wählen und die Logo-Marke neben „Lotse“ prüfen.
-- Weiter gültige Prüfbelege: `cargo test -p lotse-core` (25/25), `npm run tauri build` (App 4,5 MB, DMG 2,9 MB), jeweils 2026-10-28.
+- Arbeitsbeginn / letzter Abgleich: 2026-10-28 14:05 CET / 2026-10-28 17:09 CET
+- Nächster Abgleich spätestens: bei der nächsten gezielten Erkennungsprüfung.
+- Zum sichtbaren Ergebnis fehlt: A-005 unter der ursprünglichen konkreten Arbeitslage erneut bestätigen (8 Ghostty-Tabs sowie Claude Desktop und Codex App getrennt).
+- Laufender Schritt notwendig wegen: nur A-005; A-006 bis A-008 sind im laufenden Cockpit sichtbar bestätigt.
+- Kürzester zulässiger nächster Schritt: Bei erneut vorliegender 8-Tab-Arbeitslage Cockpit und Aktivitätsliste gezielt prüfen; private Tabtitel nicht sichern oder veröffentlichen.
+- Weiter gültige Prüfbelege: `cargo test --workspace` (30/30) und `npm run tauri build` (App und DMG), jeweils 2026-10-28; Sichtprüfung des Cockpits und der Einstellungen 2026-10-28.
 
 ## Nächster konkreter Schritt
 
-Cockpit der neu gestarteten Version sichtbar prüfen; bei Bestätigung A-005 bis A-008 auf geprüft setzen.
+Bei erneut vorliegender 8-Tab-Arbeitslage A-005 sichtbar bestätigen; A-006 bis A-008 nicht erneut öffnen, sofern sich die Implementierung nicht ändert.
 
 ## Abschlussprüfung
 

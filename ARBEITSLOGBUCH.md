@@ -2,6 +2,15 @@
 
 Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · Aktueller Einstieg: [PLAN.md](PLAN.md)
 
+## 2026-10-28 – Sichtprüfung und Tagesübergabe
+
+- Anforderungs-IDs: A-006 bis A-008 geprüft; A-005 bleibt offen.
+- Ergebnis: Das laufende Cockpit zeigt das originale KI-AffAIrs-Logo neben „Lotse“ und Bürostuhl als Standardhaltung. In den geöffneten Einstellungen sind Bürostuhl, Swopper, Stehen und Balance Board samt Hinzufügen/Entfernen sichtbar.
+- Abgrenzung: Die konkrete Erkennungsabnahme für die zuvor beobachteten acht Ghostty-Tabs und beide Desktop-Apps ist nicht wiederholt worden; daher A-005 nicht als geprüft markieren. Rohansichten mit lokalen Tabtiteln oder Pfaden werden nicht als Social-Media-Asset verwendet.
+- Social-Media-Übergabe: Drei datensparsam geprüfte Live-Screenshots liegen im separaten KW45-KI-AffAIrs-Paket; keine Veröffentlichung und keine Terminierung.
+- Nachweis: [Handoff](docs/handoffs/20261028_01_tagesabschluss-lotse.md) · [PersonalOS-Aktivität](</Users/kiaffairs/Desktop/personalOS/daily/2026/2026-10-28/activity/01a18345-c858-75d3-9e8d-8a64ba555b4c.md>).
+
+
 ## 2026-10-28 – Lokale Projektaufnahme und Audio-Anforderung
 
 - Anforderungs-IDs: A-001 bis A-003
