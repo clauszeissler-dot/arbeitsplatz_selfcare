@@ -51,6 +51,8 @@ Reminders appear as a small card at the top right. You have two options:
 - Click the orange button once you have done it, for example **"Getrunken"** (drank) or **"Stehe"** (standing).
 - Click **"Gleich"** (later), and the reminder comes back later.
 
+If you want, a brief system sound can accompany the visible card. Turn **"Play reminder sound"** on in Settings; reminders always remain visible.
+
 The card disappears on its own after 40 seconds. If you move the mouse over it, it stays.
 
 **Logging without a reminder**
@@ -77,6 +79,7 @@ In the cockpit, via the gear icon. For example, you can change:
 - your water goal and glass size
 - how long you sit, stand or use the board
 - when breaks are due
+- whether reminders also play a sound
 - when the traffic light turns yellow or red
 
 Click **Speichern** (save) at the end.

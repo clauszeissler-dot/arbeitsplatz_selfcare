@@ -11,6 +11,10 @@ cargo test -p lotse-core   # Logik-Tests (laufen auf jedem Betriebssystem)
 npm run dev                # nur Oberfläche im Browser, mit Beispieldaten
 ```
 
+Auf diesem Mac ist Xcode 27 installiert. Die Projektdatei `.cargo/config.toml`
+setzt für macOS automatisch eine Linker-Option, die ungültige Bibliotheken für
+Rust-Prozedural-Makros verhindert. Daher genügt weiter `npm run tauri build`.
+
 ## Aufbau
 
 ```

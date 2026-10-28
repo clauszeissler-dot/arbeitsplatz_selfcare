@@ -25,7 +25,13 @@ pub fn parse_ps(output: &str) -> Vec<Proc> {
             let cpu = it.next()?.replace(',', ".").parse().ok()?;
             let tty = it.next()?.to_string();
             let args = it.collect::<Vec<_>>().join(" ");
-            Some(Proc { pid, ppid, cpu, tty, args })
+            Some(Proc {
+                pid,
+                ppid,
+                cpu,
+                tty,
+                args,
+            })
         })
         .collect()
 }
@@ -74,13 +80,19 @@ pub fn agent_name(args: &str) -> Option<&'static str> {
             return Some("Codex");
         }
         let b = basename(script);
-        return CLI_AGENTS.iter().find(|(bin, _)| b == *bin).map(|(_, n)| *n);
+        return CLI_AGENTS
+            .iter()
+            .find(|(bin, _)| b == *bin)
+            .map(|(_, n)| *n);
     }
     None
 }
 
 pub fn desktop_app(args: &str) -> Option<&'static str> {
-    DESKTOP_APPS.iter().find(|(path, _)| args.contains(path)).map(|(_, n)| *n)
+    DESKTOP_APPS
+        .iter()
+        .find(|(path, _)| args.contains(path))
+        .map(|(_, n)| *n)
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -113,7 +125,11 @@ impl ProcIndex {
         for p in &procs {
             children.entry(p.ppid).or_default().push(p.pid);
         }
-        Self { procs, by_pid, children }
+        Self {
+            procs,
+            by_pid,
+            children,
+        }
     }
 
     fn get(&self, pid: u32) -> Option<&Proc> {
@@ -205,7 +221,10 @@ impl ProcIndex {
                 }
                 match out.iter_mut().find(|a| a.name == name) {
                     Some(a) => a.cpu += p.cpu,
-                    None => out.push(AppActivity { name: name.to_string(), cpu: p.cpu }),
+                    None => out.push(AppActivity {
+                        name: name.to_string(),
+                        cpu: p.cpu,
+                    }),
                 }
             }
         }
@@ -249,10 +268,17 @@ mod tests {
     fn detects_top_level_agents_with_subtree_cpu() {
         let idx = ProcIndex::new(parse_ps(PS));
         let agents = idx.agents();
-        let names: Vec<_> = agents.iter().map(|a| (a.name.as_str(), a.tty.as_str())).collect();
+        let names: Vec<_> = agents
+            .iter()
+            .map(|a| (a.name.as_str(), a.tty.as_str()))
+            .collect();
         assert_eq!(
             names,
-            vec![("Claude Code", "ttys003"), ("Codex", "ttys004"), ("Claude Code", "??")]
+            vec![
+                ("Claude Code", "ttys003"),
+                ("Codex", "ttys004"),
+                ("Claude Code", "??")
+            ]
         );
         assert!((agents[0].cpu - 43.0).abs() < 0.01);
         assert_eq!(agents[2].host_app.as_deref(), Some("Claude Desktop"));
@@ -273,7 +299,10 @@ mod tests {
     fn agent_name_rejects_lookalikes() {
         assert_eq!(agent_name("/usr/bin/claudette"), None);
         assert_eq!(agent_name("vim claude.md"), None);
-        assert_eq!(agent_name("/Users/x/.local/bin/claude"), Some("Claude Code"));
+        assert_eq!(
+            agent_name("/Users/x/.local/bin/claude"),
+            Some("Claude Code")
+        );
         assert_eq!(
             agent_name("node /usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"),
             Some("Claude Code")

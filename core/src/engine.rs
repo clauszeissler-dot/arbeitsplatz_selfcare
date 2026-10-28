@@ -30,7 +30,9 @@ impl Level {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Posture {
     #[default]
@@ -78,7 +80,10 @@ pub struct Hint {
 }
 
 fn action(id: &str, label: &str) -> HintAction {
-    HintAction { id: id.into(), label: label.into() }
+    HintAction {
+        id: id.into(),
+        label: label.into(),
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -224,7 +229,11 @@ const LOAD_RED_HOLD: i64 = 300;
 
 impl Engine {
     pub fn new(settings: Settings, state: State) -> Self {
-        Self { settings, state, last_obs: Observation::default() }
+        Self {
+            settings,
+            state,
+            last_obs: Observation::default(),
+        }
     }
 
     fn mins(&self, m: u32) -> i64 {
@@ -239,7 +248,11 @@ impl Engine {
                 active_min: s.active_secs / 60,
                 water_ml: s.water_ml,
                 breaks: s.breaks.len() as u32,
-                long_breaks: s.breaks.iter().filter(|b| b.minutes() >= self.settings.long_break_min as i64).count() as u32,
+                long_breaks: s
+                    .breaks
+                    .iter()
+                    .filter(|b| b.minutes() >= self.settings.long_break_min as i64)
+                    .count() as u32,
                 posture_min: s.posture_secs.iter().map(|(k, v)| (*k, v / 60)).collect(),
                 red_min: s.red_secs / 60,
                 max_projects: s.max_projects,
@@ -250,7 +263,10 @@ impl Engine {
             if history.len() > 60 {
                 history.remove(0);
             }
-            self.state = State { history, ..State::default() };
+            self.state = State {
+                history,
+                ..State::default()
+            };
         }
         self.state.day = day.to_string();
         self.state.block_start = now;
@@ -278,7 +294,10 @@ impl Engine {
         let ml = ml.unwrap_or(self.settings.glass_ml);
         self.state.water_ml += ml;
         self.state.last_drink = Some(now);
-        self.state.next_allowed.insert(HintKind::Water, now + self.mins(self.settings.water_interval_min));
+        self.state.next_allowed.insert(
+            HintKind::Water,
+            now + self.mins(self.settings.water_interval_min),
+        );
     }
 
     pub fn set_posture(&mut self, now: i64, p: Posture) {
@@ -302,11 +321,17 @@ impl Engine {
     }
 
     pub fn snooze(&mut self, now: i64, minutes: u32) {
-        self.state.snooze_until = if minutes == 0 { None } else { Some(now + minutes as i64 * 60) };
+        self.state.snooze_until = if minutes == 0 {
+            None
+        } else {
+            Some(now + minutes as i64 * 60)
+        };
     }
 
     pub fn dismiss(&mut self, now: i64, kind: HintKind, minutes: u32) {
-        self.state.next_allowed.insert(kind, now + minutes as i64 * 60);
+        self.state
+            .next_allowed
+            .insert(kind, now + minutes as i64 * 60);
     }
 
     // ---------- Takt ----------
@@ -333,7 +358,11 @@ impl Engine {
         } else {
             self.state.mic_since = None;
         }
-        let mic_meeting = self.state.mic_since.map(|t| now - t >= s.meeting_mic_secs as i64).unwrap_or(false);
+        let mic_meeting = self
+            .state
+            .mic_since
+            .map(|t| now - t >= s.meeting_mic_secs as i64)
+            .unwrap_or(false);
         let in_meeting = obs.camera_active || mic_meeting;
         if self.state.in_meeting && !in_meeting {
             self.state.meeting_ended = Some(now);
@@ -361,7 +390,11 @@ impl Engine {
         if active && self.state.manual_break.is_none() {
             self.state.active_secs += dt;
             self.state.first_active.get_or_insert(now);
-            *self.state.posture_secs.entry(self.state.posture).or_default() += dt;
+            *self
+                .state
+                .posture_secs
+                .entry(self.state.posture)
+                .or_default() += dt;
         }
 
         // Tab-Wechsel zählen
@@ -373,7 +406,13 @@ impl Engine {
                 self.state.last_focus = Some(focus.clone());
             }
         }
-        while self.state.switches.front().map(|t| now - t > 600).unwrap_or(false) {
+        while self
+            .state
+            .switches
+            .front()
+            .map(|t| now - t > 600)
+            .unwrap_or(false)
+        {
             self.state.switches.pop_front();
         }
 
@@ -398,7 +437,11 @@ impl Engine {
 
     fn in_break(&self, now: i64) -> bool {
         self.state.manual_break.is_some()
-            || self.state.idle_started.map(|t| now - t >= self.mins(self.settings.break_min)).unwrap_or(false)
+            || self
+                .state
+                .idle_started
+                .map(|t| now - t >= self.mins(self.settings.break_min))
+                .unwrap_or(false)
     }
 
     fn block_secs(&self, now: i64) -> i64 {
@@ -419,7 +462,9 @@ impl Engine {
 
     fn water_expected(&self, now: i64) -> u32 {
         let s = &self.settings;
-        let Some(first) = self.state.first_active else { return 0 };
+        let Some(first) = self.state.first_active else {
+            return 0;
+        };
         let elapsed = (now - first).max(0) as f64 / 60.0;
         let share = (elapsed / s.workday_minutes.max(1) as f64).min(1.0);
         (s.water_target_ml as f64 * share) as u32
@@ -431,8 +476,16 @@ impl Engine {
             return None;
         }
         let behind = self.water_expected(now).saturating_sub(self.state.water_ml) >= 2 * s.glass_ml;
-        let interval = if behind { self.mins(s.water_interval_min) / 2 } else { self.mins(s.water_interval_min) };
-        let last = self.state.last_drink.or(self.state.first_active).unwrap_or(now);
+        let interval = if behind {
+            self.mins(s.water_interval_min) / 2
+        } else {
+            self.mins(s.water_interval_min)
+        };
+        let last = self
+            .state
+            .last_drink
+            .or(self.state.first_active)
+            .unwrap_or(now);
         Some(last + interval - now)
     }
 
@@ -510,7 +563,11 @@ impl Engine {
     }
 
     fn allowed(&self, now: i64, kind: HintKind) -> bool {
-        self.state.next_allowed.get(&kind).map(|t| now >= *t).unwrap_or(true)
+        self.state
+            .next_allowed
+            .get(&kind)
+            .map(|t| now >= *t)
+            .unwrap_or(true)
     }
 
     fn pick_hint(&mut self, now: i64, level: Level, reasons: &[String]) -> Option<Hint> {
@@ -518,7 +575,12 @@ impl Engine {
         if self.state.in_meeting {
             return None;
         }
-        if self.state.meeting_ended.map(|t| now - t < 60).unwrap_or(false) {
+        if self
+            .state
+            .meeting_ended
+            .map(|t| now - t < 60)
+            .unwrap_or(false)
+        {
             return None;
         }
         if self.state.snooze_until.map(|t| now < t).unwrap_or(false) {
@@ -579,7 +641,11 @@ impl Engine {
             ));
         }
         if level == Level::Red
-            && self.state.red_since.map(|t| now - t >= LOAD_RED_HOLD).unwrap_or(false)
+            && self
+                .state
+                .red_since
+                .map(|t| now - t >= LOAD_RED_HOLD)
+                .unwrap_or(false)
         {
             candidates.push((
                 HintKind::Load,
@@ -588,7 +654,10 @@ impl Engine {
                     HintKind::Load,
                     Level::Red,
                     "Zu viel parallel".into(),
-                    format!("{}. Park einen Strang: Notiz schreiben, Tab schließen.", reasons.join(" · ")),
+                    format!(
+                        "{}. Park einen Strang: Notiz schreiben, Tab schließen.",
+                        reasons.join(" · ")
+                    ),
                     vec![action("ok", "Verstanden")],
                 ),
             ));
@@ -612,7 +681,11 @@ impl Engine {
                     vec![action("posture_standing", "Stehen"), action("posture_sitting", "Swopper")],
                 ),
             };
-            candidates.push((HintKind::Posture, 10, mk(HintKind::Posture, Level::Yellow, title, body, acts)));
+            candidates.push((
+                HintKind::Posture,
+                10,
+                mk(HintKind::Posture, Level::Yellow, title, body, acts),
+            ));
         }
         if let Some(due) = self.water_due_in(now) {
             if due <= 0 {
@@ -661,13 +734,18 @@ impl Engine {
                         "{} h aktiv. Offene Stränge notieren, Agenten parken, Feierabend.",
                         self.state.active_secs / 3600
                     ),
-                    vec![action("ok", "Ich mache Schluss"), action("snooze_30", "Noch 30 min")],
+                    vec![
+                        action("ok", "Ich mache Schluss"),
+                        action("snooze_30", "Noch 30 min"),
+                    ],
                 ),
             ));
         }
 
         candidates.sort_by_key(|(k, _, _)| *k);
-        let (kind, cooldown, hint) = candidates.into_iter().find(|(k, _, _)| self.allowed(now, *k))?;
+        let (kind, cooldown, hint) = candidates
+            .into_iter()
+            .find(|(k, _, _)| self.allowed(now, *k))?;
         self.state.next_allowed.insert(kind, now + cooldown * 60);
         self.state.last_hint_at = now;
         Some(hint)
@@ -697,9 +775,19 @@ impl Engine {
             posture_label: self.state.posture.label().into(),
             posture_min: (now - self.state.posture_since) / 60,
             posture_limit_min: self.posture_limit(),
-            posture_share: self.state.posture_secs.iter().map(|(k, v)| (*k, v / 60)).collect(),
+            posture_share: self
+                .state
+                .posture_secs
+                .iter()
+                .map(|(k, v)| (*k, v / 60))
+                .collect(),
             breaks_today: self.state.breaks.len() as u32,
-            long_breaks_today: self.state.breaks.iter().filter(|b| b.minutes() >= s.long_break_min as i64).count() as u32,
+            long_breaks_today: self
+                .state
+                .breaks
+                .iter()
+                .filter(|b| b.minutes() >= s.long_break_min as i64)
+                .count() as u32,
             next_water_min: self.water_due_in(now).map(|d| d.max(0) / 60),
             next_break_min: next_break,
             observation: self.last_obs.clone(),
@@ -717,7 +805,11 @@ mod tests {
     const T0: i64 = 1_800_000_000;
 
     fn obs(idle: u64) -> Observation {
-        Observation { ghostty_running: true, idle_secs: idle, ..Default::default() }
+        Observation {
+            ghostty_running: true,
+            idle_secs: idle,
+            ..Default::default()
+        }
     }
 
     fn tab(key: &str, project: &str, busy: bool) -> TabView {
@@ -727,7 +819,11 @@ mod tests {
             project: Some(project.into()),
             cwd: project.into(),
             focused: false,
-            agents: vec![AgentInfo { name: "Claude Code".into(), busy, cpu: 10.0 }],
+            agents: vec![AgentInfo {
+                name: "Claude Code".into(),
+                busy,
+                cpu: 10.0,
+            }],
         }
     }
 
@@ -763,7 +859,10 @@ mod tests {
         let kinds: Vec<_> = hints.iter().map(|h| h.kind).collect();
         assert_eq!(kinds.first(), Some(&HintKind::Posture), "{kinds:?}");
         assert!(kinds.contains(&HintKind::Water), "{kinds:?}");
-        assert!(hints.windows(2).all(|w| w[1].at - w[0].at >= 180), "Mindestabstand");
+        assert!(
+            hints.windows(2).all(|w| w[1].at - w[0].at >= 180),
+            "Mindestabstand"
+        );
     }
 
     #[test]
@@ -813,9 +912,15 @@ mod tests {
         e.settings.water_target_ml = 0;
         let hints = run(&mut e, T0, 125, &obs(1));
         let kinds: Vec<_> = hints.iter().map(|h| (h.kind, h.level)).collect();
-        assert!(kinds.contains(&(HintKind::Break, Level::Yellow)), "{kinds:?}");
+        assert!(
+            kinds.contains(&(HintKind::Break, Level::Yellow)),
+            "{kinds:?}"
+        );
         assert!(kinds.contains(&(HintKind::Break, Level::Red)), "{kinds:?}");
-        assert!(kinds.contains(&(HintKind::LongBreak, Level::Red)), "{kinds:?}");
+        assert!(
+            kinds.contains(&(HintKind::LongBreak, Level::Red)),
+            "{kinds:?}"
+        );
     }
 
     #[test]
@@ -852,11 +957,15 @@ mod tests {
         e.settings.sit_minutes = 999;
         e.settings.water_target_ml = 0;
         let mut o = obs(1);
-        o.tabs = (0..6).map(|i| tab(&format!("t{i}"), &format!("~/p{i}"), i < 4)).collect();
+        o.tabs = (0..6)
+            .map(|i| tab(&format!("t{i}"), &format!("~/p{i}"), i < 4))
+            .collect();
         e.tick(T0, DAY, o.clone());
         let (level, metrics, reasons) = e.assess(T0);
         assert_eq!(level, Level::Red);
-        assert!(metrics.iter().any(|m| m.key == "agents" && m.level == Level::Red));
+        assert!(metrics
+            .iter()
+            .any(|m| m.key == "agents" && m.level == Level::Red));
         assert!(!reasons.is_empty());
         let hints = run(&mut e, T0 + 30, 6, &o);
         assert_eq!(hints.first().map(|h| h.kind), Some(HintKind::Load));
@@ -917,5 +1026,9 @@ mod tests {
         let partial: Settings = serde_json::from_str(r#"{"water_target_ml": 2500}"#).unwrap();
         assert_eq!(partial.water_target_ml, 2500);
         assert_eq!(partial.glass_ml, 250);
+        assert!(
+            !partial.sound_enabled,
+            "bestehende Einstellungen bleiben standardmäßig ohne Ton"
+        );
     }
 }

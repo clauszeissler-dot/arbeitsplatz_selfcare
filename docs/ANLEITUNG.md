@@ -52,6 +52,7 @@ Hinweise erscheinen als kleine Karte oben rechts. Du hast zwei Möglichkeiten:
 - Klick auf **„Gleich“**, dann kommt der Hinweis später wieder.
 
 Die Karte verschwindet nach 40 Sekunden von selbst. Fährst du mit der Maus darauf, bleibt sie stehen.
+Wenn du möchtest, begleitet sie ein kurzer Systemton. Den Schalter **„Erinnerungston abspielen“** findest du in den Einstellungen; er ist zunächst aus, und die sichtbaren Hinweise bleiben immer aktiv.
 
 **Ohne Hinweis eintragen**
 
@@ -77,6 +78,7 @@ Im Cockpit über das Zahnrad. Du kannst zum Beispiel ändern:
 - dein Trinkziel und die Glasgröße
 - wie lange du sitzt, stehst oder auf dem Board bist
 - wann Pausen fällig sind
+- ob Hinweise zusätzlich einen Ton abspielen
 - ab wann die Ampel gelb oder rot wird
 
 Klick zum Schluss auf **Speichern**.

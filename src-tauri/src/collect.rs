@@ -55,7 +55,11 @@ pub fn observe(settings: &Settings) -> Observation {
 
     let mut note = None;
     let ghostty = if index.is_running("/Ghostty.app/Contents/MacOS/") {
-        match run("/usr/bin/osascript", &["-e", ghostty::SCRIPT], Duration::from_secs(8)) {
+        match run(
+            "/usr/bin/osascript",
+            &["-e", ghostty::SCRIPT],
+            Duration::from_secs(8),
+        ) {
             Ok(out) => Some(ghostty::parse(&out)),
             Err(e) => {
                 note = Some(ghostty_note(&e));
@@ -66,10 +70,14 @@ pub fn observe(settings: &Settings) -> Observation {
         None
     };
 
-    let idle_secs = run("/usr/sbin/ioreg", lotse_core::idle::IOREG_ARGS, Duration::from_secs(5))
-        .ok()
-        .and_then(|o| lotse_core::idle::parse_ioreg(&o))
-        .unwrap_or(0);
+    let idle_secs = run(
+        "/usr/sbin/ioreg",
+        lotse_core::idle::IOREG_ARGS,
+        Duration::from_secs(5),
+    )
+    .ok()
+    .and_then(|o| lotse_core::idle::parse_ioreg(&o))
+    .unwrap_or(0);
 
     let sys = SystemInput {
         idle_secs,
@@ -88,9 +96,24 @@ pub fn observe(settings: &Settings) -> Observation {
 /// Windows/Linux: Platzhalter bis Phase 4 (Windows Terminal via UI Automation).
 #[cfg(not(target_os = "macos"))]
 pub fn observe(settings: &Settings) -> Observation {
-    let ps = run("ps", &["-axo", "pid=,ppid=,pcpu=,tty=,args="], Duration::from_secs(5)).unwrap_or_default();
+    let ps = run(
+        "ps",
+        &["-axo", "pid=,ppid=,pcpu=,tty=,args="],
+        Duration::from_secs(5),
+    )
+    .unwrap_or_default();
     let index = ProcIndex::new(procs::parse_ps(&ps));
-    let sys = SystemInput { idle_secs: 0, mic_active: false, camera_active: false };
+    let sys = SystemInput {
+        idle_secs: 0,
+        mic_active: false,
+        camera_active: false,
+    };
     let _ = ghostty_note;
-    observe::build(None, &index, sys, settings, &std::env::var("HOME").unwrap_or_default())
+    observe::build(
+        None,
+        &index,
+        sys,
+        settings,
+        &std::env::var("HOME").unwrap_or_default(),
+    )
 }

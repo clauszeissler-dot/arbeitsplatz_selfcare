@@ -102,7 +102,11 @@ fn update_tray(app: &AppHandle, snap: &Snapshot) {
     let shared = app.state::<Shared>();
     if let Some(tray) = app.tray_by_id("main") {
         let _ = tray.set_icon(Some(dot_icon(snap.level, snap.in_meeting)));
-        let title = if snap.in_break { "Pause".to_string() } else { format!("{}′", snap.block_min) };
+        let title = if snap.in_break {
+            "Pause".to_string()
+        } else {
+            format!("{}′", snap.block_min)
+        };
         let _ = tray.set_title(Some(title));
         let _ = tray.set_tooltip(Some(status_line(snap)));
     }
@@ -123,16 +127,33 @@ fn show_dashboard(app: &AppHandle) {
 }
 
 fn show_toast(app: &AppHandle, hint: &Hint) {
-    let Some(w) = app.get_webview_window("toast") else { return };
+    let Some(w) = app.get_webview_window("toast") else {
+        return;
+    };
     if let Ok(Some(m)) = w.primary_monitor() {
         let scale = m.scale_factor();
         let size = m.size().to_logical::<f64>(scale);
         let pos = m.position().to_logical::<f64>(scale);
-        let _ = w.set_position(LogicalPosition::new(pos.x + size.width - TOAST_W - TOAST_MARGIN, pos.y + 38.0));
+        let _ = w.set_position(LogicalPosition::new(
+            pos.x + size.width - TOAST_W - TOAST_MARGIN,
+            pos.y + 38.0,
+        ));
     }
     let _ = app.emit_to("toast", "hint", hint);
     let _ = w.show();
 }
+
+/// Nutzt absichtlich einen vorhandenen macOS-Systemton: keine eingebettete Audiodatei,
+/// kein Netzwerk und kein zusätzlicher Audio-Stack. Fehler dürfen Hinweise nie verhindern.
+#[cfg(target_os = "macos")]
+fn play_reminder_sound() {
+    let _ = std::process::Command::new("/usr/bin/afplay")
+        .arg("/System/Library/Sounds/Glass.aiff")
+        .spawn();
+}
+
+#[cfg(not(target_os = "macos"))]
+fn play_reminder_sound() {}
 
 // ---------- Takt ----------
 
@@ -156,6 +177,9 @@ fn tick(app: &AppHandle) {
     publish(app, &snap);
     if let Some(h) = hint {
         show_toast(app, &h);
+        if settings.sound_enabled {
+            play_reminder_sound();
+        }
     }
 }
 
@@ -207,7 +231,12 @@ fn get_snapshot(app: AppHandle) -> Snapshot {
 
 #[tauri::command]
 fn get_settings(app: AppHandle) -> Settings {
-    app.state::<Shared>().engine.lock().unwrap().settings.clone()
+    app.state::<Shared>()
+        .engine
+        .lock()
+        .unwrap()
+        .settings
+        .clone()
 }
 
 #[tauri::command]
@@ -297,7 +326,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<MenuItem<tauri::Wry>> {
 
 pub fn run() {
     let app = tauri::Builder::default()
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             get_settings,

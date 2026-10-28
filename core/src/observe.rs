@@ -55,7 +55,12 @@ impl Observation {
     }
 
     pub fn busy_agents(&self) -> usize {
-        let tabs = self.tabs.iter().flat_map(|t| &t.agents).filter(|a| a.busy).count();
+        let tabs = self
+            .tabs
+            .iter()
+            .flat_map(|t| &t.agents)
+            .filter(|a| a.busy)
+            .count();
         let other = self.other_agents.iter().filter(|a| a.busy).count();
         let apps = self.apps.iter().filter(|a| a.busy).count();
         tabs + other + apps
@@ -130,7 +135,11 @@ pub fn build(
     let mut tabs = Vec::new();
 
     if let Some(g) = ghostty {
-        let cwds: Vec<String> = g.tabs.iter().flat_map(|t| t.terminals.iter().map(|x| x.cwd.clone())).collect();
+        let cwds: Vec<String> = g
+            .tabs
+            .iter()
+            .flat_map(|t| t.terminals.iter().map(|x| x.cwd.clone()))
+            .collect();
         let roots = project_roots(&cwds, home);
         let focused = g.focused_key();
 
@@ -153,7 +162,11 @@ pub fn build(
                     }
                 }
             }
-            let cwd = t.terminals.first().map(|x| x.cwd.clone()).unwrap_or_default();
+            let cwd = t
+                .terminals
+                .first()
+                .map(|x| x.cwd.clone())
+                .unwrap_or_default();
             let project = t
                 .terminals
                 .iter()
@@ -192,7 +205,11 @@ pub fn build(
                 continue;
             }
         }
-        other_agents.push(AgentInfo { name: a.name, busy, cpu: a.cpu });
+        other_agents.push(AgentInfo {
+            name: a.name,
+            busy,
+            cpu: a.cpu,
+        });
     }
 
     Observation {
@@ -215,7 +232,12 @@ mod tests {
     use crate::procs::parse_ps;
 
     fn term(cwd: &str, tty: &str) -> Terminal {
-        Terminal { id: tty.into(), cwd: cwd.into(), pid: None, tty: tty.into() }
+        Terminal {
+            id: tty.into(),
+            cwd: cwd.into(),
+            pid: None,
+            tty: tty.into(),
+        }
     }
 
     fn tab(id: &str, title: &str, sel: bool, terms: Vec<Terminal>) -> Tab {
@@ -238,7 +260,10 @@ mod tests {
             "/Users/cz".to_string(),
             "/Users/cz/dev/apix".to_string(),
         ];
-        assert_eq!(project_roots(&cwds, "/Users/cz/"), vec!["/Users/cz/dev/api", "/Users/cz/dev/apix"]);
+        assert_eq!(
+            project_roots(&cwds, "/Users/cz/"),
+            vec!["/Users/cz/dev/api", "/Users/cz/dev/apix"]
+        );
     }
 
     #[test]
@@ -262,12 +287,26 @@ mod tests {
         let g = GhosttyState {
             frontmost: true,
             tabs: vec![
-                tab("1", "⠐ Build", true, vec![term("/Users/cz/dev/a", "ttys001")]),
-                tab("2", "Codex", false, vec![term("/Users/cz/dev/b/src", "ttys002")]),
+                tab(
+                    "1",
+                    "⠐ Build",
+                    true,
+                    vec![term("/Users/cz/dev/a", "ttys001")],
+                ),
+                tab(
+                    "2",
+                    "Codex",
+                    false,
+                    vec![term("/Users/cz/dev/b/src", "ttys002")],
+                ),
                 tab("3", "zsh", false, vec![term("/Users/cz", "ttys003")]),
             ],
         };
-        let sys = SystemInput { idle_secs: 3, mic_active: false, camera_active: false };
+        let sys = SystemInput {
+            idle_secs: 3,
+            mic_active: false,
+            camera_active: false,
+        };
         let o = build(Some(&g), &idx, sys, &Settings::default(), "/Users/cz");
 
         assert_eq!(o.projects(), vec!["~/dev/a", "~/dev/b/src"]);

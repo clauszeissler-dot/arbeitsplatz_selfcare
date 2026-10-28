@@ -85,6 +85,8 @@ pub struct Settings {
 
     // Darstellung
     pub toast_seconds: u32,
+    /// Spielt bei einem neuen Hinweis den macOS-Systemton ab. Die Hinweis-Karte bleibt immer sichtbar.
+    pub sound_enabled: bool,
     /// Mindestabstand zwischen zwei Hinweisen (Sekunden)
     pub min_gap_secs: u32,
     pub eyes_enabled: bool,
@@ -114,6 +116,7 @@ impl Default for Settings {
             agent_busy_cpu: 3.0,
             app_busy_cpu: 10.0,
             toast_seconds: 40,
+            sound_enabled: false,
             min_gap_secs: 180,
             eyes_enabled: false,
             eyes_interval_min: 20,

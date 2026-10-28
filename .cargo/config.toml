@@ -1,0 +1,4 @@
+# Xcode 27 erzeugt ohne diese Option ungültige Dylibs für Rust-Prozedural-Makros
+# auf diesem Mac. Die Option gilt nur beim Bauen für macOS.
+[target.'cfg(target_os = "macos")']
+rustflags = ["-C", "link-arg=-Wl,-no_fixup_chains"]

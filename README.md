@@ -19,7 +19,7 @@ Lotse ist für alle, die viele Stunden am Rechner mit Claude Code, Codex, ChatGP
 - **Trinken:** Lotse erinnert dich alle 45 Minuten an ein Glas, damit du über 8 Stunden auf 2 Liter kommst.
 - **Haltung:** Lotse führt dich im Wechsel durch 30 Minuten Sitzen und 15 Minuten Stehen, gern mit Balance Board.
 - **Pausen wie bei Fluglotsen:** Spätestens nach 75 Minuten ist eine kurze Pause fällig, nach 2 Stunden eine Pause von 30 Minuten.
-- **Nur Hinweise, kein Zwang:** Eine kleine Karte oben rechts, die nach 40 Sekunden von selbst verschwindet.
+- **Nur Hinweise, kein Zwang:** Eine kleine Karte oben rechts, die nach 40 Sekunden von selbst verschwindet; ein optionaler Erinnerungston lässt sich in den Einstellungen bewusst einschalten.
 - **Ruhe im Meeting:** Ist deine Kamera oder dein Mikrofon an, kommen keine Hinweise.
 
 ![Hinweis-Karte von Lotse](docs/assets/hinweis.png)

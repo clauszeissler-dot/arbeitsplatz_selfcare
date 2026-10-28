@@ -146,9 +146,42 @@ mod tests {
     fn parses_tabs_and_merges_splits() {
         let out = [
             "true".to_string(),
-            row(&["w1", "t1", "1", "⠐ Refactor API", "true", "true", "a", "/Users/cz/dev/api", "4711", "/dev/ttys003"]),
-            row(&["w1", "t1", "1", "⠐ Refactor API", "true", "true", "b", "/Users/cz/dev/api/web", "4712", "/dev/ttys004"]),
-            row(&["w1", "t2", "2", "zsh", "false", "true", "c", "/Users/cz", "", "/dev/ttys005"]),
+            row(&[
+                "w1",
+                "t1",
+                "1",
+                "⠐ Refactor API",
+                "true",
+                "true",
+                "a",
+                "/Users/cz/dev/api",
+                "4711",
+                "/dev/ttys003",
+            ]),
+            row(&[
+                "w1",
+                "t1",
+                "1",
+                "⠐ Refactor API",
+                "true",
+                "true",
+                "b",
+                "/Users/cz/dev/api/web",
+                "4712",
+                "/dev/ttys004",
+            ]),
+            row(&[
+                "w1",
+                "t2",
+                "2",
+                "zsh",
+                "false",
+                "true",
+                "c",
+                "/Users/cz",
+                "",
+                "/dev/ttys005",
+            ]),
             "kaputt".to_string(),
         ]
         .join("\n");
@@ -165,7 +198,10 @@ mod tests {
 
     #[test]
     fn no_focus_when_ghostty_in_background() {
-        let out = format!("false\n{}", row(&["w1", "t1", "1", "x", "true", "true", "a", "/", "1", "ttys1"]));
+        let out = format!(
+            "false\n{}",
+            row(&["w1", "t1", "1", "x", "true", "true", "a", "/", "1", "ttys1"])
+        );
         assert_eq!(parse(&out).focused_key(), None);
     }
 

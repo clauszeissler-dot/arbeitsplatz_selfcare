@@ -101,6 +101,7 @@ export interface Settings {
   agent_busy_cpu: number;
   app_busy_cpu: number;
   toast_seconds: number;
+  sound_enabled: boolean;
   min_gap_secs: number;
   eyes_enabled: boolean;
   eyes_interval_min: number;
@@ -151,7 +152,7 @@ const defaultSettings: Settings = {
   sit_minutes: 30, stand_minutes: 15, board_minutes: 10, block_soft_min: 50, block_hard_min: 75,
   long_break_after_min: 120, break_min: 10, long_break_min: 25, idle_active_secs: 120,
   meeting_mic_secs: 120, meeting_use_mic: true, agent_busy_cpu: 3, app_busy_cpu: 10,
-  toast_seconds: 40, min_gap_secs: 180, eyes_enabled: false, eyes_interval_min: 20,
+  toast_seconds: 40, sound_enabled: false, min_gap_secs: 180, eyes_enabled: false, eyes_interval_min: 20,
   thresholds: {
     projects: { green: 2, yellow: 4 }, tabs: { green: 4, yellow: 8 }, busy_agents: { green: 2, yellow: 3 },
     block_minutes: { green: 60, yellow: 90 }, switches_10min: { green: 5, yellow: 15 }, day_hours: { green: 6, yellow: 8 },

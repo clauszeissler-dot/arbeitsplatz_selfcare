@@ -346,6 +346,7 @@ async function renderSettings() {
       ).join("")}
       <fieldset><legend>Schalter</legend>
         <label class="toggle"><span>Mikrofon zur Meeting-Erkennung nutzen</span><input type="checkbox" name="meeting_use_mic" ${s.meeting_use_mic ? "checked" : ""}/></label>
+        <label class="toggle"><span>Erinnerungston abspielen</span><input type="checkbox" name="sound_enabled" ${s.sound_enabled ? "checked" : ""}/></label>
         <label class="toggle"><span>Augen-Mikropause (20-20-20)</span><input type="checkbox" name="eyes_enabled" ${s.eyes_enabled ? "checked" : ""}/></label>
         <label class="toggle"><span>Beim Anmelden starten</span><input type="checkbox" name="autostart" ${auto ? "checked" : ""}/></label>
       </fieldset>
@@ -369,6 +370,7 @@ async function renderSettings() {
     const next: Settings = structuredClone(s);
     for (const g of FIELDS) for (const f of g.fields) (next[f.key] as number) = Number(fd.get(f.key));
     next.meeting_use_mic = fd.get("meeting_use_mic") === "on";
+    next.sound_enabled = fd.get("sound_enabled") === "on";
     next.eyes_enabled = fd.get("eyes_enabled") === "on";
     for (const b of BANDS) {
       next.thresholds[b.key] = { green: Number(fd.get(`t_${b.key}_green`)), yellow: Number(fd.get(`t_${b.key}_yellow`)) };

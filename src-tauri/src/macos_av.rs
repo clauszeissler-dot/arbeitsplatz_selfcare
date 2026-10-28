@@ -64,14 +64,27 @@ extern "C" {
 }
 
 fn audio_devices() -> Vec<u32> {
-    let addr = PropertyAddress { selector: PROP_DEVICES, scope: SCOPE_GLOBAL, element: ELEMENT_MAIN };
+    let addr = PropertyAddress {
+        selector: PROP_DEVICES,
+        scope: SCOPE_GLOBAL,
+        element: ELEMENT_MAIN,
+    };
     let mut size = 0u32;
     unsafe {
-        if AudioObjectGetPropertyDataSize(SYSTEM_OBJECT, &addr, 0, std::ptr::null(), &mut size) != 0 {
+        if AudioObjectGetPropertyDataSize(SYSTEM_OBJECT, &addr, 0, std::ptr::null(), &mut size) != 0
+        {
             return Vec::new();
         }
         let mut ids = vec![0u32; size as usize / 4];
-        if AudioObjectGetPropertyData(SYSTEM_OBJECT, &addr, 0, std::ptr::null(), &mut size, ids.as_mut_ptr().cast()) != 0 {
+        if AudioObjectGetPropertyData(
+            SYSTEM_OBJECT,
+            &addr,
+            0,
+            std::ptr::null(),
+            &mut size,
+            ids.as_mut_ptr().cast(),
+        ) != 0
+        {
             return Vec::new();
         }
         ids.truncate(size as usize / 4);
@@ -80,43 +93,88 @@ fn audio_devices() -> Vec<u32> {
 }
 
 fn has_input_streams(dev: u32) -> bool {
-    let addr = PropertyAddress { selector: PROP_STREAMS, scope: SCOPE_INPUT, element: ELEMENT_MAIN };
+    let addr = PropertyAddress {
+        selector: PROP_STREAMS,
+        scope: SCOPE_INPUT,
+        element: ELEMENT_MAIN,
+    };
     let mut size = 0u32;
-    unsafe { AudioObjectGetPropertyDataSize(dev, &addr, 0, std::ptr::null(), &mut size) == 0 && size > 0 }
+    unsafe {
+        AudioObjectGetPropertyDataSize(dev, &addr, 0, std::ptr::null(), &mut size) == 0 && size > 0
+    }
 }
 
 fn audio_running(dev: u32) -> bool {
-    let addr = PropertyAddress { selector: PROP_RUNNING_SOMEWHERE, scope: SCOPE_GLOBAL, element: ELEMENT_MAIN };
+    let addr = PropertyAddress {
+        selector: PROP_RUNNING_SOMEWHERE,
+        scope: SCOPE_GLOBAL,
+        element: ELEMENT_MAIN,
+    };
     let mut val = 0u32;
     let mut size = 4u32;
     unsafe {
-        AudioObjectGetPropertyData(dev, &addr, 0, std::ptr::null(), &mut size, (&mut val as *mut u32).cast()) == 0
+        AudioObjectGetPropertyData(
+            dev,
+            &addr,
+            0,
+            std::ptr::null(),
+            &mut size,
+            (&mut val as *mut u32).cast(),
+        ) == 0
             && val != 0
     }
 }
 
 pub fn mic_in_use() -> bool {
-    audio_devices().into_iter().any(|d| has_input_streams(d) && audio_running(d))
+    audio_devices()
+        .into_iter()
+        .any(|d| has_input_streams(d) && audio_running(d))
 }
 
 pub fn camera_in_use() -> bool {
-    let addr = PropertyAddress { selector: PROP_DEVICES, scope: SCOPE_GLOBAL, element: ELEMENT_MAIN };
+    let addr = PropertyAddress {
+        selector: PROP_DEVICES,
+        scope: SCOPE_GLOBAL,
+        element: ELEMENT_MAIN,
+    };
     let mut size = 0u32;
     unsafe {
-        if CMIOObjectGetPropertyDataSize(SYSTEM_OBJECT, &addr, 0, std::ptr::null(), &mut size) != 0 {
+        if CMIOObjectGetPropertyDataSize(SYSTEM_OBJECT, &addr, 0, std::ptr::null(), &mut size) != 0
+        {
             return false;
         }
         let mut ids = vec![0u32; size as usize / 4];
         let mut used = 0u32;
-        if CMIOObjectGetPropertyData(SYSTEM_OBJECT, &addr, 0, std::ptr::null(), size, &mut used, ids.as_mut_ptr().cast()) != 0 {
+        if CMIOObjectGetPropertyData(
+            SYSTEM_OBJECT,
+            &addr,
+            0,
+            std::ptr::null(),
+            size,
+            &mut used,
+            ids.as_mut_ptr().cast(),
+        ) != 0
+        {
             return false;
         }
         ids.truncate(used as usize / 4);
         ids.into_iter().any(|dev| {
-            let a = PropertyAddress { selector: PROP_RUNNING_SOMEWHERE, scope: SCOPE_GLOBAL, element: ELEMENT_MAIN };
+            let a = PropertyAddress {
+                selector: PROP_RUNNING_SOMEWHERE,
+                scope: SCOPE_GLOBAL,
+                element: ELEMENT_MAIN,
+            };
             let mut val = 0u32;
             let mut used = 0u32;
-            CMIOObjectGetPropertyData(dev, &a, 0, std::ptr::null(), 4, &mut used, (&mut val as *mut u32).cast()) == 0
+            CMIOObjectGetPropertyData(
+                dev,
+                &a,
+                0,
+                std::ptr::null(),
+                4,
+                &mut used,
+                (&mut val as *mut u32).cast(),
+            ) == 0
                 && val != 0
         })
     }
