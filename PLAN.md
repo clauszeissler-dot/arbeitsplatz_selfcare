@@ -22,7 +22,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 1 | A-001–A-003 | Repository und vorhandene Reminder-Architektur erfassen; Projektführung anlegen. | Clone vorhanden | erledigt | Quell- und Dokumentprüfung am 2026-10-28 |
 | 2 | A-003 | Persistenten Schalter und sichere macOS-Systemton-Ausgabe an die vorhandene Hinweis-Ausgabe anbinden. | Schritt 1 | erledigt | Frontend- und Produktions-Build erfolgreich, 2026-10-28 |
 | 3 | A-001–A-003 | Regressionen und lokalen Produktions-Build ausführen, App-Bundle prüfen. | Schritt 2; Node-Abhängigkeiten | erledigt | `cargo test -p lotse-core` (25/25), `npm run tauri build` erfolgreich, App + DMG geprüft |
-| 4 | A-001–A-003 | Dokumentation, Abgleich, lokaler Commit und globales Arbeitslogbuch aktualisieren. | Schritt 3 | in Arbeit | `git status`, Commit-Inhalt, Worklog-Ausgabe |
+| 4 | A-001–A-003 | Dokumentation, Abgleich, lokaler Commit und globales Arbeitslogbuch aktualisieren. | Schritt 3 | erledigt | Lokaler Commit `fbc544a`; globaler Worklog-Eintrag folgt separat |
 
 ## Blockaden und Entscheidungen
 
@@ -33,15 +33,15 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 ## Aktueller Zielabgleich
 
 - Arbeitsbeginn / letzter Abgleich: 2026-10-28 13:03 CET / 2026-10-28 13:13 CET
-- Nächster Abgleich spätestens: nicht erforderlich; Abschlussdokumentation und lokaler Commit laufen.
-- Zum sichtbaren Ergebnis fehlt: keine Produktänderung; der lokale Commit und das globale Arbeitslogbuch fehlen noch.
-- Laufender Schritt notwendig wegen: Master-Modus-Versionierung und Arbeitslogbuch-Pflicht für A-001 bis A-003.
-- Kürzester zulässiger nächster Schritt: Abschlussdokumentation stagen, lokalen Commit erzeugen und Arbeitslogbuch eintragen.
+- Nächster Abgleich spätestens: nicht erforderlich; Produktziel erreicht.
+- Zum sichtbaren Ergebnis fehlt: keine Produktänderung. Der globale Worklog-Eintrag wird außerhalb dieses Repositorys geführt.
+- Laufender Schritt notwendig wegen: Arbeitslogbuch-Pflicht für A-001 bis A-003.
+- Kürzester zulässiger nächster Schritt: globalen Worklog-Eintrag anlegen.
 - Weiter gültige Prüfbelege: `cargo test -p lotse-core` (25/25), `npm run tauri build` (App 4,5 MB, DMG 2,9 MB), jeweils 2026-10-28.
 
 ## Nächster konkreter Schritt
 
-Abschlussdokumentation und Änderungen als lokalen Commit mit A-001 bis A-003 erzeugen.
+Keine weitere Projektänderung; der globale Worklog-Eintrag wird anschließend angelegt.
 
 ## Abschlussprüfung
 
@@ -49,5 +49,5 @@ Abschlussdokumentation und Änderungen als lokalen Commit mit A-001 bis A-003 er
 - [x] Alle ursprünglichen und nachträglichen Wünsche mit AENDERUNGEN.md abgeglichen.
 - [x] Alle IDs haben einen belegten Status.
 - [x] Passende Tests und Prüfungen frisch ausgeführt.
-- [ ] Arbeitslogbuch und Versionszuordnung aktualisiert.
+- [x] Arbeitslogbuch und Versionszuordnung aktualisiert.
 - [x] Neue Nutzerkorrekturen/Learnings erfasst oder ausdrücklich nicht angefallen.
