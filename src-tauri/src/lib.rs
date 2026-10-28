@@ -283,7 +283,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<MenuItem<tauri::Wry>> {
         "Position",
         true,
         &[
-            &MenuItem::with_id(app, "posture_sitting", "Swopper", true, None::<&str>)?,
+            &MenuItem::with_id(app, "posture_sitting", "Bürostuhl", true, None::<&str>)?,
             &MenuItem::with_id(app, "posture_standing", "Stehen", true, None::<&str>)?,
             &MenuItem::with_id(app, "posture_board", "Balance Board", true, None::<&str>)?,
         ],

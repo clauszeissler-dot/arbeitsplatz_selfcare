@@ -58,7 +58,7 @@ Wenn du möchtest, begleitet sie ein kurzer Systemton. Den Schalter **„Erinner
 
 Klick auf den Punkt in der Menüleiste:
 - **Glas getrunken:** zählt ein Glas.
-- **Position:** Swopper, Stehen oder Balance Board.
+- **Position:** Bürostuhl (Standard), Stehen oder Balance Board. Nach dem Sitzintervall erinnert Lotse dich ausdrücklich an den Haltungswechsel.
 - **Pause starten / beenden:** für Pausen, in denen du am Rechner bleibst.
 - **Hinweise pausieren:** für 30 Minuten, 1 Stunde oder 2 Stunden Ruhe.
 

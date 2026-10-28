@@ -188,7 +188,7 @@ function mockSnapshot(): Snapshot {
     in_meeting: false, in_break: false, snoozed_until: null,
     active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104,
     water_ml: 750, water_target_ml: 2000, water_expected_ml: 1150, glass_ml: 250,
-    posture: "sitting", posture_label: "Swopper", posture_min: 24, posture_limit_min: 30,
+    posture: "sitting", posture_label: "Bürostuhl", posture_min: 24, posture_limit_min: 30,
     posture_share: { sitting: 190, standing: 64, board: 12 },
     breaks_today: 2, long_breaks_today: 0, next_water_min: 6, next_break_min: 0,
     observation: {
@@ -236,8 +236,8 @@ export function mockToastHint(): Hint {
   }
   if (kind === "posture") {
     return {
-      kind: "posture", level: "yellow", title: "Aufstehen",
-      body: "31 min gesessen. Jetzt 15 min stehen – gern ein paar davon aufs Board.",
+      kind: "posture", level: "yellow", title: "Haltung wechseln",
+      body: "31 min am Bürostuhl. Jetzt 15 min stehen – gern ein paar davon aufs Board.",
       actions: [{ id: "posture_standing", label: "Stehe" }, { id: "posture_board", label: "Board" }], at: Date.now() / 1000,
     };
   }

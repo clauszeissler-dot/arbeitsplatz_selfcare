@@ -20,7 +20,7 @@ const LEVEL_LEAD: Record<Level, string> = {
   red: "Mehr parallel, als ein Kopf sauber überwachen kann. Park etwas, bevor Fehler entstehen.",
 };
 const POSTURES: { id: Posture; label: string }[] = [
-  { id: "sitting", label: "Swopper" },
+  { id: "sitting", label: "Bürostuhl" },
   { id: "standing", label: "Stehen" },
   { id: "board", label: "Board" },
 ];
@@ -290,7 +290,7 @@ const FIELDS: { title: string; fields: Field[] }[] = [
   {
     title: "Haltung",
     fields: [
-      { key: "sit_minutes", label: "Sitzen (Swopper)", unit: "min", min: 10, max: 120 },
+      { key: "sit_minutes", label: "Sitzen (Bürostuhl)", unit: "min", min: 10, max: 120 },
       { key: "stand_minutes", label: "Stehen", unit: "min", min: 5, max: 90 },
       { key: "board_minutes", label: "Balance Board", unit: "min", min: 2, max: 60 },
     ],

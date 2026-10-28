@@ -44,7 +44,7 @@ pub enum Posture {
 impl Posture {
     pub fn label(self) -> &'static str {
         match self {
-            Posture::Sitting => "Swopper",
+            Posture::Sitting => "Bürostuhl",
             Posture::Standing => "Stehen",
             Posture::Board => "Balance Board",
         }
@@ -666,19 +666,19 @@ impl Engine {
         if posture_min >= self.posture_limit() as i64 {
             let (title, body, acts) = match self.state.posture {
                 Posture::Sitting => (
-                    "Aufstehen".to_string(),
-                    format!("{posture_min} min gesessen. Jetzt {} min stehen – gern ein paar davon aufs Board.", s.stand_minutes),
+                    "Haltung wechseln".to_string(),
+                    format!("{posture_min} min am Bürostuhl. Jetzt {} min stehen – gern ein paar davon aufs Board.", s.stand_minutes),
                     vec![action("posture_standing", "Stehe"), action("posture_board", "Board")],
                 ),
                 Posture::Standing => (
                     "Haltung wechseln".to_string(),
-                    format!("{posture_min} min gestanden. Zurück auf den Swopper oder 5 min aufs Board."),
-                    vec![action("posture_sitting", "Swopper"), action("posture_board", "Board")],
+                    format!("{posture_min} min gestanden. Zurück an den Bürostuhl oder 5 min aufs Board."),
+                    vec![action("posture_sitting", "Bürostuhl"), action("posture_board", "Board")],
                 ),
                 Posture::Board => (
                     "Runter vom Board".to_string(),
-                    format!("{posture_min} min Balance. Weiter stehen oder auf den Swopper."),
-                    vec![action("posture_standing", "Stehen"), action("posture_sitting", "Swopper")],
+                    format!("{posture_min} min Balance. Weiter stehen oder zurück an den Bürostuhl."),
+                    vec![action("posture_standing", "Stehen"), action("posture_sitting", "Bürostuhl")],
                 ),
             };
             candidates.push((
@@ -875,6 +875,29 @@ mod tests {
         assert!(e.tick(T0 + 60 * 60, DAY, obs(1)).is_none());
         assert_eq!(e.state.first_active, Some(T0 + 60 * 60));
         assert_eq!(e.snapshot(T0 + 60 * 60).block_min, 0);
+    }
+
+    #[test]
+    fn office_chair_is_the_default_and_prompts_a_posture_change() {
+        let mut e = engine();
+        assert_eq!(e.state.posture, Posture::Sitting);
+        assert_eq!(e.snapshot(T0).posture_label, "Bürostuhl");
+
+        e.settings.water_interval_min = 999;
+        let hints = run(&mut e, T0, 31, &obs(1));
+        let posture = hints
+            .iter()
+            .find(|hint| hint.kind == HintKind::Posture)
+            .expect("Sitzintervall muss einen Wechselhinweis auslösen");
+        assert_eq!(posture.title, "Haltung wechseln");
+        assert!(posture.body.contains("Bürostuhl"));
+        assert_eq!(
+            posture.actions,
+            vec![
+                action("posture_standing", "Stehe"),
+                action("posture_board", "Board")
+            ]
+        );
     }
 
     #[test]

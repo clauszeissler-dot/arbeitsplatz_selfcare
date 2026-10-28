@@ -35,5 +35,6 @@
 | --- | --- | --- | --- |
 | 2026-10-28 | A-003 | Optionalen, abschaltbaren Ton zum vorhandenen visuellen Hinweis ergänzt. | Nutzerauftrag |
 | 2026-10-28 | A-004 | Aktivitätsbasierten Start des vorhandenen Erinnerungsrhythmus verbindlich festgelegt. | Nutzerentscheidung |
+| 2026-10-28 | A-006 | Den normalen Bürostuhl als Standardhaltung benannt; nach dem Sitzintervall fordert Lotse zum Haltungswechsel auf. | Nutzerkorrektur |
 
 Umsetzung: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md)
