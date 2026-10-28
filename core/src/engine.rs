@@ -866,6 +866,18 @@ mod tests {
     }
 
     #[test]
+    fn inactive_time_does_not_start_the_reminder_rhythm() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(600));
+        assert_eq!(e.state.first_active, None);
+
+        // Erst bei tatsächlicher Eingabe startet der Arbeits- und Erinnerungsrhythmus.
+        assert!(e.tick(T0 + 60 * 60, DAY, obs(1)).is_none());
+        assert_eq!(e.state.first_active, Some(T0 + 60 * 60));
+        assert_eq!(e.snapshot(T0 + 60 * 60).block_min, 0);
+    }
+
+    #[test]
     fn drinking_and_posture_change_reset_their_reminders() {
         let mut e = engine();
         e.tick(T0, DAY, obs(1));

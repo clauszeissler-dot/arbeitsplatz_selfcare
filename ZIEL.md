@@ -23,7 +23,7 @@
 - Erlaubte Datenänderungen und Außenwirkungen: lokale Projektdateien und lokale Build-Artefakte; Einstellungen bleiben im lokalen App-Datenordner.
 - Leitplanken: keine Cloud-Kommunikation, keine medizinischen Versprechen, keine Veröffentlichung oder Push.
 - Nicht gebaut: eigener Klang-Editor, Push-Benachrichtigungen und iOS-/Windows-Versionen; nicht Teil des Auftrags.
-- Offene entscheidende Angaben: „ab Start“ kann entweder den bestehenden aktivitätsbasierten Start oder einen Neustart des Rhythmus bei jedem App-Start bedeuten. Der vorhandene aktivitätsbasierte Rhythmus bleibt bis zur Nutzerentscheidung erhalten; der Ton ist ein separater Schalter und standardmäßig aus.
+- Offene entscheidende Angaben: keine. Der Rhythmus startet bei erkannter Aktivität, ruht bei Pausen und Meetings und behält innerhalb eines Tages seinen Zustand bei App-Neustarts; der Ton ist ein separater Schalter und standardmäßig aus.
 
 ## Zielprüfung nach Veröffentlichung
 
@@ -34,5 +34,6 @@
 | Datum | Anlass / Anforderungs-ID | Änderung | Entscheidungsquelle |
 | --- | --- | --- | --- |
 | 2026-10-28 | A-003 | Optionalen, abschaltbaren Ton zum vorhandenen visuellen Hinweis ergänzt. | Nutzerauftrag |
+| 2026-10-28 | A-004 | Aktivitätsbasierten Start des vorhandenen Erinnerungsrhythmus verbindlich festgelegt. | Nutzerentscheidung |
 
 Umsetzung: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md)
