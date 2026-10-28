@@ -22,7 +22,7 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Prüfung: `cargo test --workspace` – 30 Tests bestanden. `npm run tauri build` – Tauri-Produktions-Bundle und DMG erfolgreich erstellt.
 - Ergebnis am vereinbarten Zielort: Das neue Bundle unter `target/release/bundle/macos/Lotse.app` und die DMG sind vorhanden; die gezielt neu gestartete Projekt-App läuft aus dem Bundle.
 - Offene Punkte und nächster Schritt: Im Cockpit vier Standardhaltungen sowie Zahnrad → „Haltungen“ mit Hinzufügen/Entfernen sichtbar prüfen.
-- Versionsbezug: noch nicht committed
+- Versionsbezug: Lokaler Commit `8d4e37a` (`feat(A-007): Haltungen lokal verwalten`); kein Push.
 
 ## 2026-10-28 – Bürostuhl als Standardhaltung und Wechselhinweis
 
