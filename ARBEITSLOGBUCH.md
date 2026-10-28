@@ -21,7 +21,7 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Prüfung: `npm run build` – TypeScript-Prüfung und Frontend-Build erfolgreich. `npm run tauri build` – Produktions-Bundle und DMG erstellt. Die Projekt-App wurde nach einem kurzen macOS-Beendigungsübergang gezielt neu gestartet.
 - Ergebnis am vereinbarten Zielort: Neue `Lotse.app` läuft aus `target/release/bundle/macos/`.
 - Offene Punkte und nächster Schritt: Im geöffneten Cockpit die kleine Bildmarke neben „Lotse“ sichtbar bestätigen.
-- Versionsbezug: noch nicht committed
+- Versionsbezug: Lokaler Commit `91f1ccc` (`feat(A-008): Markenlogo im Cockpit`); kein Push.
 
 ## 2026-10-28 – Individuell verwaltbare Haltungen
 
