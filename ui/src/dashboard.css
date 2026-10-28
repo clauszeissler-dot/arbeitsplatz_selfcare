@@ -23,12 +23,19 @@ body {
   user-select: none;
 }
 .logo {
-  font-family: var(--font-head);
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
 }
-.logo span { color: var(--primary); }
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  display: inline-block;
+  border-radius: 9px;
+  background: url("../../docs/assets/ki-affairs-github-readme-banner.png") left center / 144px 36px no-repeat;
+  filter: drop-shadow(0 2px 6px rgba(0, 245, 255, 0.14));
+}
 .logo em {
   font-style: normal;
   font-family: var(--font-mono);
@@ -36,7 +43,7 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--secondary);
-  margin-left: 10px;
+  margin-left: 0;
   padding: 3px 8px;
   border: 1px solid rgba(0, 245, 255, 0.3);
   border-radius: 999px;

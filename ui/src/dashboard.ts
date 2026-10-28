@@ -234,7 +234,7 @@ function render() {
   const workPct = pct(s.active_min, s.workday_min);
   app.innerHTML = `
     <header class="top" data-tauri-drag-region>
-      <div class="logo" data-tauri-drag-region>KI Aff<span>AI</span>rs <em>Lotse</em></div>
+      <div class="logo" data-tauri-drag-region><span class="brand-mark" role="img" aria-label="KI AffAIrs"></span><em>Lotse</em></div>
       <div class="chips">${chips(s)}</div>
       <div class="top-actions">
         <button class="btn ghost" data-act="refresh" title="Jetzt aktualisieren">${icons.refresh}</button>

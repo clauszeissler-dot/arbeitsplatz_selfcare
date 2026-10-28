@@ -1,6 +1,6 @@
 # Aktueller Arbeitsplan
 
-**Sichtbares Arbeitsziel:** Claus kann Lotse lokal als Mac-App nutzen; Bürostuhl und Swopper sind getrennt sichtbar und jede Person kann ihre Haltungen lokal verwalten.
+**Sichtbares Arbeitsziel:** Claus kann Lotse lokal als Mac-App nutzen; die Kopfzeile zeigt das originale KI-AffAIrs-Logo mit der Produktkennung Lotse.
 **Zielort:** `target/release/bundle/macos/Lotse.app` im lokalen Projektordner.
 **Abschlussnachweis:** Core-Test-Suite und Produktions-Build erfolgreich; App-Bundle am Zielort vorhanden.
 
@@ -10,7 +10,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 ## Aktueller Umfang
 
-- In diesem Arbeitslauf: A-005 bis A-007 (A-001 bis A-004 sind geprüft)
+- In diesem Arbeitslauf: A-005 bis A-008 (A-001 bis A-004 sind geprüft)
 - Bewusst außerhalb dieses Laufs: signierter/notarisierter Release und Installation nach `/Applications`; nicht beauftragt.
 - Wesentliche Annahmen: Keine zur Rhythmusart; der Nutzer hat Aktivitätsbasis verbindlich gewählt. Der macOS-Systemton für A-003 bleibt standardmäßig aus.
 - Anwendbare Learnings: Gemeinsame L-001 (Zielort nachweisen) und L-002 (jede Anforderung einzeln abgleichen). Prüfpunkte: App-Bundle tatsächlich prüfen und alle drei IDs mit Belegen abschließen.
@@ -34,6 +34,9 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 13 | A-007 | Cockpit und Wechselhinweise aus der gespeicherten Haltungs-Liste erzeugen. | Schritt 12 | erledigt | Auswahl und Hint-Aktionen entstehen dynamisch aus der Liste |
 | 14 | A-007 | Im Einstellungsbereich Hinzufügen, Intervalldauer und Entfernen implementieren. | Schritt 12 | erledigt | lokale Liste mit Mindestanzahl eins umgesetzt |
 | 15 | A-007 | Core-Tests, lokales Bundle und sichtbare Cockpit-Prüfung durchführen. | Schritte 12–14 | in Arbeit | 30 Tests grün; Tauri-Bundle und DMG erstellt, neue Projekt-App läuft; Cockpit-Prüfung offen |
+| 16 | A-008 | Vorhandenes Original-Logo als passende lokale Quelle prüfen und in die Kopfzeile einbinden. | Nutzerwunsch | erledigt | KI-AffAIrs-Banner enthält das Original-Logo |
+| 17 | A-008 | Kopfzeilen-Layout mit kompakter Logo-Marke und „Lotse“ gestalten. | Schritt 16 | erledigt | Original-Bildmarke als dezenter lokaler Ausschnitt eingebunden |
+| 18 | A-008 | Lokales Tauri-Bundle erstellen und Kopfzeile sichtbar prüfen. | Schritt 17 | in Arbeit | Produktions-Bundle und DMG erstellt; neue Instanz läuft, Cockpit-Prüfung offen |
 
 ## Blockaden und Entscheidungen
 
@@ -41,6 +44,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 - A-005: Die Prozessausgabe übersteigt den Pipe-Puffer. Der Fehler liegt vor der Ghostty- und Desktop-App-Zuordnung; die Erfassung muss zuerst zuverlässig fertiglesen.
 - A-006: Kein neues Haltungsformat nötig: Die persistierte technische Kennung `sitting` bleibt aus Kompatibilitätsgründen bestehen und wird überall als „Bürostuhl“ gezeigt.
 - A-007: Das starre Haltungsformat reicht für persönlich verwaltbare Haltungen nicht aus. Bestehende Sitzdaten werden beim Laden als Bürostuhl übernommen, damit nichts verlorengeht.
+- A-008: Es gibt kein separates Logo-Asset. Der vorhandene, originale Markenbanner liefert den Logo-Ausschnitt; kein generiertes oder nachgezeichnetes Zeichen wird verwendet.
 - Ein echter Klangtest mit hörbarer Ausgabe ist nicht automatisierbar; die direkte macOS-Ausführung und der Build sind der technische Nachweis, die Wahl bleibt über den Schalter kontrollierbar.
 - A-001: Xcode 27 erzeugte ohne `-Wl,-no_fixup_chains` nicht ladbare Rust-Makro-Dylibs. Die macOS-spezifische Cargo-Konfiguration enthält den verifizierten Build-Workaround.
 
@@ -48,14 +52,14 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 - Arbeitsbeginn / letzter Abgleich: 2026-10-28 14:05 CET / 2026-10-28 14:25 CET
 - Nächster Abgleich spätestens: nach der sichtbaren Cockpit-Prüfung.
-- Zum sichtbaren Ergebnis fehlt: Vier Standardhaltungen sowie lokale Verwaltungsoptionen im neu gebauten Cockpit bestätigen.
-- Laufender Schritt notwendig wegen: A-005 bis A-007.
-- Kürzester zulässiger nächster Schritt: Im Lotse-Menü „Cockpit öffnen“ wählen, vier Haltungen und das Zahnrad → „Haltungen“ prüfen.
+- Zum sichtbaren Ergebnis fehlt: Original-Logo in der Kopfzeile des neu gebauten Cockpits bestätigen.
+- Laufender Schritt notwendig wegen: A-005 bis A-008.
+- Kürzester zulässiger nächster Schritt: Im Lotse-Menü „Cockpit öffnen“ wählen und die Logo-Marke neben „Lotse“ prüfen.
 - Weiter gültige Prüfbelege: `cargo test -p lotse-core` (25/25), `npm run tauri build` (App 4,5 MB, DMG 2,9 MB), jeweils 2026-10-28.
 
 ## Nächster konkreter Schritt
 
-Cockpit der neu gestarteten Version sichtbar prüfen; bei Bestätigung A-005 bis A-007 auf geprüft setzen.
+Cockpit der neu gestarteten Version sichtbar prüfen; bei Bestätigung A-005 bis A-008 auf geprüft setzen.
 
 ## Abschlussprüfung
 

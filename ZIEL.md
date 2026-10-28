@@ -37,5 +37,6 @@
 | 2026-10-28 | A-004 | Aktivitätsbasierten Start des vorhandenen Erinnerungsrhythmus verbindlich festgelegt. | Nutzerentscheidung |
 | 2026-10-28 | A-006 | Den normalen Bürostuhl als Standardhaltung benannt; nach dem Sitzintervall fordert Lotse zum Haltungswechsel auf. | Nutzerkorrektur |
 | 2026-10-28 | A-007 | Bürostuhl und Swopper getrennt geführt; Haltungen und ihre Intervalle sind je Person lokal verwaltbar. | Nutzerkorrektur |
+| 2026-10-28 | A-008 | Originales KI-AffAIrs-Logo dezent in die Cockpit-Kopfzeile integriert. | Nutzerwunsch |
 
 Umsetzung: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md)

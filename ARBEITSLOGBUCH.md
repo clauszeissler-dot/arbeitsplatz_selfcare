@@ -13,6 +13,16 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Offene Punkte und nächster Schritt: A-003 implementieren, anschließend Core-Tests und Tauri-Build durchführen.
 - Versionsbezug: noch nicht committed
 
+## 2026-10-28 – Originale KI-AffAIrs-Marke in der Kopfzeile
+
+- Anforderungs-ID: A-008
+- Tatsächliche Änderungen und Ergebnis: Der Textzug „KI AffAIrs“ wurde durch eine kompakte Bildmarke aus dem vorhandenen, originalen Markenbanner ersetzt; „Lotse“ bleibt als Produktkennung daneben. Es wurde keine neue oder generierte Logo-Variante erstellt.
+- Wesentliche Entscheidung und Begründung / Quelle: Das Repository enthält kein separates Logo, aber das Original im bestehenden Markenbanner. Der lokale CSS-Ausschnitt verwendet genau diese Quelle und vermeidet doppelte Markenassets.
+- Prüfung: `npm run build` – TypeScript-Prüfung und Frontend-Build erfolgreich. `npm run tauri build` – Produktions-Bundle und DMG erstellt. Die Projekt-App wurde nach einem kurzen macOS-Beendigungsübergang gezielt neu gestartet.
+- Ergebnis am vereinbarten Zielort: Neue `Lotse.app` läuft aus `target/release/bundle/macos/`.
+- Offene Punkte und nächster Schritt: Im geöffneten Cockpit die kleine Bildmarke neben „Lotse“ sichtbar bestätigen.
+- Versionsbezug: noch nicht committed
+
 ## 2026-10-28 – Individuell verwaltbare Haltungen
 
 - Anforderungs-ID: A-007
