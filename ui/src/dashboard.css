@@ -338,6 +338,10 @@ input[type="number"]:focus { outline: 2px solid var(--primary); outline-offset: 
 .toggle input { width: 18px; height: 18px; accent-color: var(--primary); }
 .panel-foot { display: flex; align-items: center; gap: 14px; position: sticky; bottom: -24px; padding: 14px 0 24px; background: var(--background); }
 .saved { color: var(--green); }
+.posture-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 6px 0; }
+.posture-row input[type="text"] { min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--bg-deep); color: var(--foreground); font: inherit; }
+.posture-remove { min-width: 32px; padding: 4px 8px; color: var(--red); }
+.posture-add { margin: 8px 0 6px; }
 
 @media (max-width: 900px) {
   .cards, .metrics { grid-template-columns: 1fr 1fr; }

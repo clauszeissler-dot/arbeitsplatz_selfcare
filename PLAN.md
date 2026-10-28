@@ -1,6 +1,6 @@
 # Aktueller Arbeitsplan
 
-**Sichtbares Arbeitsziel:** Claus kann Lotse lokal als Mac-App nutzen; der normale Bürostuhl ist als Standardhaltung sichtbar und Lotse fordert nach dem Sitzintervall zum Haltungswechsel auf.
+**Sichtbares Arbeitsziel:** Claus kann Lotse lokal als Mac-App nutzen; Bürostuhl und Swopper sind getrennt sichtbar und jede Person kann ihre Haltungen lokal verwalten.
 **Zielort:** `target/release/bundle/macos/Lotse.app` im lokalen Projektordner.
 **Abschlussnachweis:** Core-Test-Suite und Produktions-Build erfolgreich; App-Bundle am Zielort vorhanden.
 
@@ -10,7 +10,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 ## Aktueller Umfang
 
-- In diesem Arbeitslauf: A-005 und A-006 (A-001 bis A-004 sind geprüft)
+- In diesem Arbeitslauf: A-005 bis A-007 (A-001 bis A-004 sind geprüft)
 - Bewusst außerhalb dieses Laufs: signierter/notarisierter Release und Installation nach `/Applications`; nicht beauftragt.
 - Wesentliche Annahmen: Keine zur Rhythmusart; der Nutzer hat Aktivitätsbasis verbindlich gewählt. Der macOS-Systemton für A-003 bleibt standardmäßig aus.
 - Anwendbare Learnings: Gemeinsame L-001 (Zielort nachweisen) und L-002 (jede Anforderung einzeln abgleichen). Prüfpunkte: App-Bundle tatsächlich prüfen und alle drei IDs mit Belegen abschließen.
@@ -30,27 +30,32 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 9 | A-006 | „Swopper“ im Haltungsmodell, Cockpit, Menü und Hinweisen durch „Bürostuhl“ ersetzen; bestehende Sitz-ID für gespeicherte Zustände beibehalten. | Nutzerkorrektur | erledigt | Technische Kennung unverändert; sichtbare Bezeichnung konsistent ersetzt |
 | 10 | A-006 | Standard und Wechselhinweis per Core-Test prüfen. | Schritt 9 | erledigt | `office_chair_is_the_default_and_prompts_a_posture_change` grün |
 | 11 | A-006 | Lokales Bundle bauen und die sichtbare Standardhaltung im Cockpit prüfen. | Schritte 9–10 | in Arbeit | Produktions-Build erstellt; neue Instanz läuft, verborgenes Cockpit muss manuell geöffnet werden |
+| 12 | A-007 | Starres Drei-Haltungsmodell in eine lokal gespeicherte Haltungs-Liste mit vier Standards überführen; alte lokale Zustände migrieren. | Nutzerkorrektur | erledigt | `sitting` wird als Bürostuhl migriert; alte Intervalle werden übernommen |
+| 13 | A-007 | Cockpit und Wechselhinweise aus der gespeicherten Haltungs-Liste erzeugen. | Schritt 12 | erledigt | Auswahl und Hint-Aktionen entstehen dynamisch aus der Liste |
+| 14 | A-007 | Im Einstellungsbereich Hinzufügen, Intervalldauer und Entfernen implementieren. | Schritt 12 | erledigt | lokale Liste mit Mindestanzahl eins umgesetzt |
+| 15 | A-007 | Core-Tests, lokales Bundle und sichtbare Cockpit-Prüfung durchführen. | Schritte 12–14 | in Arbeit | 30 Tests grün; Tauri-Bundle und DMG erstellt, neue Projekt-App läuft; Cockpit-Prüfung offen |
 
 ## Blockaden und Entscheidungen
 
 - A-004: Aktivitätsbasiert ist entschieden. Der Tageszustand bleibt bei Neustarts erhalten; ein später gewünschter Neustart-Reset wäre eine neue Anforderung.
 - A-005: Die Prozessausgabe übersteigt den Pipe-Puffer. Der Fehler liegt vor der Ghostty- und Desktop-App-Zuordnung; die Erfassung muss zuerst zuverlässig fertiglesen.
 - A-006: Kein neues Haltungsformat nötig: Die persistierte technische Kennung `sitting` bleibt aus Kompatibilitätsgründen bestehen und wird überall als „Bürostuhl“ gezeigt.
+- A-007: Das starre Haltungsformat reicht für persönlich verwaltbare Haltungen nicht aus. Bestehende Sitzdaten werden beim Laden als Bürostuhl übernommen, damit nichts verlorengeht.
 - Ein echter Klangtest mit hörbarer Ausgabe ist nicht automatisierbar; die direkte macOS-Ausführung und der Build sind der technische Nachweis, die Wahl bleibt über den Schalter kontrollierbar.
 - A-001: Xcode 27 erzeugte ohne `-Wl,-no_fixup_chains` nicht ladbare Rust-Makro-Dylibs. Die macOS-spezifische Cargo-Konfiguration enthält den verifizierten Build-Workaround.
 
 ## Aktueller Zielabgleich
 
 - Arbeitsbeginn / letzter Abgleich: 2026-10-28 14:05 CET / 2026-10-28 14:25 CET
-- Nächster Abgleich spätestens: nach der fokussierten Core-Prüfung und dem lokalen Build.
-- Zum sichtbaren Ergebnis fehlt: „Bürostuhl“ als Standard im Cockpit der neu gestarteten App bestätigen.
-- Laufender Schritt notwendig wegen: A-005 und A-006.
-- Kürzester zulässiger nächster Schritt: Im Lotse-Menü „Cockpit öffnen“ wählen und die Werte sichtbar prüfen.
+- Nächster Abgleich spätestens: nach der sichtbaren Cockpit-Prüfung.
+- Zum sichtbaren Ergebnis fehlt: Vier Standardhaltungen sowie lokale Verwaltungsoptionen im neu gebauten Cockpit bestätigen.
+- Laufender Schritt notwendig wegen: A-005 bis A-007.
+- Kürzester zulässiger nächster Schritt: Im Lotse-Menü „Cockpit öffnen“ wählen, vier Haltungen und das Zahnrad → „Haltungen“ prüfen.
 - Weiter gültige Prüfbelege: `cargo test -p lotse-core` (25/25), `npm run tauri build` (App 4,5 MB, DMG 2,9 MB), jeweils 2026-10-28.
 
 ## Nächster konkreter Schritt
 
-Cockpit der neu gestarteten Version sichtbar prüfen; bei Bestätigung A-005 und A-006 auf geprüft setzen.
+Cockpit der neu gestarteten Version sichtbar prüfen; bei Bestätigung A-005 bis A-007 auf geprüft setzen.
 
 ## Abschlussprüfung
 

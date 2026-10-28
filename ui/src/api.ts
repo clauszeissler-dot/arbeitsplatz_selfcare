@@ -1,7 +1,6 @@
 // Brücke zur Rust-Seite. Im normalen Browser (Designvorschau) liefert sie Beispieldaten.
 
 export type Level = "green" | "yellow" | "red";
-export type Posture = "sitting" | "standing" | "board";
 export type HintKind = "long_break" | "break" | "load" | "posture" | "water" | "eyes" | "day_end";
 
 export interface Metric {
@@ -39,7 +38,7 @@ export interface DaySummary {
   water_ml: number;
   breaks: number;
   long_breaks: number;
-  posture_min: Partial<Record<Posture, number>>;
+  posture_min: Record<string, number>;
   red_min: number;
   max_projects: number;
   max_busy_agents: number;
@@ -60,11 +59,12 @@ export interface Snapshot {
   water_target_ml: number;
   water_expected_ml: number;
   glass_ml: number;
-  posture: Posture;
+  posture: string;
   posture_label: string;
   posture_min: number;
   posture_limit_min: number;
-  posture_share: Partial<Record<Posture, number>>;
+  posture_share: Record<string, number>;
+  postures: PostureDefinition[];
   breaks_today: number;
   long_breaks_today: number;
   next_water_min: number | null;
@@ -82,14 +82,13 @@ export interface Hint {
   at: number;
 }
 export interface Band { green: number; yellow: number }
+export interface PostureDefinition { id: string; label: string; duration_min: number }
 export interface Settings {
   water_target_ml: number;
   glass_ml: number;
   water_interval_min: number;
   workday_minutes: number;
-  sit_minutes: number;
-  stand_minutes: number;
-  board_minutes: number;
+  postures: PostureDefinition[];
   block_soft_min: number;
   block_hard_min: number;
   long_break_after_min: number;
@@ -149,7 +148,13 @@ const mockListeners: { event: string; cb: (p: unknown) => void }[] = [];
 
 const defaultSettings: Settings = {
   water_target_ml: 2000, glass_ml: 250, water_interval_min: 45, workday_minutes: 480,
-  sit_minutes: 30, stand_minutes: 15, board_minutes: 10, block_soft_min: 50, block_hard_min: 75,
+  postures: [
+    { id: "office_chair", label: "Bürostuhl", duration_min: 30 },
+    { id: "swopper", label: "Swopper", duration_min: 30 },
+    { id: "standing", label: "Stehen", duration_min: 15 },
+    { id: "board", label: "Balance Board", duration_min: 10 },
+  ],
+  block_soft_min: 50, block_hard_min: 75,
   long_break_after_min: 120, break_min: 10, long_break_min: 25, idle_active_secs: 120,
   meeting_mic_secs: 120, meeting_use_mic: true, agent_busy_cpu: 3, app_busy_cpu: 10,
   toast_seconds: 40, sound_enabled: false, min_gap_secs: 180, eyes_enabled: false, eyes_interval_min: 20,
@@ -188,8 +193,9 @@ function mockSnapshot(): Snapshot {
     in_meeting: false, in_break: false, snoozed_until: null,
     active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104,
     water_ml: 750, water_target_ml: 2000, water_expected_ml: 1150, glass_ml: 250,
-    posture: "sitting", posture_label: "Bürostuhl", posture_min: 24, posture_limit_min: 30,
-    posture_share: { sitting: 190, standing: 64, board: 12 },
+    posture: "office_chair", posture_label: "Bürostuhl", posture_min: 24, posture_limit_min: 30,
+    posture_share: { office_chair: 190, swopper: 20, standing: 64, board: 12 },
+    postures: structuredClone(defaultSettings.postures),
     breaks_today: 2, long_breaks_today: 0, next_water_min: 6, next_break_min: 0,
     observation: {
       ghostty_running: true, ghostty_note: null, tabs,
@@ -200,9 +206,9 @@ function mockSnapshot(): Snapshot {
       other_agents: [], focused_key: "w1:1", idle_secs: 4, mic_active: false, camera_active: false,
     },
     history: [
-      { day: "2026-10-20", active_min: 562, water_ml: 1000, breaks: 2, long_breaks: 0, posture_min: { sitting: 470, standing: 80, board: 12 }, red_min: 240, max_projects: 9, max_busy_agents: 5 },
-      { day: "2026-10-21", active_min: 505, water_ml: 1500, breaks: 4, long_breaks: 1, posture_min: { sitting: 330, standing: 150, board: 25 }, red_min: 110, max_projects: 7, max_busy_agents: 4 },
-      { day: "2026-10-22", active_min: 468, water_ml: 2000, breaks: 5, long_breaks: 2, posture_min: { sitting: 290, standing: 150, board: 28 }, red_min: 45, max_projects: 5, max_busy_agents: 3 },
+      { day: "2026-10-20", active_min: 562, water_ml: 1000, breaks: 2, long_breaks: 0, posture_min: { office_chair: 470, standing: 80, board: 12 }, red_min: 240, max_projects: 9, max_busy_agents: 5 },
+      { day: "2026-10-21", active_min: 505, water_ml: 1500, breaks: 4, long_breaks: 1, posture_min: { office_chair: 330, swopper: 40, standing: 110, board: 25 }, red_min: 110, max_projects: 7, max_busy_agents: 4 },
+      { day: "2026-10-22", active_min: 468, water_ml: 2000, breaks: 5, long_breaks: 2, posture_min: { office_chair: 290, standing: 150, board: 28 }, red_min: 45, max_projects: 5, max_busy_agents: 3 },
     ],
   };
 }

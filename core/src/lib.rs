@@ -13,6 +13,6 @@ pub mod observe;
 pub mod procs;
 pub mod settings;
 
-pub use engine::{Engine, Hint, HintKind, Level, Posture, Snapshot};
+pub use engine::{Engine, Hint, HintKind, Level, Snapshot};
 pub use observe::Observation;
-pub use settings::Settings;
+pub use settings::{PostureDefinition, Settings};

@@ -5,7 +5,7 @@
 //! Der Zustand ist serialisierbar und überlebt Neustarts.
 
 use crate::observe::Observation;
-use crate::settings::{Band, Settings};
+use crate::settings::{Band, PostureDefinition, Settings};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, VecDeque};
 
@@ -26,27 +26,6 @@ impl Level {
             Level::Yellow
         } else {
             Level::Red
-        }
-    }
-}
-
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
-)]
-#[serde(rename_all = "lowercase")]
-pub enum Posture {
-    #[default]
-    Sitting,
-    Standing,
-    Board,
-}
-
-impl Posture {
-    pub fn label(self) -> &'static str {
-        match self {
-            Posture::Sitting => "Bürostuhl",
-            Posture::Standing => "Stehen",
-            Posture::Board => "Balance Board",
         }
     }
 }
@@ -105,7 +84,7 @@ pub struct DaySummary {
     pub water_ml: u32,
     pub breaks: u32,
     pub long_breaks: u32,
-    pub posture_min: BTreeMap<Posture, u64>,
+    pub posture_min: BTreeMap<String, u64>,
     pub red_min: u64,
     pub max_projects: u32,
     pub max_busy_agents: u32,
@@ -120,9 +99,9 @@ pub struct State {
     pub red_secs: u64,
     pub water_ml: u32,
     pub last_drink: Option<i64>,
-    pub posture: Posture,
+    pub posture: String,
     pub posture_since: i64,
-    pub posture_secs: BTreeMap<Posture, u64>,
+    pub posture_secs: BTreeMap<String, u64>,
     pub block_start: i64,
     pub last_long_break_end: i64,
     pub breaks: Vec<BreakRecord>,
@@ -152,7 +131,7 @@ impl Default for State {
             red_secs: 0,
             water_ml: 0,
             last_drink: None,
-            posture: Posture::Sitting,
+            posture: "office_chair".into(),
             posture_since: 0,
             posture_secs: BTreeMap::new(),
             block_start: 0,
@@ -204,11 +183,12 @@ pub struct Snapshot {
     pub water_target_ml: u32,
     pub water_expected_ml: u32,
     pub glass_ml: u32,
-    pub posture: Posture,
+    pub posture: String,
     pub posture_label: String,
     pub posture_min: i64,
     pub posture_limit_min: u32,
-    pub posture_share: BTreeMap<Posture, u64>,
+    pub posture_share: BTreeMap<String, u64>,
+    pub postures: Vec<PostureDefinition>,
     pub breaks_today: u32,
     pub long_breaks_today: u32,
     pub next_water_min: Option<i64>,
@@ -227,8 +207,40 @@ const MAX_TICK_GAP: i64 = 90;
 const SLEEP_GAP: i64 = 600;
 const LOAD_RED_HOLD: i64 = 300;
 
+fn normalized_posture_id(id: &str, settings: &Settings) -> String {
+    let id = match id {
+        // Bis einschließlich A-006 hieß der einzige Sitz-Zustand technisch
+        // `sitting`. Er bleibt beim Upgrade als Bürostuhl erhalten.
+        "sitting" => "office_chair",
+        other => other,
+    };
+    settings
+        .posture(id)
+        .map(|posture| posture.id.clone())
+        .unwrap_or_else(|| settings.postures[0].id.clone())
+}
+
+fn normalize_posture_map(values: &mut BTreeMap<String, u64>, settings: &Settings) {
+    let old = std::mem::take(values);
+    for (id, seconds) in old {
+        *values
+            .entry(normalized_posture_id(&id, settings))
+            .or_default() += seconds;
+    }
+}
+
+fn normalize_state_postures(state: &mut State, settings: &Settings) {
+    state.posture = normalized_posture_id(&state.posture, settings);
+    normalize_posture_map(&mut state.posture_secs, settings);
+    for day in &mut state.history {
+        normalize_posture_map(&mut day.posture_min, settings);
+    }
+}
+
 impl Engine {
-    pub fn new(settings: Settings, state: State) -> Self {
+    pub fn new(mut settings: Settings, mut state: State) -> Self {
+        settings.normalize_postures();
+        normalize_state_postures(&mut state, &settings);
         Self {
             settings,
             state,
@@ -253,7 +265,11 @@ impl Engine {
                     .iter()
                     .filter(|b| b.minutes() >= self.settings.long_break_min as i64)
                     .count() as u32,
-                posture_min: s.posture_secs.iter().map(|(k, v)| (*k, v / 60)).collect(),
+                posture_min: s
+                    .posture_secs
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v / 60))
+                    .collect(),
                 red_min: s.red_secs / 60,
                 max_projects: s.max_projects,
                 max_busy_agents: s.max_busy_agents,
@@ -300,12 +316,21 @@ impl Engine {
         );
     }
 
-    pub fn set_posture(&mut self, now: i64, p: Posture) {
-        if self.state.posture != p {
-            self.state.posture = p;
+    pub fn set_posture(&mut self, now: i64, id: &str) {
+        if self.settings.posture(id).is_none() {
+            return;
+        }
+        if self.state.posture != id {
+            self.state.posture = id.into();
         }
         self.state.posture_since = now;
         self.state.next_allowed.remove(&HintKind::Posture);
+    }
+
+    pub fn update_settings(&mut self, mut settings: Settings) {
+        settings.normalize_postures();
+        self.settings = settings;
+        normalize_state_postures(&mut self.state, &self.settings);
     }
 
     pub fn start_break(&mut self, now: i64) {
@@ -393,7 +418,7 @@ impl Engine {
             *self
                 .state
                 .posture_secs
-                .entry(self.state.posture)
+                .entry(self.state.posture.clone())
                 .or_default() += dt;
         }
 
@@ -453,11 +478,10 @@ impl Engine {
     }
 
     fn posture_limit(&self) -> u32 {
-        match self.state.posture {
-            Posture::Sitting => self.settings.sit_minutes,
-            Posture::Standing => self.settings.stand_minutes,
-            Posture::Board => self.settings.board_minutes,
-        }
+        self.settings
+            .posture(&self.state.posture)
+            .map(|posture| posture.duration_min)
+            .unwrap_or(30)
     }
 
     fn water_expected(&self, now: i64) -> u32 {
@@ -664,23 +688,21 @@ impl Engine {
         }
         let posture_min = (now - self.state.posture_since) / 60;
         if posture_min >= self.posture_limit() as i64 {
-            let (title, body, acts) = match self.state.posture {
-                Posture::Sitting => (
-                    "Haltung wechseln".to_string(),
-                    format!("{posture_min} min am Bürostuhl. Jetzt {} min stehen – gern ein paar davon aufs Board.", s.stand_minutes),
-                    vec![action("posture_standing", "Stehe"), action("posture_board", "Board")],
-                ),
-                Posture::Standing => (
-                    "Haltung wechseln".to_string(),
-                    format!("{posture_min} min gestanden. Zurück an den Bürostuhl oder 5 min aufs Board."),
-                    vec![action("posture_sitting", "Bürostuhl"), action("posture_board", "Board")],
-                ),
-                Posture::Board => (
-                    "Runter vom Board".to_string(),
-                    format!("{posture_min} min Balance. Weiter stehen oder zurück an den Bürostuhl."),
-                    vec![action("posture_standing", "Stehen"), action("posture_sitting", "Bürostuhl")],
-                ),
-            };
+            let current = self
+                .settings
+                .posture(&self.state.posture)
+                .map(|posture| posture.label.as_str())
+                .unwrap_or("deiner aktuellen Haltung");
+            let acts = s
+                .postures
+                .iter()
+                .filter(|posture| posture.id != self.state.posture)
+                .map(|posture| action(&format!("posture_{}", posture.id), &posture.label))
+                .collect();
+            let (title, body) = (
+                "Haltung wechseln".to_string(),
+                format!("{posture_min} min am {current}. Jetzt eine andere Haltung wählen."),
+            );
             candidates.push((
                 HintKind::Posture,
                 10,
@@ -771,16 +793,21 @@ impl Engine {
             water_target_ml: s.water_target_ml,
             water_expected_ml: self.water_expected(now),
             glass_ml: s.glass_ml,
-            posture: self.state.posture,
-            posture_label: self.state.posture.label().into(),
+            posture: self.state.posture.clone(),
+            posture_label: self
+                .settings
+                .posture(&self.state.posture)
+                .map(|posture| posture.label.clone())
+                .unwrap_or_else(|| "Bürostuhl".into()),
             posture_min: (now - self.state.posture_since) / 60,
             posture_limit_min: self.posture_limit(),
             posture_share: self
                 .state
                 .posture_secs
                 .iter()
-                .map(|(k, v)| (*k, v / 60))
+                .map(|(k, v)| (k.clone(), v / 60))
                 .collect(),
+            postures: self.settings.postures.clone(),
             breaks_today: self.state.breaks.len() as u32,
             long_breaks_today: self
                 .state
@@ -880,7 +907,7 @@ mod tests {
     #[test]
     fn office_chair_is_the_default_and_prompts_a_posture_change() {
         let mut e = engine();
-        assert_eq!(e.state.posture, Posture::Sitting);
+        assert_eq!(e.state.posture, "office_chair");
         assert_eq!(e.snapshot(T0).posture_label, "Bürostuhl");
 
         e.settings.water_interval_min = 999;
@@ -894,10 +921,64 @@ mod tests {
         assert_eq!(
             posture.actions,
             vec![
-                action("posture_standing", "Stehe"),
-                action("posture_board", "Board")
+                action("posture_swopper", "Swopper"),
+                action("posture_standing", "Stehen"),
+                action("posture_board", "Balance Board")
             ]
         );
+    }
+
+    #[test]
+    fn posture_list_keeps_swopper_and_allows_a_personal_posture() {
+        let mut e = engine();
+        assert_eq!(e.settings.postures.len(), 4);
+        assert_eq!(e.settings.postures[0].id, "office_chair");
+        assert!(e.settings.postures.iter().any(|p| p.id == "swopper"));
+
+        e.settings
+            .postures
+            .push(crate::settings::PostureDefinition {
+                id: "sattelstuhl".into(),
+                label: "Sattelstuhl".into(),
+                duration_min: 20,
+            });
+        e.set_posture(T0, "sattelstuhl");
+        let snapshot = e.snapshot(T0);
+        assert_eq!(snapshot.posture_label, "Sattelstuhl");
+        assert_eq!(snapshot.posture_limit_min, 20);
+
+        e.settings.water_interval_min = 999;
+        let hints = run(&mut e, T0, 21, &obs(1));
+        let posture = hints
+            .iter()
+            .find(|hint| hint.kind == HintKind::Posture)
+            .unwrap();
+        assert!(posture
+            .actions
+            .iter()
+            .any(|action| action.id == "posture_office_chair"));
+        assert!(!posture
+            .actions
+            .iter()
+            .any(|action| action.id == "posture_sattelstuhl"));
+
+        let mut without_saddle = e.settings.clone();
+        without_saddle
+            .postures
+            .retain(|posture| posture.id != "sattelstuhl");
+        e.update_settings(without_saddle);
+        assert_eq!(e.snapshot(T0).posture_label, "Bürostuhl");
+    }
+
+    #[test]
+    fn legacy_sitting_data_migrates_to_office_chair() {
+        let mut state = State::default();
+        state.posture = "sitting".into();
+        state.posture_secs.insert("sitting".into(), 1800);
+        let e = Engine::new(Settings::default(), state);
+
+        assert_eq!(e.state.posture, "office_chair");
+        assert_eq!(e.state.posture_secs.get("office_chair"), Some(&1800));
     }
 
     #[test]
@@ -906,7 +987,7 @@ mod tests {
         e.tick(T0, DAY, obs(1));
         e.drink(T0 + 60, None);
         assert_eq!(e.state.water_ml, 250);
-        e.set_posture(T0 + 60, Posture::Standing);
+        e.set_posture(T0 + 60, "standing");
         let hints = run(&mut e, T0 + 60, 14, &obs(1));
         assert!(hints.is_empty(), "{hints:?}");
         let hints = run(&mut e, T0 + 15 * 60, 3, &obs(1));

@@ -6,7 +6,7 @@ import "@fontsource/space-grotesk/600.css";
 import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
-import { api, listen, type Level, type Posture, type Settings, type Snapshot, type TabView } from "./api";
+import { api, listen, type Level, type Settings, type Snapshot, type TabView } from "./api";
 import { icons } from "./icons";
 
 const app = document.getElementById("app")!;
@@ -19,12 +19,6 @@ const LEVEL_LEAD: Record<Level, string> = {
   yellow: "Noch im Rahmen – aber der Kopf zahlt schon Zinsen. Nächsten Strang bewusst abschließen.",
   red: "Mehr parallel, als ein Kopf sauber überwachen kann. Park etwas, bevor Fehler entstehen.",
 };
-const POSTURES: { id: Posture; label: string }[] = [
-  { id: "sitting", label: "Bürostuhl" },
-  { id: "standing", label: "Stehen" },
-  { id: "board", label: "Board" },
-];
-
 function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 }
@@ -115,9 +109,13 @@ function waterCard(s: Snapshot): string {
 
 function postureCard(s: Snapshot): string {
   const share = s.posture_share;
-  const total = (share.sitting ?? 0) + (share.standing ?? 0) + (share.board ?? 0) || 1;
-  const sit = pct(share.sitting ?? 0, total);
-  const stand = pct((share.standing ?? 0) + (share.board ?? 0), total);
+  const total = Object.values(share).reduce((sum, minutes) => sum + minutes, 0) || 1;
+  const chair = pct(share.office_chair ?? 0, total);
+  const changing = 100 - chair;
+  const today = s.postures
+    .filter((posture) => (share[posture.id] ?? 0) > 0)
+    .map((posture) => `${esc(posture.label)} ${Math.round(pct(share[posture.id] ?? 0, total))} %`)
+    .join(" · ");
   const over = s.posture_min >= s.posture_limit_min;
   return `
     <section class="card">
@@ -125,12 +123,12 @@ function postureCard(s: Snapshot): string {
       <div class="big"><strong>${esc(s.posture_label)}</strong><span>${s.posture_min} / ${s.posture_limit_min} min</span></div>
       <div class="bar-track"><div class="bar-fill ${over ? "warn" : ""}" style="width:${pct(s.posture_min, s.posture_limit_min)}%"></div></div>
       <div class="seg" role="group" aria-label="Position">
-        ${POSTURES.map((p) => `<button class="${p.id === s.posture ? "on" : ""}" data-act="posture_${p.id}">${p.label}</button>`).join("")}
+        ${s.postures.map((p) => `<button class="${p.id === s.posture ? "on" : ""}" data-act="posture_${p.id}">${esc(p.label)}</button>`).join("")}
       </div>
       <div class="split-bar" title="Heute: Sitzen / Stehen">
-        <span class="sit" style="width:${sit}%"></span><span class="stand" style="width:${stand}%"></span>
+        <span class="sit" style="width:${chair}%"></span><span class="stand" style="width:${changing}%"></span>
       </div>
-      <p class="note">Heute ${Math.round(sit)} % sitzend · ${Math.round(stand)} % stehend. Ziel: rund 60 / 30, dazu 10 % gehen.</p>
+      <p class="note">${today || "Heute noch keine Haltung erfasst."}</p>
     </section>`;
 }
 
@@ -219,10 +217,10 @@ function history(s: Snapshot): string {
         <tbody>
           ${days
             .map((d) => {
-              const tot = (d.posture_min.sitting ?? 0) + (d.posture_min.standing ?? 0) + (d.posture_min.board ?? 0) || 1;
-              const stand = Math.round(pct((d.posture_min.standing ?? 0) + (d.posture_min.board ?? 0), tot));
+              const tot = Object.values(d.posture_min).reduce((sum, minutes) => sum + minutes, 0) || 1;
+              const change = Math.round(100 - pct(d.posture_min.office_chair ?? 0, tot));
               const date = new Date(d.day + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-              return `<tr><td>${date}</td><td>${hm(d.active_min)} h</td><td>${liters(d.water_ml)} l</td><td>${d.breaks} (${d.long_breaks} lang)</td><td>${stand} %</td><td>${d.red_min} min</td><td>${d.max_projects}</td></tr>`;
+              return `<tr><td>${date}</td><td>${hm(d.active_min)} h</td><td>${liters(d.water_ml)} l</td><td>${d.breaks} (${d.long_breaks} lang)</td><td>${change} %</td><td>${d.red_min} min</td><td>${d.max_projects}</td></tr>`;
             })
             .join("")}
         </tbody>
@@ -288,14 +286,6 @@ const FIELDS: { title: string; fields: Field[] }[] = [
     ],
   },
   {
-    title: "Haltung",
-    fields: [
-      { key: "sit_minutes", label: "Sitzen (Bürostuhl)", unit: "min", min: 10, max: 120 },
-      { key: "stand_minutes", label: "Stehen", unit: "min", min: 5, max: 90 },
-      { key: "board_minutes", label: "Balance Board", unit: "min", min: 2, max: 60 },
-    ],
-  },
-  {
     title: "Pausen (Lotsen-Prinzip)",
     fields: [
       { key: "block_soft_min", label: "Pause ankündigen nach", unit: "min", min: 20, max: 180 },
@@ -324,9 +314,11 @@ const BANDS: { key: keyof Settings["thresholds"]; label: string }[] = [
   { key: "day_hours", label: "Aktive Stunden" },
 ];
 
-async function renderSettings() {
+async function renderSettings(settingsOverride?: Settings, autoOverride?: boolean) {
   const drawer = document.getElementById("drawer")!;
-  const [s, auto] = await Promise.all([api.settings(), api.autostart()]);
+  const [s, auto] = settingsOverride
+    ? [settingsOverride, autoOverride ?? false]
+    : await Promise.all([api.settings(), api.autostart()]);
   drawer.innerHTML = `
     <div class="scrim" data-act="settings"></div>
     <form class="panel" id="settings-form">
@@ -344,6 +336,14 @@ async function renderSettings() {
             .join("")}
         </fieldset>`,
       ).join("")}
+      <fieldset class="posture-editor"><legend>Haltungen <small>jeweils bis zum Wechsel</small></legend>
+        ${s.postures.map((posture, index) => `<div class="posture-row">
+          <input type="text" name="posture_${index}_label" value="${esc(posture.label)}" aria-label="Name der Haltung" maxlength="48"/>
+          <span class="inp"><input type="number" name="posture_${index}_minutes" value="${posture.duration_min}" min="1" max="720"/><em>min</em></span>
+          <button type="button" class="btn ghost posture-remove" data-posture-remove="${index}" ${s.postures.length === 1 ? "disabled" : ""} aria-label="Haltung entfernen">×</button>
+        </div>`).join("")}
+        <button type="button" class="btn ghost posture-add" data-posture-add>+ Haltung hinzufügen</button>
+      </fieldset>
       <fieldset><legend>Schalter</legend>
         <label class="toggle"><span>Mikrofon zur Meeting-Erkennung nutzen</span><input type="checkbox" name="meeting_use_mic" ${s.meeting_use_mic ? "checked" : ""}/></label>
         <label class="toggle"><span>Erinnerungston abspielen</span><input type="checkbox" name="sound_enabled" ${s.sound_enabled ? "checked" : ""}/></label>
@@ -364,6 +364,17 @@ async function renderSettings() {
     </form>`;
 
   const form = document.getElementById("settings-form") as HTMLFormElement;
+  drawer.querySelector("[data-posture-add]")?.addEventListener("click", () => {
+    s.postures.push({ id: `custom_${Date.now()}`, label: "Neue Haltung", duration_min: 20 });
+    void renderSettings(s, auto);
+  });
+  drawer.querySelectorAll<HTMLElement>("[data-posture-remove]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (s.postures.length <= 1) return;
+      s.postures.splice(Number(button.dataset.postureRemove), 1);
+      void renderSettings(s, auto);
+    });
+  });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
@@ -372,6 +383,13 @@ async function renderSettings() {
     next.meeting_use_mic = fd.get("meeting_use_mic") === "on";
     next.sound_enabled = fd.get("sound_enabled") === "on";
     next.eyes_enabled = fd.get("eyes_enabled") === "on";
+    next.postures = s.postures
+      .map((posture, index) => ({
+        ...posture,
+        label: String(fd.get(`posture_${index}_label`) ?? "").trim(),
+        duration_min: Number(fd.get(`posture_${index}_minutes`)),
+      }))
+      .filter((posture) => posture.label);
     for (const b of BANDS) {
       next.thresholds[b.key] = { green: Number(fd.get(`t_${b.key}_green`)), yellow: Number(fd.get(`t_${b.key}_yellow`)) };
     }

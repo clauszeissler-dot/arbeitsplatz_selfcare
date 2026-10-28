@@ -17,7 +17,7 @@ Lotse ist für alle, die viele Stunden am Rechner mit Claude Code, Codex, ChatGP
 - **Ampel in der Menüleiste:** Grün, Gelb oder Rot, je nachdem, wie viel du gerade gleichzeitig überwachst.
 - **Erkennt deine Arbeit:** Lotse liest deine Tabs im Terminal Ghostty und sieht, in welchem Tab gerade ein KI-Agent arbeitet. ChatGPT und Claude Desktop zählen mit.
 - **Trinken:** Lotse erinnert dich alle 45 Minuten an ein Glas, damit du über 8 Stunden auf 2 Liter kommst.
-- **Haltung:** Lotse führt dich im Wechsel durch 30 Minuten Sitzen und 15 Minuten Stehen, gern mit Balance Board.
+- **Haltung:** Lotse startet mit Bürostuhl, Swopper, Stehen und Balance Board. Jede Person kann ihre Haltungen samt Wechselintervall lokal ergänzen oder entfernen.
 - **Pausen wie bei Fluglotsen:** Spätestens nach 75 Minuten ist eine kurze Pause fällig, nach 2 Stunden eine Pause von 30 Minuten.
 - **Nur Hinweise, kein Zwang:** Eine kleine Karte oben rechts, die nach 40 Sekunden von selbst verschwindet; ein optionaler Erinnerungston lässt sich in den Einstellungen bewusst einschalten.
 - **Ruhe im Meeting:** Ist deine Kamera oder dein Mikrofon an, kommen keine Hinweise.

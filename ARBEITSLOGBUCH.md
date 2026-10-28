@@ -13,6 +13,17 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Offene Punkte und nächster Schritt: A-003 implementieren, anschließend Core-Tests und Tauri-Build durchführen.
 - Versionsbezug: noch nicht committed
 
+## 2026-10-28 – Individuell verwaltbare Haltungen
+
+- Anforderungs-ID: A-007
+- Tatsächliche Änderungen und Ergebnis: Das starre Haltungs-Enum wurde durch eine lokale Liste mit Name, stabiler Kennung und Wechselintervall ersetzt. Standard sind Bürostuhl, Swopper, Stehen und Balance Board. Das Cockpit zeigt alle gespeicherten Haltungen; in Einstellungen können Personen Haltungen ergänzen, umbenennen, ihr Intervall festlegen und entfernen. Mindestens eine Haltung bleibt erhalten.
+- Kompatibilität: Alte lokale `sitting`-Einträge und deren Tageswerte werden beim Laden in `office_chair` (Bürostuhl) überführt. Ältere Einstellungen ohne Liste erzeugen die vier Standards aus ihren bestehenden Intervallen.
+- Red / Green: Der neue Test war rot, da weder eine Haltungs-Liste noch eine eigene Haltung existierten. Er ist grün und prüft Swopper neben Bürostuhl, Auswahl einer persönlichen Haltung, dynamische Wechselaktionen und das Entfernen der gerade aktiven Haltung.
+- Prüfung: `cargo test --workspace` – 30 Tests bestanden. `npm run tauri build` – Tauri-Produktions-Bundle und DMG erfolgreich erstellt.
+- Ergebnis am vereinbarten Zielort: Das neue Bundle unter `target/release/bundle/macos/Lotse.app` und die DMG sind vorhanden; die gezielt neu gestartete Projekt-App läuft aus dem Bundle.
+- Offene Punkte und nächster Schritt: Im Cockpit vier Standardhaltungen sowie Zahnrad → „Haltungen“ mit Hinzufügen/Entfernen sichtbar prüfen.
+- Versionsbezug: noch nicht committed
+
 ## 2026-10-28 – Bürostuhl als Standardhaltung und Wechselhinweis
 
 - Anforderungs-ID: A-006

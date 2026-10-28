@@ -46,6 +46,40 @@ impl Default for Thresholds {
     }
 }
 
+/// Eine frei benennbare Haltung mit eigenem Wechselintervall. Sie wird nur
+/// lokal in den Einstellungen der jeweiligen Person gespeichert.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PostureDefinition {
+    pub id: String,
+    pub label: String,
+    pub duration_min: u32,
+}
+
+pub fn default_postures() -> Vec<PostureDefinition> {
+    vec![
+        PostureDefinition {
+            id: "office_chair".into(),
+            label: "Bürostuhl".into(),
+            duration_min: 30,
+        },
+        PostureDefinition {
+            id: "swopper".into(),
+            label: "Swopper".into(),
+            duration_min: 30,
+        },
+        PostureDefinition {
+            id: "standing".into(),
+            label: "Stehen".into(),
+            duration_min: 15,
+        },
+        PostureDefinition {
+            id: "board".into(),
+            label: "Balance Board".into(),
+            duration_min: 10,
+        },
+    ]
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -57,10 +91,13 @@ pub struct Settings {
     // Arbeitstag
     pub workday_minutes: u32,
 
-    // Haltung (Griffith 2025: 30 min sitzen / 15 min stehen)
+    // Alte Einzelwerte bleiben beim Laden älterer lokaler Einstellungen erhalten.
+    // Neue Einstellungen verwenden `postures` darunter.
     pub sit_minutes: u32,
     pub stand_minutes: u32,
     pub board_minutes: u32,
+    #[serde(default)]
+    pub postures: Vec<PostureDefinition>,
 
     // Pausen (Fluglotsen-Prinzip)
     pub block_soft_min: u32,
@@ -105,6 +142,7 @@ impl Default for Settings {
             sit_minutes: 30,
             stand_minutes: 15,
             board_minutes: 10,
+            postures: default_postures(),
             block_soft_min: 50,
             block_hard_min: 75,
             long_break_after_min: 120,
@@ -122,5 +160,67 @@ impl Default for Settings {
             eyes_interval_min: 20,
             thresholds: Thresholds::default(),
         }
+    }
+}
+
+impl Settings {
+    /// Vereinheitlicht Eingaben aus der lokalen Oberfläche und erzeugt bei
+    /// älteren Einstellungsdateien die neue Liste aus deren bisherigen Werten.
+    pub fn normalize_postures(&mut self) {
+        if self.postures.is_empty() {
+            self.postures = vec![
+                PostureDefinition {
+                    id: "office_chair".into(),
+                    label: "Bürostuhl".into(),
+                    duration_min: self.sit_minutes,
+                },
+                PostureDefinition {
+                    id: "swopper".into(),
+                    label: "Swopper".into(),
+                    duration_min: self.sit_minutes,
+                },
+                PostureDefinition {
+                    id: "standing".into(),
+                    label: "Stehen".into(),
+                    duration_min: self.stand_minutes,
+                },
+                PostureDefinition {
+                    id: "board".into(),
+                    label: "Balance Board".into(),
+                    duration_min: self.board_minutes,
+                },
+            ];
+        }
+
+        let mut used = std::collections::BTreeSet::new();
+        self.postures = std::mem::take(&mut self.postures)
+            .into_iter()
+            .filter_map(|mut posture| {
+                posture.label = posture.label.trim().to_string();
+                if posture.label.is_empty() {
+                    return None;
+                }
+                let id: String = posture
+                    .id
+                    .to_ascii_lowercase()
+                    .chars()
+                    .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                    .take(48)
+                    .collect();
+                if id.is_empty() || !used.insert(id.clone()) {
+                    return None;
+                }
+                posture.id = id;
+                posture.duration_min = posture.duration_min.clamp(1, 720);
+                Some(posture)
+            })
+            .collect();
+        if self.postures.is_empty() {
+            self.postures.push(default_postures().remove(0));
+        }
+    }
+
+    pub fn posture(&self, id: &str) -> Option<&PostureDefinition> {
+        self.postures.iter().find(|posture| posture.id == id)
     }
 }

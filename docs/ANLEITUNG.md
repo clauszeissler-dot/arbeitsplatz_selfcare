@@ -58,7 +58,7 @@ Wenn du möchtest, begleitet sie ein kurzer Systemton. Den Schalter **„Erinner
 
 Klick auf den Punkt in der Menüleiste:
 - **Glas getrunken:** zählt ein Glas.
-- **Position:** Bürostuhl (Standard), Stehen oder Balance Board. Nach dem Sitzintervall erinnert Lotse dich ausdrücklich an den Haltungswechsel.
+- **Position:** Bürostuhl (Standard), Swopper, Stehen oder Balance Board. Nach dem jeweiligen Intervall erinnert Lotse dich ausdrücklich an den Haltungswechsel.
 - **Pause starten / beenden:** für Pausen, in denen du am Rechner bleibst.
 - **Hinweise pausieren:** für 30 Minuten, 1 Stunde oder 2 Stunden Ruhe.
 
@@ -76,7 +76,7 @@ Kurzes Diktieren zählt nicht als Meeting. Nach dem Meeting wartet Lotse eine Mi
 
 Im Cockpit über das Zahnrad. Du kannst zum Beispiel ändern:
 - dein Trinkziel und die Glasgröße
-- wie lange du sitzt, stehst oder auf dem Board bist
+- deine Haltungen: Name und Wechselintervall ändern, neue Haltungen ergänzen oder nicht benötigte entfernen. Mindestens eine Haltung bleibt immer erhalten.
 - wann Pausen fällig sind
 - ob Hinweise zusätzlich einen Ton abspielen
 - ab wann die Ampel gelb oder rot wird

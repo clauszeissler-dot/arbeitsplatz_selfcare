@@ -59,7 +59,7 @@ The card disappears on its own after 40 seconds. If you move the mouse over it, 
 
 Click the dot in the menu bar:
 - **Glas getrunken:** counts one glass of water.
-- **Position:** office chair (default), standing, or balance board. After the sitting interval, Lotse prompts you to change posture.
+- **Position:** office chair (default), Swopper, standing, or balance board. After the configured interval, Lotse prompts you to change posture. Each person can add or remove local posture options in Settings.
 - **Pause starten / beenden:** start or end a break while you stay at your desk.
 - **Hinweise pausieren:** quiet time for 30 minutes, 1 hour or 2 hours.
 

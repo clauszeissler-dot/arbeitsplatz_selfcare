@@ -3,12 +3,12 @@ mod collect;
 mod macos_av;
 
 use lotse_core::engine::State as EngineState;
-use lotse_core::{Engine, Hint, HintKind, Level, Posture, Settings, Snapshot};
+use lotse_core::{Engine, Hint, HintKind, Level, Settings, Snapshot};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::image::Image;
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{IsMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, LogicalPosition, Manager, RunEvent, WindowEvent};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
@@ -200,9 +200,10 @@ fn with_engine<R>(app: &AppHandle, f: impl FnOnce(&mut Engine, i64) -> R) -> R {
 fn perform(app: &AppHandle, action: &str, kind: Option<HintKind>) {
     match action {
         "drink" => with_engine(app, |e, t| e.drink(t, None)),
-        "posture_sitting" => with_engine(app, |e, t| e.set_posture(t, Posture::Sitting)),
-        "posture_standing" => with_engine(app, |e, t| e.set_posture(t, Posture::Standing)),
-        "posture_board" => with_engine(app, |e, t| e.set_posture(t, Posture::Board)),
+        a if a.starts_with("posture_") => {
+            let id = a.trim_start_matches("posture_");
+            with_engine(app, |e, t| e.set_posture(t, id));
+        }
         "break_start" => with_engine(app, |e, t| e.start_break(t)),
         "break_end" => with_engine(app, |e, t| e.finish_break(t)),
         "resume" => with_engine(app, |e, t| e.snooze(t, 0)),
@@ -242,8 +243,10 @@ fn get_settings(app: AppHandle) -> Settings {
 #[tauri::command]
 fn save_settings(app: AppHandle, settings: Settings) {
     let shared = app.state::<Shared>();
+    let mut settings = settings;
+    settings.normalize_postures();
     save(&shared.dir.join("settings.json"), &settings);
-    with_engine(&app, |e, _| e.settings = settings);
+    with_engine(&app, |e, _| e.update_settings(settings));
 }
 
 #[tauri::command]
@@ -278,16 +281,31 @@ fn refresh(app: AppHandle) {
 
 fn build_tray(app: &AppHandle) -> tauri::Result<MenuItem<tauri::Wry>> {
     let status = MenuItem::with_id(app, "status", "Lotse startet …", false, None::<&str>)?;
-    let posture = Submenu::with_items(
-        app,
-        "Position",
-        true,
-        &[
-            &MenuItem::with_id(app, "posture_sitting", "Bürostuhl", true, None::<&str>)?,
-            &MenuItem::with_id(app, "posture_standing", "Stehen", true, None::<&str>)?,
-            &MenuItem::with_id(app, "posture_board", "Balance Board", true, None::<&str>)?,
-        ],
-    )?;
+    let postures = app
+        .state::<Shared>()
+        .engine
+        .lock()
+        .unwrap()
+        .settings
+        .postures
+        .clone();
+    let posture_items = postures
+        .iter()
+        .map(|posture| {
+            MenuItem::with_id(
+                app,
+                format!("posture_{}", posture.id),
+                &posture.label,
+                true,
+                None::<&str>,
+            )
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
+    let posture_refs: Vec<&dyn IsMenuItem<tauri::Wry>> = posture_items
+        .iter()
+        .map(|item| item as &dyn IsMenuItem<tauri::Wry>)
+        .collect();
+    let posture = Submenu::with_items(app, "Position", true, &posture_refs)?;
     let quiet = Submenu::with_items(
         app,
         "Hinweise pausieren",

@@ -10,6 +10,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 | A-004 | Nutzer, 2026-10-28 | Erinnerungsrhythmus arbeitet aktivitätsbasiert. | Ohne erkannte Eingabe startet keine Reminder-Uhr; erst erkannte Aktivität startet sie. Pausen und Meetings erzeugen keine Hinweise. | geprüft | 5 | `inactive_time_does_not_start_the_reminder_rhythm`, `cargo test -p lotse-core` (26/26) |
 | A-005 | Nutzer, 2026-10-28 | Lotse erkennt die acht Ghostty-Tabs sowie Claude Desktop und die Codex-Desktop-Komponenten. | Prozessliste wird auch bei großer Ausgabe verarbeitet; Cockpit zeigt die 8 Ghostty-Tabs, Claude Desktop und Codex getrennt. | umgesetzt | 6–8 | Roter/grüner Test für 50.000 Zeilen; Codex-Zuordnungstest; 28 Workspace-Tests grün. Sichtprüfung der neu gestarteten Menüleisten-App offen. |
 | A-006 | Nutzer, 2026-10-28 | Der normale Bürostuhl ist die Standardhaltung; nach dem Sitzintervall fordert Lotse ausdrücklich zum Haltungswechsel auf. | Neue und vorhandene Sitz-Zustände erscheinen als „Bürostuhl“. Nach dem Sitzintervall zeigt der Hinweis „Haltung wechseln“ mit Alternativen Stehen und Board. | umgesetzt | 9–11 | Core-Test grün; Workspace-Tests 29/29 und lokales Produktions-Bundle vorhanden. Sichtprüfung des versteckten Cockpits offen. |
+| A-007 | Nutzer, 2026-10-28 | Bürostuhl und Swopper sind getrennte Standardhaltungen. Personen können weitere Haltungen lokal ergänzen oder nicht benötigte entfernen. | Vier Standardhaltungen sind sichtbar. Einstellungen erlauben Namen und Intervall je Haltung, Hinzufügen und Entfernen (mindestens eine Haltung bleibt). Auswahl und Wechselhinweise nutzen die gespeicherte Liste. | umgesetzt | 12–15 | 30 Workspace-Tests grün; Tauri-Produktions-Bundle und DMG erstellt. Sichtprüfung des versteckten Cockpits offen. |
 
 ## Revisionen und Entscheidungen
 
@@ -18,6 +19,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 | 2026-10-28 | A-002 | „Bestimmter Rhythmus“ als bestehende, pro Hinweisart einstellbare Intervalle konkretisiert. | Im Repository bereits vorhandene Einstellungen für Trinken, Haltung, Pausen und Mindestabstand; keine zusätzliche Nutzerentscheidung erforderlich. | — |
 | 2026-10-28 | A-004 | Aktivitätsbasierte Auslegung von „ab Start“ verbindlich entschieden. | Nutzerentscheidung nach Erläuterung der Alternativen. | — |
 | 2026-10-28 | A-006 | Der bisherige Name „Swopper“ wird durch „Bürostuhl“ ersetzt; die bestehende Sitz-Zeit bleibt der Standard und führt nach Ablauf zum Wechselhinweis. | Nutzerkorrektur: normaler Bürostuhl ist die tatsächliche Standardhaltung. | — |
+| 2026-10-28 | A-007 | A-006 wird fachlich erweitert: Swopper bleibt eine eigene Haltung; Haltungen werden pro Person lokal verwaltbar. | Nutzerkorrektur: Tool soll für andere Mac-Nutzer mit eigenen Haltungen teilbar sein. | — |
 
 ## Letzter Abschlussabgleich
 
@@ -26,4 +28,5 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 - Geprüft erfüllt: A-001 bis A-004; Belege in den Tabellenzeilen und [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md).
 - Nicht erfüllt: A-005 ist umgesetzt, aber die Sichtprüfung des neu gestarteten Cockpits steht offen.
 - Nicht erfüllt: A-006 ist umgesetzt, aber die Sichtprüfung des neu gestarteten Cockpits steht offen.
-- Neue Wünsche seit dem letzten Abgleich vollständig erfasst: ja (A-006 in Arbeit)
+- Nicht erfüllt: A-007 ist umgesetzt, aber die Sichtprüfung des neu gestarteten Cockpits steht offen.
+- Neue Wünsche seit dem letzten Abgleich vollständig erfasst: ja (A-007 in Arbeit)
