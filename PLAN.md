@@ -2,6 +2,19 @@
 
 ## Stabilität, Farblogik und Zeitübersicht · A-021 bis A-023
 
+### Reale Reproduktion und Produktionsbuild-Korrektur · A-024
+
+**Korrektur 2026-10-29T14:57:33+01:00:** Die erneute Nutzerreproduktion widerlegte den ersten Abschluss als Ursache. JavaScript konnte weder Fehleransicht noch Diagnose schreiben, weil beide WebViews bereits beim Dokumentladen mit WebKit `-1004` scheiterten. `scripts/build-universal.sh` verwendete plain `cargo build` ohne Tauri-Feature `custom-protocol`; die gebündelte App versuchte deshalb `devUrl` auf Port 1420 zu laden. Sounds/Engine liefen nativ weiter. Das Wegklicken war nicht ursächlich.
+
+1. [x] Roter statischer Regressionstest verlangt `--features custom-protocol` für ARM64 und x86_64.
+2. [x] Feature im App-Crate definiert und im Universal-Build für beide Architekturen aktiviert; Entwicklerdokumentation ergänzt.
+3. [x] Vollständige lokale Gates: 43 Rust-, 5 UI- und 13 Python-/Securitytests, Build, Formatierung und Clippy grün.
+4. [x] Universal-Build `x86_64 arm64`, Developer-ID-Signatur, Apple Accepted für App/DMG, Ticket und Gatekeeper.
+5. [x] Dev-Server beendet; final installierte `/Applications/Lotse.app` zeigt feste Cockpit- und Zeitleistenüberschriften (322 Accessibility-Knoten), keine WebKit-`-1004`-Fehler.
+6. [x] Veröffentlichte `lotse-0.1.0` separat aus GitHub-DMG schreibgeschützt gestartet: kein `-1004`; bestehender Release ist nicht von diesem später eingeführten Universal-Buildfehler betroffen.
+
+**Nächster Schritt:** Hotfix über geschützten PR integrieren. Kein neuer Release nötig, solange kein neuer Universal-Download veröffentlicht wird; jeder künftige Universal-Release läuft durch den neuen Buildtest.
+
 **Sichtbares Ergebnis / Zielort:** Das lokale Dashboard bleibt nach wiederholtem Ignorieren/Schließen von Hinweisen funktionsfähig, Fokus und Pause folgen einer einheitlichen semantischen Farblogik, und eine kompakte Tages-Zeitleiste zeigt Startzeit/aktive Dauer erkannter Tasks sowie Beginn/Ende/Dauer von Pausen.
 **Abschlussnachweis:** belegte Fehlerursache oder ausdrücklich dokumentierte Nicht-Reproduzierbarkeit mit Diagnostik; Red/Green-Regressionen für Hinweis-Lebenszyklus und Zeitmodell; vollständige Rust-/Frontend-/Securitytests; lokaler signierter/notarisierter App-Build tatsächlich unter `/Applications` aktiv; Laufzeit- und Datenrechteprüfung. Browserprüfungen ausschließlich Ego Lite, falls für die Oberfläche nötig.
 **Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T14:22:45+01:00 / 2026-10-29T14:37:04+01:00.
@@ -13,7 +26,7 @@
 4. [x] A-023: Datenschutzarmes Tages-Zeitmodell testgetrieben ergänzen: erkannte Tasks mit erstem Start/aktiver Dauer, Pausenereignisse mit Start/Ende/Dauer; Dashboard kompakt und zugänglich darstellen.
 5. [x] Gesamttests/Build, Ego-Lite-TaskSpace, lokalen Developer-ID-/Apple-Ablauf abschließen, App unter `/Applications` aktualisieren und tatsächlichen Prozess, Dashboard, Schreibzyklen und Dateirechte prüfen.
 
-**Abschluss 2026-10-29T14:37:04+01:00:** Kein Lotse-/WebKit-Crashbericht und kein Prozessabsturz belegt. Der native Takt/Klang lief weiter; Dashboard-Start hatte keinen Catch/Retry und Toasts bezogen aktuelle Hinweise ausschließlich aus einem flüchtigen Event. Dieses Fehlerbild erklärt schwarze/fehlende WebViews bei weiterlaufendem Ton und die Heilung durch Neustart. Wiederholtes Schließen ist idempotent und nicht als Ursache belegt. 43 Rust-, 5 UI- und 12 Release-/Securitytests, Build und Clippy grün. Ego Lite bestätigt Fokus Gelb und Pause Cyan samt Zeitleiste ohne horizontalen Overflow. Universal-App/DMG Apple Accepted; installierte `/Applications/Lotse.app` besteht Signatur, Ticket und Gatekeeper, läuft sichtbar und schreibt `0600` in `0700`.
+**Erster Abschluss 2026-10-29T14:37:04+01:00, durch A-024 korrigiert:** Kein Prozesscrash; Event-/Start-Recovery wurde gehärtet. Die Aussage, dies erkläre den realen Ausfall vollständig, war falsch. Die konkrete Ursache und finale Abnahme stehen im A-024-Abschnitt oben.
 **Remote-Abschluss 2026-10-29T14:46:18+01:00:** PR #11 nach grünen Pflichtchecks gemergt; Squash-Commit `c78209e`. `Kernlogik und Security` 2:23 Minuten, `Mac-App bauen (unsigniert)` 6:46 Minuten. Kein Tag und kein GitHub-Release.
 **Nächster Schritt:** Realbetrieb beobachten. Falls ein WebView-Fehler wiederkehrt, die feste Kategorie und den Zeitstempel aus `ui-diagnostics.json` mit dem sichtbaren Zustand abgleichen; keine privaten Rohdaten erforderlich.
 

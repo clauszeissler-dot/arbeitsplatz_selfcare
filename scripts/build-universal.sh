@@ -17,10 +17,10 @@ fi
 cd "$ROOT"
 npm run build
 
-CARGO_TARGET_DIR="$ARM_ROOT" cargo build -p lotse --target aarch64-apple-darwin --release --locked
+CARGO_TARGET_DIR="$ARM_ROOT" cargo build -p lotse --target aarch64-apple-darwin --release --locked --features custom-protocol
 CARGO_TARGET_DIR="$ARM_ROOT" npx tauri bundle --target aarch64-apple-darwin --bundles app --no-sign --ci
 
-CARGO_TARGET_DIR="$X86_ROOT" cargo build -p lotse --target x86_64-apple-darwin --release --locked
+CARGO_TARGET_DIR="$X86_ROOT" cargo build -p lotse --target x86_64-apple-darwin --release --locked --features custom-protocol
 CARGO_TARGET_DIR="$X86_ROOT" npx tauri bundle --target x86_64-apple-darwin --bundles app --no-sign --ci
 
 [[ -d "$ARM_APP" && -d "$X86_APP" ]] || {

@@ -48,6 +48,16 @@ class WorkflowSecurityTests(unittest.TestCase):
         self.assertIn("CFBundleExecutable", script)
         self.assertNotIn("Contents/MacOS/Lotse", script)
 
+    def test_universal_release_embeds_frontend_instead_of_using_dev_server(self):
+        script = (ROOT / "scripts" / "build-universal.sh").read_text()
+        release_builds = [
+            line for line in script.splitlines()
+            if "cargo build -p lotse" in line and "--release" in line
+        ]
+        self.assertEqual(len(release_builds), 2)
+        for line in release_builds:
+            self.assertIn("--features custom-protocol", line)
+
 
 class TauriSecurityTests(unittest.TestCase):
     def test_capabilities_do_not_grant_network_shell_or_filesystem(self):
