@@ -4,7 +4,7 @@
 
 **Sichtbares Ergebnis / Zielort:** lokaler, vollständig geprüfter Härtungsstand im Repository sowie ein PR-fähiger GitHub-Branch; nach autorisiertem Push ein geschütztes öffentliches Repository mit PR-Pflicht, Sicherheitsfunktionen und manuell freizugebender Release-Umgebung. Kein neuer Produktrelease.
 **Abschlussnachweis:** Regressionstests für die drei Findings, vollständige Workspace-/Frontend-/Security-Prüfungen, macOS-Universal-Build, überprüfte GitHub-Regeln/Einstellungen und Anforderungsabgleich.
-**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T10:58:32+01:00 / 2026-10-29T11:32:58+01:00.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T10:58:32+01:00 / 2026-10-29T11:51:38+01:00.
 **Gates:** bestehende ungetrackte Handoff-Dateien unangetastet lassen; keine vorhandenen Release-Artefakte verändern; Apple-Secrets niemals auslesen oder protokollieren; vor GitHub-Änderungen lokale Prüfungen abschließen; kein Release-Tag und keine Veröffentlichung erzeugen.
 **Sicherheitsgate:** S1 für Persistenz-, Signier- und Deployment-Grenzen. Invarianten: ältere Zustände überschreiben keine neueren; lokale Dateien sind nur für den Benutzer zugänglich; falsche Signieridentität/Team-/Bundle-ID stoppt vor Apple; kein veränderlicher Action-Code erhält Release-Zugangsdaten.
 
@@ -15,7 +15,9 @@
 5. Gesamtdiff unabhängig prüfen, vollständige Tests/Builds ausführen, Anforderungen und Logs aktualisieren, gezielt committen; danach autorisierten GitHub-Branch/PR und Repository-Regeln einrichten und remote kontrollieren.
 
 **Zielabgleich 2026-10-29T11:32:58+01:00:** Die drei Findings sind implementiert und ihre fokussierten Red/Green-Tests bestanden. Der unabhängige Nachreview führte zusätzlich zur Entfernung des automatischen Tag-Triggers und zur sichtbaren Behandlung fehlgeschlagener UI-Aktionen. Der Universal-Build ist nach Trennung von direktem Cargo-Build und Tauri-Bundling nachweislich `x86_64 arm64`. Zum sichtbaren Ergebnis fehlen jetzt Gesamttest, lokale Datenmigration, GitHub-Regeln/PR und Remote-Kontrolle.
-**Nächster Schritt:** vollständige lokale Gates erneut ausführen; danach den geprüften Branch pushen, Repository-Schutz konfigurieren und den PR bis zu grünen Checks kontrollieren.
+**Abschluss 2026-10-29T11:51:38+01:00:** A-020 geprüft. PR [#1](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/pull/1) nach grünen Pflichtchecks gemergt (`9f95ac8`). `main` verlangt PR, aktuelle Basis und beide Checks; Admins sind eingeschlossen, Force-Push/Löschung gesperrt. Actions akzeptiert nur GitHub-eigene, vollständig SHA-gepinnte Actions. `production-release` verlangt Claus' manuelle Freigabe und geschützte Branches. Secret Scanning, Push Protection, Dependabot-Sicherheitsupdates/-Alerts und private Meldungen sind aktiv. Die vorhandenen lokalen Lotse-Dateien sind `0600`, ihre Ordner `0700`. Kein Tag/Release erzeugt. RustSec ohne blockierende Vulnerability, mit zwei dokumentierten transitiven Warnungen. Dependabot-Alert #1 zu `glib 0.18.5` wurde als ausschließlich ungenutzter Linux/GTK-Zweig belegt und begründet als `not_used` geschlossen; bei Linux-Support oder Tauri-Upstream-Update neu bewerten. GitHubs zusätzliche Secret-Validity-Checks bleiben für dieses Repository deaktiviert; die verlangten Kernkontrollen sind aktiv.
+**Betriebsrest:** Das Release-Environment enthält noch keine Apple-Secrets und blockiert daher sicher. Vor dem ersten neuen offiziellen Release die in `docs/RELEASE.md` genannten Werte einmalig als Environment-Secrets hinterlegen; keine lokalen Schlüssel auslesen oder ins Repository kopieren.
+**Status:** geprüft abgeschlossen; keine offene Code- oder Repository-Härtung aus A-020.
 
 ---
 

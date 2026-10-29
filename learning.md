@@ -73,3 +73,14 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Zuständige Umsetzung: A-019 und Codex-Security-Standardscan.
 - Prüfpunkt: Scan läuft im CLI-Workflow bis zum versiegelten Bericht; Daybreak-Widerspruch wird nicht als fehlender Nutzerzugang ausgegeben.
 - Wirkung: Standardscan erfolgreich abgeschlossen und Bericht erzeugt. Ursache der falschen Advisory-Zuordnung bleibt extern ungeklärt.
+
+
+### L-007 – Tauri-App-Prüfungen auf dem Zielbetriebssystem ausführen
+
+- Datum / Status: 2026-10-29 · bestätigt/aktiv durch fehlgeschlagenen und korrigierten PR-Check.
+- Quelle: GitHub-Actions-Lauf `40859104108`; Ubuntu scheiterte beim Workspace-Build an fehlendem `glib-2.0`, obwohl die plattformneutrale Core-Crate Linux unterstützt.
+- Geltung: CI für Lotse und andere Tauri-macOS-Crates in diesem Repository.
+- Beobachtung: `cargo test --workspace` zieht auf Linux die Tauri-/GTK-Abhängigkeiten der macOS-App ein. Das ist keine Produktregression und macht den Linux-Runner unnötig zum Ersatz für den Zielplattform-Build.
+- Konsequenz / zuständige Regel: Ubuntu prüft `lotse-core` und RustSec; vollständige Workspace-Tests, Clippy und Universal-App-Build laufen im macOS-Job. macOS-Cross-Targets werden nur im macOS-Job installiert.
+- Prüfpunkt: PR muss sowohl `Kernlogik und Security` als auch `Mac-App bauen (unsigniert)` bestehen.
+- Wirkung: Korrigierter Lauf `40859430217` grün; Kernjob 2:51 Minuten, macOS-Job 9:18 Minuten. Nächste passende CI-Änderung muss diese Plattformgrenze erhalten.

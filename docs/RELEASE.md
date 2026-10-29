@@ -138,3 +138,13 @@ Das Environment benötigt zusätzlich zu den bisherigen Werten
 `APPLE_EXPECTED_TEAM_ID` und `APPLE_EXPECTED_BUNDLE_ID`. Actions-Referenzen werden
 über Dependabot aktualisiert und müssen als vollständige Commit-SHAs geprüft
 bleiben.
+
+Stand A-020: Das Environment und seine manuelle Freigabe sind aktiv, enthalten
+aber bewusst noch keine Apple-Secrets. Damit schlägt ein Release sicher vor der
+Signierung fehl, bis `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`,
+`APPLE_SIGNING_IDENTITY`, `APPLE_EXPECTED_TEAM_ID`, `APPLE_EXPECTED_BUNDLE_ID`,
+`KEYCHAIN_PASSWORD`, `APPLE_API_ISSUER`, `APPLE_API_KEY` und
+`APPLE_API_KEY_CONTENT` einmalig als **Environment-Secrets** hinterlegt sind.
+Diese Werte niemals aus lokalen Schlüsselbunden auslesen oder in Repository-
+Secrets, Workflow-Dateien, Logs oder Commits kopieren. Die Einrichtung erfolgt
+erst vor einem tatsächlich beauftragten neuen offiziellen Release.
