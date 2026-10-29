@@ -12,7 +12,15 @@ how to set up and use Lotse.
 
 ## Installing
 
-There are no ready-made downloads yet. Until then, you build Lotse once yourself. The first time takes about 10 minutes.
+### Download the ready-to-use app
+
+1. [Download Lotse 0.1.0 (.dmg)](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/download/lotse-0.1.0/Lotse.dmg) — for Apple Silicon (M1 or later), macOS 13 or later.
+2. Open the DMG and drag **Lotse** into **Applications**.
+3. Open **Lotse** from Applications. The package is Developer ID signed and notarized by Apple.
+
+### Build it yourself
+
+For development or a custom build:
 
 1. Install the tools if you don't have them yet:
    - Xcode Command Line Tools: `xcode-select --install`

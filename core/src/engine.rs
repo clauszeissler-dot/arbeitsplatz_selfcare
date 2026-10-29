@@ -980,8 +980,10 @@ mod tests {
 
     #[test]
     fn legacy_sitting_data_migrates_to_office_chair() {
-        let mut state = State::default();
-        state.posture = "sitting".into();
+        let mut state = State {
+            posture: "sitting".into(),
+            ..State::default()
+        };
         state.posture_secs.insert("sitting".into(), 1800);
         let e = Engine::new(Settings::default(), state);
 

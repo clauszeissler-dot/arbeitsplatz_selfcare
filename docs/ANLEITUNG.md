@@ -12,7 +12,15 @@ wie du Lotse einrichtest und benutzt.
 
 ## Installieren
 
-Fertige Downloads gibt es noch nicht. Bis dahin baust du Lotse einmal selbst. Das dauert beim ersten Mal etwa 10 Minuten.
+### Fertige App herunterladen
+
+1. [Lotse 0.1.0 als DMG herunterladen](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/download/lotse-0.1.0/Lotse.dmg) — für Apple Silicon (M1 oder neuer), ab macOS 13.
+2. Die DMG-Datei öffnen und **Lotse** in den Ordner **Programme** ziehen.
+3. **Lotse** aus Programme öffnen. Das Paket ist mit Developer ID signiert und von Apple notarisiert.
+
+### Alternativ selbst bauen
+
+Für die Entwicklung oder einen eigenen Build:
 
 1. Installiere die Werkzeuge, falls du sie noch nicht hast:
    - Xcode Command Line Tools: `xcode-select --install`
@@ -26,7 +34,7 @@ Fertige Downloads gibt es noch nicht. Bis dahin baust du Lotse einmal selbst. Da
    ```
 4. Die fertige App liegt danach unter `target/release/bundle/macos/Lotse.app`. Zieh sie in deinen Ordner **Programme**.
 
-Sobald es signierte Downloads gibt, lädst du einfach die DMG-Datei herunter und ziehst Lotse in **Programme**.
+Eigene Builds übernehmen die Signatur und Notarisierung des Downloads nicht automatisch.
 
 ## Der erste Start
 

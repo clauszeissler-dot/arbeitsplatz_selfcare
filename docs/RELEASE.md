@@ -105,3 +105,18 @@ DMG bestätigt. Finale Pakete:
 Das ursprüngliche `target/release/bundle/dmg/Lotse_0.1.0_aarch64.dmg` ist der
 signierte Zwischenstand. Für Weitergabe das finale DMG unter `notarized/` verwenden.
 Apple-Protokolle liegen im Artefaktordner, Submission-IDs im Projekt-Arbeitslog.
+
+
+## Repository-Download (A-014/A-015)
+
+Das bereits notarisierten Apple-Silicon-Paket wird unverändert als Release
+[`lotse-0.1.0`](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/tag/lotse-0.1.0)
+angeboten. README und beide Anleitungen verlinken direkt auf `Lotse.dmg`;
+zusätzlich werden `Lotse.zip` und `SHA256SUMS` bereitgestellt. Das Repository bleibt
+privat, daher setzt der Download entsprechenden GitHub-Zugriff voraus.
+
+Der Tag beginnt bewusst nicht mit `v`: Der bestehende `v*`-Workflow würde einen
+separaten Universal-Build erzeugen. Dieser Release enthält exakt den lokal
+geprüften ARM64-Build. Veröffentlichter Download und Quellartefakt werden anhand
+der SHA-256-Prüfsumme verglichen. Upload/Push erfolgen hier auf ausdrücklichen
+Nutzerauftrag; das Notarisierungsskript veröffentlicht weiterhin nichts.

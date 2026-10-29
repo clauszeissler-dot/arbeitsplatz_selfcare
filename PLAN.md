@@ -1,5 +1,23 @@
 # Aktueller Arbeitsplan
 
+## Repository-Download · A-014 / A-015
+
+**Sichtbares Ergebnis / Zielort:** bestehendes GitHub-Repository `clauszeissler-dot/arbeitsplatz_selfcare`: Release `lotse-0.1.0` mit unverändert notarisiertem Apple-Silicon-DMG/ZIP und direktem Download-Link oben im README.
+**Abschlussnachweis:** Release veröffentlicht, Asset erneut authentifiziert heruntergeladen und SHA-256 mit geprüfter Quelle identisch; Remote-README-Link stimmt mit Release-Asset-URL überein.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T09:00:00+01:00.
+**Freigabe:** Nutzerauftrag umfasst Upload, README und dafür notwendigen Push. Repository bleibt privat; keine Sichtbarkeitsänderung.
+**Gates:** bestehende Signatur-/Notarisierungsbelege wiederverwenden, finalen Download prüfen. Release-Tag `lotse-0.1.0` statt `v*`, damit die bestehende Universal-Build-Automation das bereits geprüfte ARM64-Paket nicht neu baut. Kein neuer Binärbuild.
+
+1. A-014: bestehende Remote/Release-Lage erfassen, Hashes und Apple-Silicon-Architektur bestätigen; Paket als Release-Entwurf hochladen.
+2. A-015: Download-Link und Installationshinweis im README und den bestehenden Anleitungen ergänzen; frühere Aussagen zu fehlenden Downloads entfernen.
+3. A-014/A-015: eigene Änderungen committen/pushen, Release veröffentlichen; Remote-Datei herunterladen und README-Link am Ziel nachweisen.
+
+Zielabgleich 2026-10-29T09:01:17+01:00: Release-Erstellung verlangt einen bereits remote vorhandenen Commit; daher erst Commit/Push, dann Release-Upload. Clippy-Pflichtprüfung meldet field_reassign_with_default in bestehendem Migrations-Test; nur Testinitialisierung korrigieren, keine Produkt-/Binäränderung.
+
+Status: in Arbeit. Nächster Schritt: Testinitialisierung korrigieren, Core-Tests/Clippy, Commit/Push, dann Release-Upload und Download-Prüfung.
+
+---
+
 ## Wiederaufnahme A-013 · 2026-10-29T08:44:19+01:00
 
 **Sichtbares Ergebnis / Zielort:** Apple-notarisierte Lotse.app sowie ZIP und DMG unter `target/release/notarized/` und Ticket am lokalen App-Bundle.

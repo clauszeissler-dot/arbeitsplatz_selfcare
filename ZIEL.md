@@ -57,3 +57,8 @@ A-013 erweitert die bisherige Grenze ausdrücklich auf lokale Developer-ID-Signa
 und Apple-Notarisierung. Dafür darf das gebaute Paket an Apple gesendet werden;
 keine Veröffentlichung im App Store oder im Repository. Das vorhandene Apple-Zugangsprofil `KI-Kennzeichnung-Notarization` wird wiederverwendet;
 Freigabe ist durch Apple-Ticket und Gatekeeper-Prüfung nachzuweisen.
+
+
+## Repository-Download 2026-10-29 (A-014/A-015)
+
+Nutzer autorisiert Upload des fertigen Pakets und README-Verlinkung im bestehenden privaten GitHub-Repository. Release-Dateien aus `target/release/notarized/` unverändert bereitstellen; notwendiger Push der vorhandenen Umsetzung und Dokumentation eingeschlossen. Keine Umstellung auf öffentlich und kein neuer Build.

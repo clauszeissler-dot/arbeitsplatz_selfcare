@@ -145,3 +145,16 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - DMG SHA-256: `05e13130616461f5d429ddde45b37329d4714ba808954757c838709a5c840475`.
 - Anforderungen: A-013 geprüft erfüllt, ursprüngliche Blockerannahme korrigiert. A-009/A-011/A-012 behalten geprüften Stand, A-010 technisch geprüft und Klanggeschmack offen. Altpunkt A-005 bleibt wie bisher getrennt offen.
 - Globaler Arbeitslog erfolgreich aktualisiert. Vorhandene Produktprüfungen aus `e5a09a5` gelten unverändert; kein Produktcode geändert, kein zusätzlicher Browserlauf erforderlich. Kein Push, keine öffentliche Veröffentlichung und keine Installation.
+
+
+## 2026-10-29T09:00:00+01:00 – Repository-Download beauftragt (A-014/A-015)
+
+- Ziel ist das bestehende private GitHub-Repository `clauszeissler-dot/arbeitsplatz_selfcare`, nicht Forgejo. `gh` ist dafür die passende CLI. Kein bestehender Release/Tag; Remote main ist Vorfahr des lokalen geprüften Stands.
+- Nutzer autorisiert Upload und README-Link; dazu nötigen Push vorbereiten. Sichtbarkeit bleibt privat. Bestehenden signierten/notarisierten ARM64-Stand unverändert verwenden.
+- Tag `lotse-0.1.0` vermeidet Auslösen der separaten `v*`-Universal-Build-Automation. Finale Download-Prüfung anhand SHA-256 vorgesehen.
+
+- Zielabgleich 2026-10-29T09:01:17+01:00: GitHub verweigert Release-Ziel ade59bb, da dieser lokale Commit noch nicht remote existiert. Reihenfolge korrigiert: zuerst autorisierten Stand pushen, dann Release-Entwurf mit Remote-Commit erzeugen. Es wurde kein Release angelegt.
+- Verbindliche Clippy-Prüfung vor Push findet `field_reassign_with_default` im bestehenden Migrations-Test. Testinitialisierung wird ohne Änderung am Produktverhalten korrigiert; keine erneute Notarisierung nötig.
+
+- Vor Upload: DMG/ZIP stimmen mit den unter A-013 dokumentierten SHA-256-Werten überein; Architektur `arm64` bestätigt. README und deutsche/englische Anleitung enthalten identischen Direktlink und passende Installationsschritte. Lokale Markdown-Dateilinks geprüft.
+- Clippy-Gate nach rein testinterner Initialisierungskorrektur grün, Core-Tests 31/31. Produktcode und signierte Binärdatei unverändert. README/Anleitungen/Release-Dokumentation bereit für autorisierten Push.
