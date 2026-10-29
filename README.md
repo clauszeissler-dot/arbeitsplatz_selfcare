@@ -22,15 +22,20 @@ DMG öffnen und **Lotse** in den Ordner **Programme** ziehen.
 ## Was Lotse für dich tut
 
 - **Ampel in der Menüleiste:** Grün, Gelb oder Rot, je nachdem, wie viel du gerade gleichzeitig überwachst.
-- **Erkennt deine Arbeit:** Lotse liest deine Tabs im Terminal Ghostty und sieht, in welchem Tab gerade ein KI-Agent arbeitet. ChatGPT und Claude Desktop zählen mit.
+- **Erkennt deine Arbeit:** Lotse liest deine Tabs im Terminal Ghostty und sieht, in welchem Tab gerade ein KI-Agent arbeitet. ChatGPT, Claude Desktop und die Codex App zählen mit.
+- **Dein Arbeitsrhythmus:** Die Erinnerungen richten sich nach erkannter Aktivität. Der Rhythmus beginnt beim Arbeiten, nicht allein beim App-Start.
 - **Trinken:** Lotse erinnert dich alle 45 Minuten an ein Glas, damit du über 8 Stunden auf 2 Liter kommst.
 - **Haltung:** Lotse startet mit Bürostuhl, Swopper, Stehen und Balance Board. Jede Person kann ihre Haltungen samt Wechselintervall lokal ergänzen oder entfernen.
 - **Pausen wie bei Fluglotsen:** Spätestens nach 75 Minuten ist eine kurze Pause fällig, nach 2 Stunden eine lange Pause. Die Dauern sind einstellbar.
-- **Startbare Übungstimer:** Augen- und Pausenhinweise lassen sich mit einem Countdown starten. Der Timer bleibt sichtbar und meldet den Abschluss auf Wunsch mit einem sanften Klang.
-- **Nur Hinweise, kein Zwang:** Eine kleine Karte oben rechts. Ohne laufenden Timer verschwindet sie nach 40 Sekunden. Eigene lokale Klänge lassen sich in den Einstellungen probehören und einschalten.
+- **Startbare Übungstimer:** Die optionale Augenpause bietet **20 Sekunden in die Ferne schauen**; Pausen nutzen deine eingestellte Dauer. Mit **Starten** beginnt ein sichtbarer Countdown. Er bleibt bis **Fertig** oder **Abbrechen** stehen und meldet den Abschluss auf Wunsch mit einem Klang.
+- **Eigene Klangwelt:** Sanfte, lokale Klänge für **Hinweis, Start und Abschluss**. Alle drei kannst du in den Einstellungen probehören. Der Hinweisklang ist abschaltbar; Timer haben einen eigenen Klangschalter.
+- **Nur Hinweise, kein Zwang:** Eine kleine Karte oben rechts. Ohne laufenden Timer verschwindet sie nach der eingestellten Sichtdauer (standardmäßig 40 Sekunden).
+- **Fenster wiederfinden:** Bei geöffnetem Cockpit erscheint Lotse im **Dock und in ⌘Tab**. Schließt du das Fenster, läuft die App in der Menüleiste weiter.
 - **Ruhe im Meeting:** Ist deine Kamera oder dein Mikrofon an, kommen keine Hinweise.
 
 ![Hinweis-Karte von Lotse](docs/assets/hinweis.png)
+
+![Countdown der 20-Sekunden-Augenpause](docs/assets/timer.png)
 
 ## Gut zu wissen
 

@@ -169,3 +169,9 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Remote-README über GitHub-API auf main gelesen: prominenter Direktlink entspricht exakt der veröffentlichten Asset-URL `/releases/download/lotse-0.1.0/Lotse.dmg`. Beide Installationsanleitungen aktualisiert; Apple-Silicon-Voraussetzung ausdrücklich angegeben.
 - Core-Tests 31/31 und Clippy ohne Warnung. GitHub-CI-Kernlogik für `f1244a5` erfolgreich; separater unsignierter Universal-Build zu diesem Zeitpunkt noch in Arbeit. Dieser CI-Build liefert nicht das freigegebene Download-Paket. Vorhandene lokale Produktions-/Notarisierungs-/Ego-Lite-Belege bleiben gültig, da nur Testinitialisierung und Dokumentation geändert wurden.
 - Anforderungsabgleich: A-014 und A-015 geprüft erfüllt; keine offenen Punkte für Upload/README. A-005 und subjektive Klangbewertung bleiben wie zuvor getrennt dokumentiert.
+
+
+## 2026-10-29T09:49:22+01:00 – README auf neue Funktionen abgeglichen (A-016)
+
+- Timer, Sounds, Haltungsverwaltung und notarisierten Download waren vorhanden; Dock/⌘Tab war nur in der Anleitung beschrieben. README ergänzt: Dock/⌘Tab, optionale 20-Sekunden-Augenpause, konfigurierte Pausendauer, drei Klangproben mit getrenntem Timer-Schalter und aktivitätsbasierter Rhythmus.
+- Vorhandenen tatsächlichen Ego-Lite-Timer-Screenshot eingebunden. Lokale Inhaltsprüfung gegen Funktionsliste und alle lokalen Markdown-Dateilinks erfolgreich. Binärpakete unverändert; keine neue Signierung/Notarisierung nötig. Remote-Abgleich nach Push.

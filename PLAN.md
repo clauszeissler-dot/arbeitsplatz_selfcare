@@ -1,5 +1,15 @@
 # Aktueller Arbeitsplan
 
+## README-Funktionsabgleich · A-016
+
+**Sichtbares Ergebnis / Zielort:** README auf GitHub main beschreibt die tatsächlich ergänzten Funktionen vollständig: Timer/Augenpause, Klänge, Haltungen, aktivitätsbasierter Rhythmus, Dock/⌘Tab und Download.
+**Abschlussnachweis:** lokale Inhalts-/Linkprüfung und nach Push Remote-README auf die ergänzten Angaben prüfen.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T09:49:22+01:00.
+**Umfang/Freigabe:** Abschluss der bereits beauftragten README-Aktualisierung; Dokumentation committen/pushen, Binärpakete unverändert. Keine neuen Build-/Browserprüfungen für reine Textkorrektur.
+**Nächster Schritt:** bestehende Texte ergänzen, Links prüfen, committen/pushen, Remote-Inhalt abgleichen.
+
+---
+
 ## Repository-Download · A-014 / A-015
 
 **Sichtbares Ergebnis / Zielort:** bestehendes GitHub-Repository `clauszeissler-dot/arbeitsplatz_selfcare`: Release `lotse-0.1.0` mit unverändert notarisiertem Apple-Silicon-DMG/ZIP und direktem Download-Link oben im README.
