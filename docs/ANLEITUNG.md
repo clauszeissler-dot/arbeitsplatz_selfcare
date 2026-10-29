@@ -30,7 +30,7 @@ Sobald es signierte Downloads gibt, lädst du einfach die DMG-Datei herunter und
 
 ## Der erste Start
 
-1. Öffne Lotse. Es erscheint ein farbiger Punkt oben in der Menüleiste, aber kein Symbol im Dock.
+1. Öffne Lotse. Es erscheint ein farbiger Punkt oben in der Menüleiste. Sobald du das Cockpit öffnest, ist Lotse auch im Dock und über ⌘Tab erreichbar. Schließen blendet das Cockpit aus und lässt Lotse in der Menüleiste weiterlaufen.
 2. macOS fragt: **„Lotse möchte Ghostty steuern“**. Klicke auf **OK**. Lotse liest nur mit und verändert nichts.
 3. Klicke auf den Punkt und dann auf **Cockpit öffnen**.
 4. Klicke im Cockpit oben rechts auf das Zahnrad und schalte **„Beim Anmelden starten“** ein.
@@ -52,7 +52,11 @@ Hinweise erscheinen als kleine Karte oben rechts. Du hast zwei Möglichkeiten:
 - Klick auf **„Gleich“**, dann kommt der Hinweis später wieder.
 
 Die Karte verschwindet nach 40 Sekunden von selbst. Fährst du mit der Maus darauf, bleibt sie stehen.
-Wenn du möchtest, begleitet sie ein kurzer Systemton. Den Schalter **„Erinnerungston abspielen“** findest du in den Einstellungen; er ist zunächst aus, und die sichtbaren Hinweise bleiben immer aktiv.
+Wenn du möchtest, begleitet sie ein sanfter, eigens für Lotse komponierter Klang. Den Schalter **„Sanfter Hinweisklang“** findest du in den Einstellungen; er ist zunächst aus. Unter **„Lotse · Klangwelt“** kannst du Hinweis, Start und Abschluss probehören. Die Klänge liegen vollständig lokal vor.
+
+**Übung mit Timer:** Augenhinweise (20 Sekunden) und Pausenhinweise (deine eingestellte Pausenlänge) haben einen **Starten**-Knopf. Der Countdown bleibt sichtbar und kann abgebrochen werden. Am Ende erscheint **Fertig**; mit aktiviertem **„Klang zum Start und Abschluss“** hörst du außerdem die passenden Klänge. Dieser Schalter ist unabhängig vom automatischen Hinweisklang. Es gibt kein Ticken.
+
+Bei Pausen startet der Knopf auch die Pausenerfassung. **Fertig**, Abbrechen oder Schließen beendet diese gestartete Pause. Ein Timer läuft während der aktuellen App-Sitzung; App-Beenden verwirft ihn. Verschiebeaktionen wie „In 15 min“ verschieben weiterhin den Hinweis und starten keine Übung.
 
 **Ohne Hinweis eintragen**
 

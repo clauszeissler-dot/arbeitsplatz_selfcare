@@ -1,5 +1,27 @@
 # Aktueller Arbeitsplan
 
+## Arbeitslauf 2026-10-29 · A-009 / A-010
+
+**Sichtbares Ergebnis:** Zeitbezogene Übungshinweise bieten Starten, Countdown und Abschluss; eigene sanfte Klänge ersetzen Glass.
+**Zielort:** lokales `target/release/bundle/macos/Lotse.app`, Browserprüfung der Vorschau ausschließlich Ego Lite.
+**Abschlussnachweis:** Timer-/Hinweis-Regressionstests, Frontend- und Tauri-Build, Ego-Lite-Nutzerablauf und gebündelte WAV-Dateien. Klanggeschmack bleibt durch Claus zu beurteilen.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T08:16:07+01:00 / 2026-10-29T08:25:03+01:00.
+**Gates:** kein Push, keine Veröffentlichung oder Installation; lokales Bundle wie bisher.
+
+1. A-009: strukturierte Übungsdauer für Augen- und Pausenhinweise; nativer Timer unabhängig vom Webview; keine Verdrängung laufender Timer.
+2. A-010: eigene zusammengehörige, lokal komponierte WAV-Klänge; Hinweis-Schalter erhalten, bewusst gestarteter Timer mit eigenem abschaltbaren Abschlusston und Klangprobe.
+3. A-009/A-010: passende Tests, Ego-Lite-Prüfung, Produktions-Bundle, Dokumentation und gezielter lokaler Commit.
+
+4. A-011/A-012: Arbeitslog laufend führen; Dashboard beim Öffnen im Dock/⌘Tab anzeigen, beim Schließen in Menüleistenmodus zurückkehren.
+
+5. A-013: Developer-ID-Identität und Notarytool-Profil prüfen; bei vorhandenem Zugang lokales Bundle signieren/notarisieren/stapeln und Gatekeeper prüfen. Fehlende Apple-Voraussetzungen als konkreten Blocker melden. Nutzer hat diesen lokalen Apple-Freigabeschritt ausdrücklich autorisiert.
+
+Aktueller Zielabgleich (2026-10-29T08:32:58+01:00): 33 Tests grün, Ego Lite abgeschlossen, native Öffnen-/Schließen-Policy geprüft, finaler signierter App-/DMG-Build und Signaturen geprüft. Apple-Notarisierung wartet auf einmalige lokale Zugangseinrichtung durch Claus. Kürzester nächster Schritt: Schlüsselbundprofil lotse einrichten und scripts/notarize.sh lotse ausführen; danach Ticket und Gatekeeper-Freigabe dokumentieren.
+
+Status: A-009/A-011/A-012 geprüft, A-010 technisch geprüft (Geschmacksabnahme offen); A-013 signiert, Notarisierung mangels Apple-Zugangsprofil blockiert. Annahme: Zeitangaben für eine konkrete Übung bekommen Timer; vergangene Arbeitszeit und „in 10 min erinnern“ sind keine Übungsdauer.
+
+---
+
 **Sichtbares Arbeitsziel:** Claus kann Lotse lokal als Mac-App nutzen; die Kopfzeile zeigt das originale KI-AffAIrs-Logo mit der Produktkennung Lotse.
 **Zielort:** `target/release/bundle/macos/Lotse.app` im lokalen Projektordner.
 **Abschlussnachweis:** Core-Test-Suite und Produktions-Build erfolgreich; App-Bundle am Zielort vorhanden.
@@ -8,7 +30,7 @@ Stand: 2026-10-28
 
 Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md)
 
-## Aktueller Umfang
+## Historischer Umfang (2026-10-28)
 
 - In diesem Arbeitslauf: A-005 bis A-008 (A-001 bis A-004 sind geprüft)
 - Bewusst außerhalb dieses Laufs: signierter/notarisierter Release und Installation nach `/Applications`; nicht beauftragt.
@@ -48,7 +70,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 - Ein echter Klangtest mit hörbarer Ausgabe ist nicht automatisierbar; die direkte macOS-Ausführung und der Build sind der technische Nachweis, die Wahl bleibt über den Schalter kontrollierbar.
 - A-001: Xcode 27 erzeugte ohne `-Wl,-no_fixup_chains` nicht ladbare Rust-Makro-Dylibs. Die macOS-spezifische Cargo-Konfiguration enthält den verifizierten Build-Workaround.
 
-## Aktueller Zielabgleich
+## Historischer Zielabgleich (2026-10-28)
 
 - Arbeitsbeginn / letzter Abgleich: 2026-10-28 14:05 CET / 2026-10-28 17:09 CET
 - Nächster Abgleich spätestens: bei der nächsten gezielten Erkennungsprüfung.

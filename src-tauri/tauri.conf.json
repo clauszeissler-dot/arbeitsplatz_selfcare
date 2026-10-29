@@ -31,7 +31,7 @@
         "title": "Lotse Hinweis",
         "url": "toast.html",
         "width": 380,
-        "height": 216,
+        "height": 380,
         "visible": false,
         "decorations": false,
         "transparent": true,

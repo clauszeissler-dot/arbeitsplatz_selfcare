@@ -56,3 +56,37 @@ npm run tauri build -- --target universal-apple-darwin
   Automation-Abfrage („Lotse möchte Ghostty steuern“).
 - Mikrofon/Kamera: Lotse fragt nur ab, *ob* ein Gerät irgendwo läuft. Es wird nichts
   aufgenommen, deshalb erscheint auch keine Mikrofon-/Kamera-Freigabe.
+
+
+## Lokaler Freigabestand 2026-10-29 (A-013)
+
+- Gültige Identität: `Developer ID Application: Claus Zeissler (ZWT6395G7Q)`.
+- App und DMG werden lokal mit dieser Identität und Hardened Runtime signiert:
+
+```sh
+APPLE_SIGNING_IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)' npm run tauri build
+```
+
+- `codesign --verify --deep --strict` besteht. Ohne Notarisierung meldet Gatekeeper `Unnotarized Developer ID`.
+- Noch offen: Schlüsselbundprofil `lotse` für den Apple-Notarisierungsdienst. Die App wurde bisher nicht eingereicht. Kein App-Store-Release beauftragt.
+- Einmalig durch den Accountinhaber: anwendungsspezifisches Passwort unter https://account.apple.com erzeugen, dann im eigenen Terminal interaktiv hinterlegen (Passwort niemals in Repository, Chat oder Befehlsargument schreiben):
+
+```sh
+xcrun notarytool store-credentials lotse --team-id ZWT6395G7Q
+```
+
+Danach der vorbereitete Ablauf:
+
+```sh
+./scripts/notarize.sh lotse
+```
+
+Das Skript prüft zuerst Signatur und Zugang, reicht die signierte App als ZIP ein,
+sichert Apples Ergebnis und Prüfprotokoll, heftet das Ticket an die App und prüft
+Gatekeeper. Danach erstellt es ein DMG aus der bereits mit Ticket versehenen App,
+signiert und notarisiert auch dieses und prüft das angeheftete Ticket. Finale
+Artefakte und Apple-Protokolle: `target/release/notarized/`. Keine automatische
+Veröffentlichung und kein Push. Das Skript ist syntaktisch geprüft; die tatsächliche
+Einreichung ist bis zum eingerichteten Zugang offen.
+
+Quelle: [Apple – Customizing the notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow), am 2026-10-29 mit Ego Lite geprüft.

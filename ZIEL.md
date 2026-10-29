@@ -5,7 +5,7 @@
 - Lebensdauer: dauerhaftes lokales macOS-Produkt
 - Outcome: Menschen mit langer KI-gestützter Bildschirmarbeit erhalten auf ihrem Mac konfigurierbare, lokale Erinnerungen mit eindeutigem visuellen Signal und optionalem Ton.
 - Ausgangswert: Das bestehende MVP zeigt bereits lokale Hinweis-Karten und speichert Einstellungen lokal; ein vom Nutzer schaltbarer Erinnerungston fehlt.
-- Zielwert und Zeitraum: In diesem Arbeitslauf: jede regulär ausgelöste Erinnerung zeigt die bestehende Karte; bei aktiviertem Ton wird zusätzlich ein macOS-Systemton ausgelöst, bei deaktiviertem Ton nicht. Nachweis durch Core-Tests und einen erfolgreichen lokalen Produktions-Build.
+- Historischer Zielwert A-001 bis A-003: In diesem Arbeitslauf: jede regulär ausgelöste Erinnerung zeigt die bestehende Karte; bei aktiviertem Ton wird zusätzlich ein macOS-Systemton ausgelöst, bei deaktiviertem Ton nicht. Nachweis durch Core-Tests und einen erfolgreichen lokalen Produktions-Build.
 
 ## Nutzerablauf und Abnahme
 
@@ -40,3 +40,20 @@
 | 2026-10-28 | A-008 | Originales KI-AffAIrs-Logo dezent in die Cockpit-Kopfzeile integriert. | Nutzerwunsch |
 
 Umsetzung: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md)
+
+
+## Arbeitslauf 2026-10-29
+
+Claus kann zeitbezogene Augen- und Pausenübungen direkt mit einem Timer ausführen,
+ohne die Zeit selbst mitzählen zu müssen. Ausgangswert: keine Übungstimer, macOS
+Glass als Ton und dauerhaft unsichtbar in Dock/⌘Tab. Ziel: Start, sichtbarer
+Countdown, einmaliger Abschluss; eigene lokale Klangfamilie mit Probe und
+Stummschaltung; Dock/⌘Tab bei geöffnetem Cockpit. Abnahme: A-009 bis A-012.
+Zielort bleibt das lokale App-Bundle. Ein nicht startbarer Timer meldet seinen
+Fehler sichtbar; die Karte bleibt bedienbar. App-Neustart stellt Timer nicht wieder
+her. Klänge werden lokal im App-Datenordner abgelegt; keine Cloud-Funktion ergänzt.
+
+A-013 erweitert die bisherige Grenze ausdrücklich auf lokale Developer-ID-Signatur
+und Apple-Notarisierung. Dafür darf das gebaute Paket an Apple gesendet werden;
+keine Veröffentlichung im App Store oder im Repository. Das Apple-Zugangsprofil
+fehlt aktuell; Freigabe bleibt bis zum erfolgreichen Apple-Ticket offen.

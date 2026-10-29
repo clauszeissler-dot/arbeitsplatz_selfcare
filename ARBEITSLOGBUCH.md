@@ -95,3 +95,31 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Prüfung: `cargo test -p lotse-core` – 26/26 erfolgreich, darunter `inactive_time_does_not_start_the_reminder_rhythm`.
 - Offene Punkte und nächster Schritt: lokalen Commit erzeugen.
 - Versionsbezug: noch nicht committed
+
+
+## 2026-10-29 – Laufender Auftrag: Timer, Klanggestaltung und Dashboard-Erreichbarkeit
+
+- A-009: Nutzer möchte insbesondere den 20-Sekunden-Augenhinweis starten können, mit Countdown und hörbarem Abschluss. Konkrete Übungsdauer wird strukturiert geführt; vergangene Arbeitszeit und Verschieben sind keine Timer.
+- A-010: Bestehender Klang ist tatsächlich macOS Glass. Eigene lokale Stereo-Klänge für Hinweis, Start und Abschluss werden erstellt; keine Cloud-Abhängigkeit. Klanggeschmack wird nicht als technisch bewiesen ausgegeben.
+- A-011: Nutzer verlangt einen laufenden Arbeitslog, damit Ergänzungen erhalten bleiben. Dieser Eintrag sowie PLAN.md/AENDERUNGEN.md führen den aktuellen Stand.
+- A-012: Nutzer findet das geöffnete Dashboard nicht im Dock/⌘Tab. Befund: dauerhaft `ActivationPolicy::Accessory`. Öffnen soll auf Regular umschalten, Schließen wieder auf Accessory; Tray bleibt erhalten.
+- Prüfstand: Umsetzung läuft; erster roter Regressionstest für strukturierte Übungsdauer gestartet. Lokales App-Bundle ist Ziel; kein Push/Release/Installation beauftragt.
+
+- Ergänzung A-012: Nutzer bestätigt Menüleiste bei geschlossenem Fenster; bei geöffnetem Fenster Dock/⌘Tab erforderlich.
+- Ergänzung A-013: Nutzer autorisiert Apple-Developer-Freigabe. Vorprüfung von Developer ID und lokalem Notarytool-Profil gestartet. Kein zusätzlicher öffentlicher Release/Push abgeleitet.
+
+- Zwischenstand: Regressionstest war rot (fehlende strukturierte 20-s-Dauer), danach grün für Augen- und individuelle Pausendauern. Workspace: 33 Tests grün, inklusive nativer Countdown-Deadline, Aufrunden, Überbrücken von Standby, mehrfacher Start und einmaliger Abschluss.
+- Ego Lite, TaskSpace 5: Augenhinweis gestartet und Abschluss bei 0:00/Fertig nachgewiesen. Screenshot zeigte zusätzlichen Platzbedarf; native Fensterhöhe auf 380 angepasst, Kartenbreite auf 364 begrenzt. Laufender Timer wird nicht automatisch ausgeblendet und nicht durch neue Hinweise ersetzt.
+- Apple: gültiges Developer-ID-Zertifikat vorhanden; erster Produktions-Build signiert. Profil `lotse` fehlt; Nutzer bestätigt keine bisherige Einreichung. Sichere lokale Einrichtung mit `notarytool store-credentials` beschrieben; keine Zugangsdaten im Chat.
+
+
+### Abschlussstand 2026-10-29T08:32:58+01:00
+
+- A-009: Strukturierte Dauer für Augen und Pausen; Pausentexte nutzen die eingestellte Dauer. Native Deadline mit 200-ms-Auswertung verhindert Webview-Drosselung; Timer bleibt bis Fertig/Abbruch erhalten, konkurrierende Hinweise werden unterdrückt. Abbrechen/Schließen einer gestarteten Pause beendet auch deren Pausenerfassung.
+- A-010: Originale, reproduzierbare Stereo-Kompositionen (D-Dur-Pentatonik, weiche Teiltöne, Stereo-Echos; 1,9/2,8/4,4 s). Drei WAVs lokal eingebettet, kein Glass. Technische Analyse: alle Peaks -12 dBFS, beide Endsamples null. Hinweisschalter bleibt standardmäßig aus; bewusste Timerstarts haben unabhängigen Klangschalter. Einstellungen bieten drei Klangproben. Geschmack durch Claus noch nicht bewertet.
+- Red/Green: Dauertest zuerst rot (Null statt 20 s), danach grün für 20 s / 7 min / 22 min. Frisch: `cargo test --workspace`, 33/33; `npm run tauri build` inklusive TypeScript/Vite erfolgreich. `bash -n scripts/notarize.sh` und `git diff --check` grün.
+- Ego Lite TaskSpace 5: 20 s im Echtzeitablauf bis 0:00/Fertig; instrumentiert genau ein Start- und ein Abschlussaufruf; stummer 25-min-Start und Abbruch ohne Klangaufruf. Start/Fertig per Enter bedienbar; Status-Live-Region vorhanden. Einstellungen-Klangprobe lädt die 776204-Byte-WAV ohne Fehler; keine unbenannten Buttons im geprüften Einstellungsformular. Fenstergröße 380×380: Pausenkarte 350,94 px hoch, vollständig sichtbar. Screenshot: `docs/assets/timer.png`. TaskSpace danach geschlossen.
+- A-012: Finale native Öffnen-/Schließen-Logik über macOS-Reopen und AX geprüft: geöffnet Regular (background-only=false, visible=true), geschlossen Accessory (background-only=true, visible=false). Tray-Menüabfrage über AX war nicht zuverlässig (ungültiger Menüindex); kein Hänger im Prozess-Sample, reguläres Wiederöffnen funktioniert. Menüaktion und Reopen verwenden dieselbe show_dashboard-Funktion. Keine tatsächliche ⌘Tab-Tastensequenz aufgezeichnet.
+- A-013: Finales lokales App-Bundle und DMG mit `Developer ID Application: Claus Zeissler (ZWT6395G7Q)` signiert; Hardened Runtime, Zeitstempel und gültige Signatur nachgewiesen. DMG-Integritätsprüfung erfolgreich. Keine Apple-Einreichung erfolgt: Notarytool-Profil lotse fehlt. Gatekeeper weist das Paket derzeit ausdrücklich als Unnotarized Developer ID zurück. Sicherer Einrichtungsweg an Claus gegeben; vollständiger nachfolgender Einreichungs-/Ticket-/Prüfablauf unter `scripts/notarize.sh` vorbereitet, noch nicht gegen Apple ausgeführt.
+- A-011: Projektlog, Anforderungen, Plan, Ziel und Learning fortgeschrieben. Globaler Arbeitslogbucheintrag erfolgreich geschrieben; keine persönliche Arbeitszeit angesetzt.
+- Versionsbezug: gezielter lokaler Commit folgt; kein Push und keine Veröffentlichung. A-005 aus dem Altauftrag bleibt wie dokumentiert separat offen.

@@ -1,4 +1,5 @@
 mod collect;
+mod exercise;
 #[cfg(target_os = "macos")]
 mod macos_av;
 
@@ -20,6 +21,7 @@ const TOAST_MARGIN: f64 = 14.0;
 struct Shared {
     engine: Mutex<Engine>,
     dir: PathBuf,
+    exercise: Mutex<Option<exercise::Exercise>>,
     status_item: Mutex<Option<MenuItem<tauri::Wry>>>,
 }
 
@@ -119,6 +121,8 @@ fn update_tray(app: &AppHandle, snap: &Snapshot) {
 // ---------- Fenster ----------
 
 fn show_dashboard(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
         let _ = w.unminimize();
@@ -126,9 +130,13 @@ fn show_dashboard(app: &AppHandle) {
     }
 }
 
-fn show_toast(app: &AppHandle, hint: &Hint) {
+fn show_toast(app: &AppHandle, hint: &Hint) -> bool {
+    let shared = app.state::<Shared>();
+    if shared.exercise.lock().unwrap().as_ref().is_some_and(|e| e.deadline.is_some()) {
+        return false;
+    }
     let Some(w) = app.get_webview_window("toast") else {
-        return;
+        return false;
     };
     if let Ok(Some(m)) = w.primary_monitor() {
         let scale = m.scale_factor();
@@ -139,21 +147,90 @@ fn show_toast(app: &AppHandle, hint: &Hint) {
             pos.y + 38.0,
         ));
     }
+    // Monitor queries above can wait on the UI thread; never hold the exercise lock there.
+    let mut exercise = shared.exercise.lock().unwrap();
+    if exercise.as_ref().is_some_and(|e| e.deadline.is_some()) {
+        return false;
+    }
+    *exercise = Some(exercise::Exercise {
+        hint: hint.clone(),
+        deadline: None,
+        finished: false,
+        sound: true,
+    });
     let _ = app.emit_to("toast", "hint", hint);
     let _ = w.show();
+    true
 }
 
-/// Nutzt absichtlich einen vorhandenen macOS-Systemton: keine eingebettete Audiodatei,
-/// kein Netzwerk und kein zusätzlicher Audio-Stack. Fehler dürfen Hinweise nie verhindern.
-#[cfg(target_os = "macos")]
-fn play_reminder_sound() {
-    let _ = std::process::Command::new("/usr/bin/afplay")
-        .arg("/System/Library/Sounds/Glass.aiff")
-        .spawn();
+/// Originale lokale WAV-Dateien; der Playback-Prozess wird außerhalb des UI-Threads abgewartet.
+#[tauri::command]
+fn play_sound(app: AppHandle, name: String) -> Result<(), String> {
+    let bytes: &[u8] = match name.as_str() {
+        "hint" => include_bytes!("../../ui/src/audio/hint.wav"),
+        "start" => include_bytes!("../../ui/src/audio/start.wav"),
+        "complete" => include_bytes!("../../ui/src/audio/complete.wav"),
+        _ => return Err("Unbekannter Klang".into()),
+    };
+    let dir = app.state::<Shared>().dir.join("sounds");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{name}.wav"));
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    std::thread::spawn(move || {
+        let _ = std::process::Command::new("/usr/bin/afplay")
+            .arg(path)
+            .status();
+    });
+    Ok(())
 }
 
-#[cfg(not(target_os = "macos"))]
-fn play_reminder_sound() {}
+#[derive(Clone, serde::Serialize)]
+struct TimerUpdate {
+    remaining: u32,
+    finished: bool,
+}
+
+#[tauri::command]
+fn start_hint_timer(app: AppHandle, sound: bool) -> Result<(), String> {
+    let kind = {
+        let shared = app.state::<Shared>();
+        let mut guard = shared.exercise.lock().unwrap();
+        let exercise = guard.as_mut().ok_or("Kein aktueller Hinweis")?;
+        exercise.start(std::time::SystemTime::now(), sound)?;
+        exercise.hint.kind
+    };
+    if matches!(kind, HintKind::Break | HintKind::LongBreak) {
+        perform(&app, "break_start", Some(kind));
+    }
+    if sound {
+        let _ = play_sound(app, "start".into());
+    }
+    Ok(())
+}
+
+fn timer_tick(app: &AppHandle) {
+    let shared = app.state::<Shared>();
+    let mut guard = shared.exercise.lock().unwrap();
+    if let Some(exercise) = guard
+        .as_mut()
+        .filter(|e| e.deadline.is_some() && !e.finished)
+    {
+        let now = std::time::SystemTime::now();
+        let finished = exercise.finish_if_due(now);
+        let _ = app.emit_to(
+            "toast",
+            "timer_update",
+            TimerUpdate {
+                remaining: exercise.remaining(now),
+                finished,
+            },
+        );
+        if finished && exercise.sound {
+            let _ = play_sound(app.clone(), "complete".into());
+        }
+    }
+}
 
 // ---------- Takt ----------
 
@@ -176,9 +253,8 @@ fn tick(app: &AppHandle) {
     save(&shared.dir.join("state.json"), &state);
     publish(app, &snap);
     if let Some(h) = hint {
-        show_toast(app, &h);
-        if settings.sound_enabled {
-            play_reminder_sound();
+        if show_toast(app, &h) && settings.sound_enabled {
+            let _ = play_sound(app.clone(), "hint".into());
         }
     }
 }
@@ -256,6 +332,12 @@ fn act(app: AppHandle, action: String, kind: Option<HintKind>) {
 
 #[tauri::command]
 fn hide_toast(app: AppHandle) {
+    let ended = app.state::<Shared>().exercise.lock().unwrap().take();
+    if ended.is_some_and(|e| {
+        e.deadline.is_some() && matches!(e.hint.kind, HintKind::Break | HintKind::LongBreak)
+    }) {
+        perform(&app, "break_end", None);
+    }
     if let Some(w) = app.get_webview_window("toast") {
         let _ = w.hide();
     }
@@ -356,7 +438,9 @@ pub fn run() {
             hide_toast,
             autostart_enabled,
             set_autostart,
-            refresh
+            refresh,
+            play_sound,
+            start_hint_timer
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -369,12 +453,18 @@ pub fn run() {
             app.manage(Shared {
                 engine: Mutex::new(Engine::new(settings, state)),
                 dir,
+                exercise: Mutex::new(None),
                 status_item: Mutex::new(None),
             });
 
             let status = build_tray(app.handle())?;
             *app.state::<Shared>().status_item.lock().unwrap() = Some(status);
 
+            let timer_handle = app.handle().clone();
+            std::thread::spawn(move || loop {
+                timer_tick(&timer_handle);
+                std::thread::sleep(Duration::from_millis(200));
+            });
             let handle = app.handle().clone();
             std::thread::spawn(move || loop {
                 tick(&handle);
@@ -387,6 +477,10 @@ pub fn run() {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     let _ = window.hide();
+                    #[cfg(target_os = "macos")]
+                    let _ = window
+                        .app_handle()
+                        .set_activation_policy(tauri::ActivationPolicy::Accessory);
                     api.prevent_close();
                 }
             }
@@ -394,7 +488,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("Lotse konnte nicht starten");
 
-    app.run(|_app, event| {
+    app.run(|app, event| {
+        #[cfg(target_os = "macos")]
+        if let RunEvent::Reopen { .. } = event {
+            show_dashboard(app);
+        }
         if let RunEvent::ExitRequested { api, code, .. } = event {
             if code.is_none() {
                 api.prevent_exit();

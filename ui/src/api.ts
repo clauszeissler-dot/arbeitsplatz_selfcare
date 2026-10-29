@@ -80,6 +80,7 @@ export interface Hint {
   body: string;
   actions: HintAction[];
   at: number;
+  duration_seconds?: number | null;
 }
 export interface Band { green: number; yellow: number }
 export interface PostureDefinition { id: string; label: string; duration_min: number }
@@ -136,6 +137,7 @@ export const api = {
   settings: () => invoke<Settings>("get_settings"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
   act: (action: string, kind?: HintKind) => invoke<void>("act", { action, kind: kind ?? null }),
+  startTimer: (sound: boolean) => invoke<void>("start_hint_timer", { sound }),
   hideToast: () => invoke<void>("hide_toast"),
   autostart: () => invoke<boolean>("autostart_enabled"),
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
@@ -233,10 +235,16 @@ async function mock<T>(cmd: string, _args?: Record<string, unknown>): Promise<T>
 
 export function mockToastHint(): Hint {
   const kind = new URLSearchParams(location.search).get("kind");
+  if (kind === "eyes") return {
+    kind: "eyes", level: "green", title: "Augen kurz raus",
+    body: "20 Sekunden auf etwas in mindestens 6 m Entfernung schauen.",
+    actions: [{ id: "ok", label: "Erledigt" }], at: Date.now() / 1000, duration_seconds: 20,
+  };
   if (kind === "break") {
     return {
       kind: "long_break", level: "red", title: "2 h ohne echte Pause",
-      body: "Lotsen-Regel: 30 Minuten raus, ohne Verantwortung. Agenten laufen lassen oder parken, Bildschirm aus.",
+      body: "25 Minuten raus, ohne Verantwortung. Agenten laufen lassen oder parken, Bildschirm aus.",
+      duration_seconds: 25 * 60,
       actions: [{ id: "break_start", label: "Pause starten" }, { id: "snooze_15", label: "In 15 min" }], at: Date.now() / 1000,
     };
   }

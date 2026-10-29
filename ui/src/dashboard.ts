@@ -1,3 +1,4 @@
+import { playSound } from "./sounds";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
@@ -69,7 +70,7 @@ function focusCard(s: Snapshot): string {
         ${ring(s.in_break ? 0 : s.block_min, hard, level, s.in_break ? "Pause" : `${s.block_min}′`, "am Stück")}
         <ul class="facts">
           <li><span>Nächste Pause</span><strong>${s.in_break ? "läuft" : s.next_break_min > 0 ? `in ${s.next_break_min} min` : "jetzt"}</strong></li>
-          <li><span>Lotsen-Pause (30 min)</span><strong>${longLeft > 0 ? `in ${longLeft} min` : "fällig"}</strong></li>
+          <li><span>Lange Pause</span><strong>${longLeft > 0 ? `in ${longLeft} min` : "fällig"}</strong></li>
           <li><span>Pausen heute</span><strong>${s.breaks_today} · davon lang ${s.long_breaks_today}</strong></li>
         </ul>
       </div>
@@ -324,7 +325,7 @@ async function renderSettings(settingsOverride?: Settings, autoOverride?: boolea
     <form class="panel" id="settings-form">
       <div class="panel-head">
         <div><span class="eyebrow">Einstellungen</span><h2>Dein <span class="accent">Rhythmus.</span></h2></div>
-        <button type="button" class="btn ghost" data-act="settings">${icons.close}</button>
+        <button type="button" class="btn ghost" data-act="settings" aria-label="Einstellungen schließen">${icons.close}</button>
       </div>
       ${FIELDS.map(
         (g) => `
@@ -346,9 +347,18 @@ async function renderSettings(settingsOverride?: Settings, autoOverride?: boolea
       </fieldset>
       <fieldset><legend>Schalter</legend>
         <label class="toggle"><span>Mikrofon zur Meeting-Erkennung nutzen</span><input type="checkbox" name="meeting_use_mic" ${s.meeting_use_mic ? "checked" : ""}/></label>
-        <label class="toggle"><span>Erinnerungston abspielen</span><input type="checkbox" name="sound_enabled" ${s.sound_enabled ? "checked" : ""}/></label>
+        <label class="toggle"><span>Sanfter Hinweisklang</span><input type="checkbox" name="sound_enabled" ${s.sound_enabled ? "checked" : ""}/></label>
         <label class="toggle"><span>Augen-Mikropause (20-20-20)</span><input type="checkbox" name="eyes_enabled" ${s.eyes_enabled ? "checked" : ""}/></label>
         <label class="toggle"><span>Beim Anmelden starten</span><input type="checkbox" name="autostart" ${auto ? "checked" : ""}/></label>
+      </fieldset>
+      <fieldset><legend>Lotse · Klangwelt</legend>
+        <p>Weiche, helle Töne mit warmem Nachklang. Timer haben einen eigenen Klangschalter direkt im Hinweis.</p>
+        <div class="actions">
+          <button class="btn ghost" type="button" data-sound="hint">Hinweis anhören</button>
+          <button class="btn ghost" type="button" data-sound="start">Start anhören</button>
+          <button class="btn ghost" type="button" data-sound="complete">Abschluss anhören</button>
+        </div>
+        <p id="sound-feedback" role="status"></p>
       </fieldset>
       <fieldset class="bands"><legend>Ampel-Schwellen <small>grün bis · gelb bis</small></legend>
         ${BANDS.map(
@@ -373,6 +383,13 @@ async function renderSettings(settingsOverride?: Settings, autoOverride?: boolea
       if (s.postures.length <= 1) return;
       s.postures.splice(Number(button.dataset.postureRemove), 1);
       void renderSettings(s, auto);
+    });
+  });
+  form.querySelectorAll<HTMLButtonElement>("[data-sound]").forEach((button) => {
+    button.addEventListener("click", () => {
+      void playSound(button.dataset.sound as "hint" | "start" | "complete").catch(() => {
+        form.querySelector("#sound-feedback")!.textContent = "Klang konnte nicht abgespielt werden.";
+      });
     });
   });
   form.addEventListener("submit", async (e) => {

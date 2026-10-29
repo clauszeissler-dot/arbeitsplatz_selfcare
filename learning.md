@@ -27,3 +27,14 @@ Vor Arbeit und Wiederaufnahme passende aktive Learnings lesen. Die gemeinsamen R
 - Wirksamkeitsprüfung: Am 2026-10-28 im laufenden Cockpit und den Einstellungen bestätigt.
 
 Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBUCH.md)
+
+
+### L-003 – Eigene Klanggestaltung und auffindbares Cockpit
+
+- Datum / Status: 2026-10-29 · beobachtet; konkrete Änderungen durch Nutzer beauftragt.
+- Quelle: Nutzerfeedback zu unpassendem Systemklang und fehlendem Fenster in Dock/⌘Tab.
+- Geltung: Lotse-Klanggestaltung und macOS-Fensterverhalten.
+- Beobachtung: Glass erfüllt die bloße Signalfunktion, aber nicht den gewünschten Klangcharakter. Dauerhaftes Accessory blendet auch ein geöffnetes Cockpit aus der App-Auswahl aus.
+- Konsequenz / zuständige Umsetzung: A-010 liefert eine eigene lokale Klangfamilie mit Klangprobe; A-012 schaltet beim Öffnen auf Regular und beim Schließen auf Accessory. Beide Entscheidungen sind konkrete Produktanforderungen, keine allgemeine Designregel.
+- Prüfpunkt: Ego-Lite-Klangprobe lädt eigene WAV-Datei; native App ist bei geöffnetem Cockpit nicht mehr background-only und nach Schließen wieder background-only.
+- Wirkung: Technische Wirkung am 2026-10-29 belegt. Subjektive Bewertung der neuen Klänge durch Claus bleibt offen; aus erfolgreichem Playback folgt keine Geschmacksabnahme.

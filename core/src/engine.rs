@@ -56,6 +56,8 @@ pub struct Hint {
     pub body: String,
     pub actions: Vec<HintAction>,
     pub at: i64,
+    #[serde(default)]
+    pub duration_seconds: Option<u32>,
 }
 
 fn action(id: &str, label: &str) -> HintAction {
@@ -624,6 +626,12 @@ impl Engine {
             body,
             actions,
             at: now,
+            duration_seconds: match kind {
+                HintKind::Eyes => Some(20),
+                HintKind::Break => Some(s.break_min.clamp(1, 720) * 60),
+                HintKind::LongBreak => Some(s.long_break_min.clamp(1, 720) * 60),
+                _ => None,
+            },
         };
 
         if since_long >= s.long_break_after_min as i64 {
@@ -634,7 +642,7 @@ impl Engine {
                     HintKind::LongBreak,
                     Level::Red,
                     format!("{} h ohne echte Pause", since_long / 60),
-                    "Lotsen-Regel: 30 Minuten raus, ohne Verantwortung. Agenten laufen lassen oder parken, Bildschirm aus.".into(),
+                    format!("{} Minuten raus, ohne Verantwortung. Agenten laufen lassen oder parken, Bildschirm aus.", s.long_break_min.clamp(1, 720)),
                     vec![action("break_start", "Pause starten"), action("snooze_15", "In 15 min")],
                 ),
             ));
@@ -647,7 +655,7 @@ impl Engine {
                     HintKind::Break,
                     Level::Red,
                     format!("{block_min} min am Stück"),
-                    "Zeit für 10–15 Minuten weg vom Bildschirm. Vorher kurz notieren, wo du stehst.".into(),
+                    format!("Zeit für {} Minuten weg vom Bildschirm. Vorher kurz notieren, wo du stehst.", s.break_min.clamp(1, 720)),
                     vec![action("break_start", "Pause starten"), action("snooze_10", "In 10 min")],
                 ),
             ));
@@ -1146,5 +1154,44 @@ mod tests {
             !partial.sound_enabled,
             "bestehende Einstellungen bleiben standardmäßig ohne Ton"
         );
+    }
+}
+
+#[cfg(test)]
+mod timed_hint_tests {
+    use super::*;
+    #[test]
+    fn exercise_duration_is_structured_and_uses_personal_break_settings() {
+        let t = 1_800_000_000;
+        let settings = Settings {
+            break_min: 7,
+            long_break_min: 22,
+            eyes_enabled: true,
+            ..Settings::default()
+        };
+        let state = State {
+            first_active: Some(t - 20 * 60),
+            block_start: t - 20 * 60,
+            last_long_break_end: t,
+            posture_since: t,
+            last_drink: Some(t),
+            ..State::default()
+        };
+        let mut e = Engine::new(settings, state);
+        let eyes = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert_eq!(eyes.kind, HintKind::Eyes);
+        assert_eq!(serde_json::to_value(&eyes).unwrap()["duration_seconds"], 20);
+        e.state.last_hint_at = 0;
+        e.state.block_start = t - 80 * 60;
+        let pause = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert_eq!(pause.kind, HintKind::Break);
+        assert_eq!(pause.duration_seconds, Some(7 * 60));
+        assert!(pause.body.contains("7 Minuten"));
+        e.state.last_hint_at = 0;
+        e.state.last_long_break_end = t - 130 * 60;
+        let long = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert_eq!(long.kind, HintKind::LongBreak);
+        assert_eq!(long.duration_seconds, Some(22 * 60));
+        assert!(long.body.contains("22 Minuten"));
     }
 }

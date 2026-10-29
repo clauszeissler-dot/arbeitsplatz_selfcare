@@ -30,7 +30,7 @@ Once signed downloads are available, you just download the DMG file and drag Lot
 
 ## First start
 
-1. Open Lotse. A coloured dot appears in the menu bar. There is no Dock icon.
+1. Open Lotse. A coloured dot appears in the menu bar. When the cockpit is open, Lotse appears in the Dock and ⌘Tab. Closing the cockpit returns it to menu-bar mode.
 2. macOS asks: **"Lotse wants to control Ghostty"**. Click **OK**. Lotse only reads; it changes nothing.
 3. Click the dot, then **Cockpit öffnen** (open cockpit).
 4. In the cockpit, click the gear icon at the top right and switch on **"Beim Anmelden starten"** (start at login).
@@ -113,3 +113,8 @@ Click **Speichern** (save) at the end.
 Lotse is a reminder tool. It is not a medical device and does not replace medical advice.
 The default values are based on studies and recommendations ([sources, German](RECHERCHE.md)), but they do not fit everyone.
 If you are in pain, talk to a doctor.
+
+
+### Exercise timers and sound
+
+Eye reminders offer a 20-second timer. Break reminders use your configured break duration. Click **Starten** to begin; the card stays visible until you finish or cancel it. **Klang zum Start und Abschluss** controls the start and completion sounds separately from automatic reminder sounds. Hear all three original, local sounds under **Lotse · Klangwelt** in Settings. Closing or cancelling a break timer ends the manually started break. Timers are not restored after quitting the app.
