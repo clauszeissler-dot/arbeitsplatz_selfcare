@@ -18,6 +18,13 @@ wie du Lotse einrichtest und benutzt.
 2. Die DMG-Datei öffnen und **Lotse** in den Ordner **Programme** ziehen.
 3. **Lotse** aus Programme öffnen. Das Paket ist mit Developer ID signiert und von Apple notarisiert.
 
+Version 0.1.0 enthält noch keinen Updater. Die erste Aktualisierung auf die
+updaterfähige Version 0.2.0 muss deshalb einmalig wieder als DMG installiert
+werden. Ab 0.2.0 prüft Lotse beim Öffnen des Cockpits den offiziellen
+GitHub-Release-Feed. Unter **Einstellungen → Updates** kannst du jederzeit selbst
+prüfen. Download, Installation und Neustart beginnen erst nach deinem Klick;
+Lotse akzeptiert nur passend kryptografisch signierte Universal-Pakete.
+
 ### Alternativ selbst bauen
 
 Quellcode, Dokumentation und eigene Klänge stehen unter [Apache-2.0](../LICENSE).
@@ -47,6 +54,10 @@ die Originalmarke und App-Icons durch eigene Grafiken und kennzeichnest Änderun
 Eigene Builds übernehmen die Signatur und Notarisierung des Originals nicht.
 Für eine signierte Veröffentlichung brauchst du deine eigenen Apple-Zugänge:
 [Release-Anleitung](RELEASE.md).
+Ein dauerhafter Fork muss außerdem den offiziellen Lotse-Updater in
+`src-tauri/tauri.conf.json` entfernen oder durch einen eigenen HTTPS-Feed und
+einen eigenen Update-Schlüssel ersetzen. Der private Originalschlüssel wird nicht
+mit dem Repository ausgeliefert.
 
 ## Der erste Start
 

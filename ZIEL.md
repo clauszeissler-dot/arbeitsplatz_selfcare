@@ -107,3 +107,15 @@ erkannte Tasks/Projekte begannen, wie lange sie aktiv waren und wann Pausen
 begannen/endeten. Die Übersicht speichert keine Rohpfade, Tabtitel oder
 vollständigen Prozessargumente und bleibt auf den begrenzten lokalen Verlauf
 beschränkt.
+
+## Sichere GitHub-Updates 2026-10-29 (A-025)
+
+Ab der ersten updaterfähigen Version kann Lotse neue offizielle Versionen direkt
+aus GitHub Releases erkennen, nach ausdrücklicher Zustimmung installieren und
+neu starten. Akzeptiert werden nur kryptografisch signierte Updatepakete aus dem
+fest konfigurierten offiziellen HTTPS-Feed. Der private Update-Schlüssel bleibt
+im geschützten Releaseprozess; Apple-Signierung und Notarisierung bleiben
+zusätzliche Pflichtgates. Die bereits verteilte `0.1.0` benötigt einmalig eine
+manuelle Aktualisierung. Zielort dieses Arbeitslaufs sind Repository, getesteter
+Universal-Build und lokaler synthetischer Update-Feed; ein neuer öffentlicher
+Release wird ohne separaten Auftrag nicht erzeugt.

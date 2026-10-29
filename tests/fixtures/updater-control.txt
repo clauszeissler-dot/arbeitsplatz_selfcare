@@ -1,0 +1,1 @@
+Lotse updater signature control fixture for version 0.2.0.

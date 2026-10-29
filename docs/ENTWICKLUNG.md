@@ -42,6 +42,9 @@ veröffentlichte Änderung auch die Texte/Markengrafik in `ui/src/dashboard.ts`,
 `ui/src/toast.ts` und den HTML-Titeln sowie eigene Icons unter `assets/` und
 `src-tauri/icons/` anpassen. Ein zusätzlicher Copyright-Hinweis für eigene
 Änderungen ist möglich; ursprüngliche erforderliche Urheberhinweise bleiben.
+Außerdem den offiziellen Updater-Endpunkt und öffentlichen Schlüssel entfernen
+oder durch einen eigenen Feed und ein eigenes Schüsselpaar ersetzen. Andernfalls
+würde der Fork nach offiziellen Lotse-Releases suchen.
 
 Für eigene Veröffentlichungen sind die Apple-Zugänge, Zertifikate und Secrets des
 eigenen Accounts zu verwenden. Die Release-Workflow-Datei enthält nur Secret-Namen;
@@ -73,5 +76,5 @@ docs/        Anleitungen, Recherche, Release
 
 - [x] Phase 1 – Mac-MVP: Ampel, Hinweise, Ghostty, Agenten, Meetings
 - [ ] Phase 2 – Kalibrieren mit echten Daten (1–2 Wochen), Schwellen anpassen
-- [ ] Phase 3 – Signierte und notarisierte Releases ([RELEASE.md](RELEASE.md)), Auto-Update
+- [x] Phase 3 – Signierte und notarisierte Releases ([RELEASE.md](RELEASE.md)), signierte GitHub-Updates ab 0.2.0
 - [ ] Phase 4 – Windows: Windows Terminal per UI Automation, Leerlauf per `GetLastInputInfo`, Signierung per Azure Trusted Signing

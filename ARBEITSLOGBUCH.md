@@ -281,3 +281,29 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Apple Accepted: App `73b7d690-8341-423b-93e8-573a376adad7`, DMG `58ccb4ac-0ef6-47f9-be12-17a028b3675d`; finale ZIP-SHA-256 `c00ad50b409d65d5435d9496eade825e7561e2da2dbca2e11bbe64779fe87b12`, DMG-SHA-256 `8706dcc49580a070d5e8a1dedf83788dea2270d86b8eab361abba4dab9d70d22`.
 - Zielprüfung ohne Dev-Server: final notarisierten `/Applications/Lotse.app`, PID 38347; Signatur/Ticket/Gatekeeper grün, keine `-1004`-Logs. Cockpit erneut geöffnet; feste Überschriften „Ampel steht auf“ und „Heute · Aufgaben & Pausen“ bei 322 Accessibility-Knoten vorhanden; `state.json` weiterhin `0600`.
 - Bestehender GitHub-Release `lotse-0.1.0` separat heruntergeladen, schreibgeschützt gemountet und kurz ohne Dev-Server gestartet: kein `-1004`. Dieser frühere Tauri-Build ist nicht betroffen; kein Austausch des veröffentlichten Downloads nötig.
+
+
+## 2026-10-29T15:39:27+01:00 – Sichere GitHub-Updates gestartet (A-025)
+
+- Nutzer beauftragt die Integration automatischer Updates aus den offiziellen GitHub Releases. Die aktuelle `0.1.0` besitzt keinen Updater und benötigt daher einmalig ein manuelles Übergangsupdate.
+- Sichtbares Ziel: updaterfähiges Cockpit, feste offizielle Updatequelle, Zustimmung vor Installation sowie kryptografisch signierte Universal-Updateartefakte und Metadaten im geschützten Releasepfad. Kein neuer Release in diesem Auftrag.
+- S1-Gate: Manipulierte, unsignierte oder falsch adressierte Updates dürfen die App nicht verändern; ein korrekt signiertes synthetisches Kontrollupdate muss den echten Prüfpfad bestehen. Privater Update-Schlüssel bleibt außerhalb von App und Repository; Apple Developer ID und Notarisierung bleiben getrennte Pflichtgates.
+- Arbeitsbeginn und Zielabgleich: 2026-10-29T15:39:27+01:00. Die fremden ungetrackten AUTO-Handoffs bleiben unangetastet. Nächster Schritt: offizielle Tauri-v2-Spezifikation mit Ego Lite prüfen, dann TDD-Red.
+
+### Zielabgleich · 2026-10-29T16:01:42+01:00
+
+- Updater, Cockpit-Bedienung, geteilte Fensterrechte und signierter Releasepfad sind implementiert. Der echte Universal-Build `0.2.0` ist Developer-ID-signiert und der Laufzeitverifier akzeptiert sein signiertes Archiv; eine Bit-Manipulation und die Wiederverwendung derselben Signatur für `0.3.0` werden abgelehnt.
+- Der private Updater-Schlüssel liegt nicht im Repository, sondern nur als generische Schlüsselbundobjekte; im Quellstand befindet sich ausschließlich der öffentliche Prüfschlüssel. Ein zusätzlicher Schutz lehnt `/` als Ausgabeziel des Artefaktskripts ab.
+- Die lokale GitHub-CLI-Authentifizierung ist abgelaufen. Deshalb wurden weder Environment-Secrets noch PR/Remote-Änderungen behauptet oder vorgenommen. Lokale Abschlussprüfung und Commit werden unabhängig davon fertiggestellt; kein Tag oder Release.
+
+### Lokale Abnahme und Release-Secret-Gate · 2026-10-29T16:10:46+01:00
+
+- GitHub-CLI-Zugang über den bereits funktionierenden macOS-Credential-Helper wiederhergestellt; ein kurzzeitig verwendeter isolierter Ego-Lite-Gerätefluss wurde ohne Browser-Fallback sauber beendet. Im geschützten Environment `production-release` liegen jetzt `TAURI_SIGNING_PRIVATE_KEY` und `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; kontrolliert wurden ausschließlich Namen und Aktualisierungszeit, keine Werte.
+- Das Universal-Bundle wurde nach einer inkonsistenten alten lokalen Signatur frisch mit `Developer ID Application: Claus Zeissler (ZWT6395G7Q)` signiert und strikt verifiziert (`x86_64 arm64`, Version `0.2.0`). Das daraus neu erzeugte Updatearchiv hat SHA-256 `4f68c1199e42f15cc3bc64be4e84b9267ef673850a0a8ad6a50d51c9921d9814`; sein realer Tauri-Laufzeitverifier- und Manipulationstest ist grün.
+- Frische Gates: 8/8 UI-Tests, Produktions-Frontendbuild, zunächst 18/18, nach CI-Korrektur 19/19 Python-/Release-/Securitytests, 44 reguläre Rust-Tests plus realer ignorierter Archivtest, Formatierung, Clippy mit Warnungen als Fehler, Shellsyntax, Diff-Check und npm-Audit mit 0 Schwachstellen. Updater-Prüfung hat 30 Sekunden Timeout, der bewusste Download/Installationsschritt fünf Minuten.
+- Apple-Environment-Secrets bleiben weiterhin absent; der künftige Releasejob stoppt damit vor Signierung und Notarisierung. Kein Tag, Draft oder Release wurde angelegt. Nächster Schritt: gezielter Commit, Push, geschützter PR und Remote-CI.
+
+### CI-Rückkopplung · 2026-10-29T16:13:55+01:00
+
+- PR #13 scheiterte im Ubuntu-Job unmittelbar im Python-Vertragstest, während das macOS-Gate noch wartete. Ursache war die macOS-spezifische `plutil`-Abhängigkeit im ansonsten synthetisch plattformneutralen Artefakttest.
+- Die Versionslesung nutzt jetzt Python-`plistlib`; Regressionstest erzwingt die Linux-Testbarkeit und verbietet `plutil` im Artefaktskript. 19/19 Tests und Shellsyntax lokal grün. Korrigierter Commit/CI-Lauf folgt; der fehlgeschlagene Erstlauf wird nicht als Abnahme gezählt.

@@ -1,5 +1,65 @@
 # Aktueller Arbeitsplan
 
+## Sichere Updates aus GitHub Releases · A-025
+
+**Sichtbares Ergebnis / Zielort:** Eine updaterfähige Lotse-App zeigt im Cockpit
+den Updatezustand, kann manuell nach einer neueren offiziellen GitHub-Version
+suchen und installiert sie erst nach Zustimmung und erfolgreicher
+kryptografischer Prüfung. Der Releasepfad erzeugt die dafür nötigen signierten
+Universal-Artefakte und Metadaten. Zielorte sind der Feature-Branch, ein lokaler
+synthetischer Update-Feed und ein echter Universal-App-Build; kein neuer
+öffentlicher Release.
+
+**Abschlussnachweis:** beobachtete Red/Green-Tests für UI-Zustände und
+Releasevertrag; S1-Missbrauchstest lehnt manipuliertes/unsigniertes Paket ab,
+während das korrekt signierte Kontrollpaket akzeptiert wird; vollständige
+Rust-/Frontend-/Python-/Securitytests, Formatierung, Clippy und Universal-Build;
+Updater-Konfiguration enthält nur öffentlichen Schlüssel und festen offiziellen
+HTTPS-Endpunkt. Dokumentation benennt den einmaligen manuellen Sprung von
+`0.1.0`.
+
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T15:39:27+01:00 /
+2026-10-29T16:01:42+01:00.
+
+**Sicherheitsgate S1:** Autorisiert sind lokaler Code, synthetische lokale
+Updateartefakte und der eigene GitHub-Releasepfad. Keine Produktionseinreichung,
+kein echter Release und keine Verwendung/Anzeige privater Schlüssel. Invarianten:
+fest gebundener offizieller HTTPS-Feed; Update erst nach Signaturprüfung und
+Nutzerzustimmung; fehlende/fehlerhafte Metadaten bleiben sichtbar fehlerhaft und
+verändern die installierte App nicht; privater Update-Schlüssel nur als
+geschütztes Release-Secret; Apple-Signierung/Notarisierung nicht durch die
+Updater-Signatur ersetzen.
+
+1. [x] Offizielle Tauri-v2-Updater-Spezifikation ausschließlich mit Ego Lite
+   prüfen; bestehenden UI-, Rust- und Releasepfad zuordnen.
+2. [x] Funktionale Red-Tests für Updatezustände/Bedienung und Releaseartefakte
+   schreiben und mit erwarteter Ursache scheitern sehen.
+3. [x] Minimalen Updater, Cockpit-Bedienung, feste Feed-/Public-Key-Konfiguration
+   und sicheren Release-Artefaktpfad implementieren; Dokumentation ergänzen.
+4. [x] S1 SECURITY RED/GREEN: legitimes signiertes Kontrollupdate und
+   manipulierte/unsignierte Gegenprobe mit unverändertem Zielzustand ausführen.
+5. [ ] Gesamttests, Universal-Build und lokale Zielprüfung; Anforderungen,
+   Projekt-/Global-Log aktualisieren, gezielt committen und über geschützten PR
+   integrieren. Kein Tag und kein Release.
+
+**Zielabgleich 2026-10-29T16:01:42+01:00:** Schritte 1–4 sind mit dem
+Produktionsschlüssel, einem echten Universal-Archiv und negativer Manipulations-
+sowie Versionsbindungsprobe belegt. Die vollständigen lokalen Gates waren grün;
+nach der letzten Ausgabepfad-Härtung laufen sie erneut. GitHub-CLI-Zugang ist
+abgelaufen und blockiert derzeit nur Environment-Secrets, PR und Remote-Kontrolle.
+Kein Release wurde angelegt.
+
+**Nächster Schritt:** finale Gates und lokaler Commit; danach GitHub-Zugang
+erneuern, die zwei Updater-Secrets hinterlegen und den geschützten PR integrieren.
+
+**CI-Korrektur 2026-10-29T16:13:55+01:00:** PR #13 deckte im verpflichtenden
+Ubuntu-Securityjob auf, dass der neue Artefaktvertrag macOS-`plutil` voraussetzte.
+Die Plist-Prüfung verwendet jetzt portables Python-`plistlib`; ein neuer
+Regressionstest verbietet `plutil` in diesem Skript. Lokal 19/19 grün, erneuter
+CI-Lauf folgt.
+
+---
+
 ## Stabilität, Farblogik und Zeitübersicht · A-021 bis A-023
 
 ### Reale Reproduktion und Produktionsbuild-Korrektur · A-024
