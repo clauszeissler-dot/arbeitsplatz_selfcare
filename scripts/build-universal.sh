@@ -27,15 +27,29 @@ CARGO_TARGET_DIR="$X86_ROOT" npx tauri bundle --target x86_64-apple-darwin --bun
   printf '%s\n' 'Einer der architekturspezifischen App-Builds fehlt.' >&2
   exit 3
 }
+ARM_EXECUTABLE_NAME="$(plutil -extract CFBundleExecutable raw "$ARM_APP/Contents/Info.plist")"
+X86_EXECUTABLE_NAME="$(plutil -extract CFBundleExecutable raw "$X86_APP/Contents/Info.plist")"
+if [[ -z "$ARM_EXECUTABLE_NAME" || "$ARM_EXECUTABLE_NAME" == */* || "$ARM_EXECUTABLE_NAME" != "$X86_EXECUTABLE_NAME" ]]; then
+  printf 'Ungültige oder abweichende CFBundleExecutable-Werte: %s / %s\n' \
+    "$ARM_EXECUTABLE_NAME" "$X86_EXECUTABLE_NAME" >&2
+  exit 3
+fi
+ARM_EXECUTABLE="$ARM_APP/Contents/MacOS/$ARM_EXECUTABLE_NAME"
+X86_EXECUTABLE="$X86_APP/Contents/MacOS/$X86_EXECUTABLE_NAME"
+OUTPUT_EXECUTABLE="$OUTPUT_APP/Contents/MacOS/$ARM_EXECUTABLE_NAME"
+[[ -f "$ARM_EXECUTABLE" && -f "$X86_EXECUTABLE" ]] || {
+  printf '%s\n' 'Eines der in Info.plist benannten Programme fehlt.' >&2
+  exit 3
+}
 rm -rf "$OUTPUT_APP"
 mkdir -p "$(dirname "$OUTPUT_APP")"
 ditto "$ARM_APP" "$OUTPUT_APP"
 lipo -create \
-  "$ARM_APP/Contents/MacOS/Lotse" \
-  "$X86_APP/Contents/MacOS/Lotse" \
-  -output "$OUTPUT_APP/Contents/MacOS/Lotse"
+  "$ARM_EXECUTABLE" \
+  "$X86_EXECUTABLE" \
+  -output "$OUTPUT_EXECUTABLE"
 
-ARCHS="$(lipo -archs "$OUTPUT_APP/Contents/MacOS/Lotse")"
+ARCHS="$(lipo -archs "$OUTPUT_EXECUTABLE")"
 [[ "$ARCHS" == *arm64* && "$ARCHS" == *x86_64* ]] || {
   printf 'Universal-Binary unvollständig: %s\n' "$ARCHS" >&2
   exit 3

@@ -43,6 +43,11 @@ class WorkflowSecurityTests(unittest.TestCase):
         self.assertIn("scripts/ci-release.sh", workflow)
         self.assertIn("--draft", (ROOT / "scripts" / "ci-release.sh").read_text())
 
+    def test_universal_build_preserves_the_plist_executable_name(self):
+        script = (ROOT / "scripts" / "build-universal.sh").read_text()
+        self.assertIn("CFBundleExecutable", script)
+        self.assertNotIn("Contents/MacOS/Lotse", script)
+
 
 class TauriSecurityTests(unittest.TestCase):
     def test_capabilities_do_not_grant_network_shell_or_filesystem(self):
