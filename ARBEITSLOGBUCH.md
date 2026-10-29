@@ -264,3 +264,9 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Universal-Build `x86_64 arm64` mit Developer ID signiert. Apple Accepted: App-Submission `31d8f567-de74-4030-8f91-a648d3b44158`, DMG-Submission `bf8a1a41-0522-479b-b7ab-fe8161f93dbd`; Tickets, strikte Signatur, Gatekeeper und DMG-Integrität grün. SHA-256: ZIP `4ca8a7690cda04744da7fec3e25b036b719edc55834245fb52a08ab2ca1e3284`, DMG `43fd20755e20cb70aa0dfc2e9fc43c488baa5ddec39ea4ab70110c23dc1f3167`.
 - Zielort: alte `/Applications/Lotse.app` gezielt beendet und unter `/private/tmp/Lotse.app.before-a021-20261029` rückrollbar gesichert. Neue notarisierten App läuft aus `/Applications/Lotse.app`; Cockpit per Accessibility `background only=false`, `visible=true`. App-Datenordner `0700`, `state.json`/`settings.json` `0600`.
 - Kein Tag und kein GitHub-Release. README, DE-/EN-Anleitung und SECURITY.md an Zeitansicht, Farblogik, Recovery und Datenumfang angepasst. Nächster Schritt: geschützten PR integrieren.
+
+### Remote-Abschluss · 2026-10-29T14:46:18+01:00
+
+- PR #11 nach beiden geschützten Pflichtchecks per Squash gemergt; `main` steht auf `c78209e`.
+- `Kernlogik und Security` erfolgreich in 2:23 Minuten; `Mac-App bauen (unsigniert)` erfolgreich in 6:46 Minuten einschließlich Workspace-Tests, Clippy, Frontend- und Universal-Build.
+- Der lokal installierte notarisierten Stand entspricht dem integrierten Produktcode. Die vier fremden AUTO-Handoffs wurden weder gestagt noch verändert. Kein Tag, kein GitHub-Release und keine Änderung des bestehenden Downloads.

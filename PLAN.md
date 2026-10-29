@@ -14,7 +14,8 @@
 5. [x] Gesamttests/Build, Ego-Lite-TaskSpace, lokalen Developer-ID-/Apple-Ablauf abschließen, App unter `/Applications` aktualisieren und tatsächlichen Prozess, Dashboard, Schreibzyklen und Dateirechte prüfen.
 
 **Abschluss 2026-10-29T14:37:04+01:00:** Kein Lotse-/WebKit-Crashbericht und kein Prozessabsturz belegt. Der native Takt/Klang lief weiter; Dashboard-Start hatte keinen Catch/Retry und Toasts bezogen aktuelle Hinweise ausschließlich aus einem flüchtigen Event. Dieses Fehlerbild erklärt schwarze/fehlende WebViews bei weiterlaufendem Ton und die Heilung durch Neustart. Wiederholtes Schließen ist idempotent und nicht als Ursache belegt. 43 Rust-, 5 UI- und 12 Release-/Securitytests, Build und Clippy grün. Ego Lite bestätigt Fokus Gelb und Pause Cyan samt Zeitleiste ohne horizontalen Overflow. Universal-App/DMG Apple Accepted; installierte `/Applications/Lotse.app` besteht Signatur, Ticket und Gatekeeper, läuft sichtbar und schreibt `0600` in `0700`.
-**Nächster Schritt:** geprüften Branch committen, über den geschützten GitHub-PR integrieren und Remote-Checks kontrollieren; kein Tag und kein Release.
+**Remote-Abschluss 2026-10-29T14:46:18+01:00:** PR #11 nach grünen Pflichtchecks gemergt; Squash-Commit `c78209e`. `Kernlogik und Security` 2:23 Minuten, `Mac-App bauen (unsigniert)` 6:46 Minuten. Kein Tag und kein GitHub-Release.
+**Nächster Schritt:** Realbetrieb beobachten. Falls ein WebView-Fehler wiederkehrt, die feste Kategorie und den Zeitstempel aus `ui-diagnostics.json` mit dem sichtbaren Zustand abgleichen; keine privaten Rohdaten erforderlich.
 
 ---
 
