@@ -20,7 +20,12 @@ Skript baut ARM64 und x86_64 per Cargo in getrennten Zielverzeichnissen, lässt
 Tauri anschließend nur noch die jeweiligen App-Bundles erzeugen und verbindet
 die beiden geprüften Binärdateien mit `lipo`. Dadurch werden Host-Prozedural-
 Makros nicht aus einem Cross-Target-Verzeichnis geladen oder zwischen den
-Architekturen überschrieben.
+Architekturen überschrieben. Einmalig werden beide Ziele benötigt:
+
+```sh
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+scripts/build-universal.sh
+```
 
 ## Eigene Builds und Veröffentlichungen
 
