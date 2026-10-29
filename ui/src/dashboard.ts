@@ -8,6 +8,7 @@ import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
 import { api, listen, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
+import { focusVisual, loadDashboardData, type FocusTone } from "./dashboard-model";
 import { icons } from "./icons";
 
 const app = document.getElementById("app")!;
@@ -28,12 +29,12 @@ const liters = (ml: number) => (ml / 1000).toLocaleString("de-DE", { minimumFrac
 const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.floor(min % 60)).padStart(2, "0")}`;
 const pct = (a: number, b: number) => Math.max(0, Math.min(100, b > 0 ? (a / b) * 100 : 0));
 
-function ring(value: number, max: number, level: Level, label: string, sub: string): string {
+function ring(value: number, max: number, tone: FocusTone, label: string, sub: string): string {
   const r = 52;
   const c = 2 * Math.PI * r;
   const p = pct(value, max) / 100;
   return `
-    <div class="ring lvl-${level}">
+    <div class="ring tone-${tone}">
       <svg viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="${r}" class="track"/>
         <circle cx="60" cy="60" r="${r}" class="bar" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p)}"/>
@@ -61,14 +62,15 @@ function chips(s: Snapshot): string {
 }
 
 function focusCard(s: Snapshot): string {
+  const blockLevel = s.metrics.find((metric) => metric.key === "block")?.level ?? "green";
+  const visual = focusVisual(s.in_break, s.block_min, blockLevel);
   const hard = 75;
-  const level: Level = s.block_min >= 90 ? "red" : s.block_min >= 60 ? "yellow" : "green";
   const longLeft = Math.max(0, 120 - s.since_long_break_min);
   return `
-    <section class="card">
-      <div class="card-head"><span class="eyebrow">Fokus &amp; Pause</span>${icons.break}</div>
+    <section class="card focus-card tone-${visual.tone}">
+      <div class="card-head"><span class="eyebrow">Fokus &amp; Pause</span><span class="mode-badge">${visual.mode === "pause" ? "PAUSE" : "FOKUS"}</span></div>
       <div class="split">
-        ${ring(s.in_break ? 0 : s.block_min, hard, level, s.in_break ? "Pause" : `${s.block_min}′`, "am Stück")}
+        ${ring(visual.value, hard, visual.tone, visual.label, visual.mode === "pause" ? "läuft" : "am Stück")}
         <ul class="facts">
           <li><span>Nächste Pause</span><strong>${s.in_break ? "läuft" : s.next_break_min > 0 ? `in ${s.next_break_min} min` : "jetzt"}</strong></li>
           <li><span>Lange Pause</span><strong>${longLeft > 0 ? `in ${longLeft} min` : "fällig"}</strong></li>
@@ -77,8 +79,8 @@ function focusCard(s: Snapshot): string {
       </div>
       <div class="row">
         ${s.in_break
-          ? `<button class="btn primary" data-act="break_end">${icons.pause} Pause beenden</button>`
-          : `<button class="btn primary" data-act="break_start">${icons.break} Pause starten</button>`}
+          ? `<button class="btn pause" data-act="break_end">${icons.pause} Pause beenden</button>`
+          : `<button class="btn pause-outline" data-act="break_start">${icons.break} Pause starten</button>`}
       </div>
     </section>`;
 }
@@ -208,6 +210,45 @@ function workList(s: Snapshot): string {
     </section>`;
 }
 
+const atTime = (epochSeconds: number) => new Date(epochSeconds * 1000).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+function duration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  return minutes >= 60 ? `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")} h` : `${minutes} min`;
+}
+
+function timeline(s: Snapshot): string {
+  const tasks = [...s.tasks_today].sort((a, b) => Number(b.active) - Number(a.active) || b.started_at - a.started_at);
+  const pauses = [...s.break_timeline].sort((a, b) => b.start - a.start);
+  const kind = { project: "Projekt", app: "App", agent: "Agent" } as const;
+  return `
+    <section class="card wide timeline-card">
+      <div class="card-head">
+        <span class="eyebrow">Heute · Aufgaben &amp; Pausen</span>
+        <span class="mono">lokal · nur Anzeigenamen</span>
+      </div>
+      <div class="timeline-columns">
+        <div>
+          <h3>Aufgaben</h3>
+          <div class="timeline-list">${tasks.length ? tasks.map((task) => `
+            <article class="timeline-item ${task.active ? "active" : ""}">
+              <i class="timeline-dot"></i>
+              <div><strong>${esc(task.label)}</strong><span>${kind[task.kind]} · begonnen ${atTime(task.started_at)}</span></div>
+              <div class="timeline-duration"><strong>${duration(task.active_secs)}</strong><span>${task.active ? "läuft" : `zuletzt ${atTime(task.last_active_at)}`}</span></div>
+            </article>`).join("") : `<p class="empty">Heute wurde noch keine Aufgabe erkannt.</p>`}</div>
+        </div>
+        <div>
+          <h3>Pausen</h3>
+          <div class="timeline-list">${pauses.length ? pauses.map((pause) => `
+            <article class="timeline-item pause-item ${pause.end === null ? "active" : ""}">
+              <i class="timeline-dot"></i>
+              <div><strong>${pause.end === null ? "Pause läuft" : "Pause"}</strong><span>${atTime(pause.start)}${pause.end === null ? " – jetzt" : ` – ${atTime(pause.end)}`}</span></div>
+              <div class="timeline-duration"><strong>${duration(pause.duration_secs)}</strong><span>${pause.end === null ? "aktuell" : "Dauer"}</span></div>
+            </article>`).join("") : `<p class="empty">Heute wurde noch keine Pause erfasst.</p>`}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
 function history(s: Snapshot): string {
   const days = s.history.slice(-7).reverse();
   if (!days.length) return "";
@@ -263,6 +304,7 @@ function render() {
 
       <div class="cards">${focusCard(s)}${waterCard(s)}${postureCard(s)}</div>
       ${metricsGrid(s)}
+      ${timeline(s)}
       ${workList(s)}
       ${history(s)}
 
@@ -434,6 +476,9 @@ app.addEventListener("click", (e) => {
     render();
   } else if (act === "refresh") {
     void api.refresh();
+  } else if (act === "retry") {
+    snap = null;
+    void load();
   } else {
     void api.act(act).catch(() => {
       storageHealth = { ok: false, message: "Die Aktion konnte nicht sicher gespeichert werden." };
@@ -442,17 +487,35 @@ app.addEventListener("click", (e) => {
   }
 });
 async function load() {
-  [snap, storageHealth] = await Promise.all([api.snapshot(), api.storageHealth()]);
-  render();
+  renderLoading();
+  for (const delay of [0, 250, 750]) {
+    if (delay) await new Promise((resolve) => window.setTimeout(resolve, delay));
+    const result = await loadDashboardData(api);
+    if (result.ok) {
+      snap = result.snapshot;
+      storageHealth = result.storageHealth;
+      render();
+      return;
+    }
+  }
+  void api.reportUiIssue("dashboard-load").catch(() => {});
+  app.innerHTML = `<main class="boot-state" role="alert"><div class="boot-panel"><span class="eyebrow">Lotse</span><h1>Cockpit konnte nicht geladen werden.</h1><p>Die Hintergrundfunktion läuft weiter. Du kannst die Oberfläche neu verbinden, ohne Lotse neu zu starten.</p><button class="btn primary" data-act="retry">Erneut verbinden</button></div></main>`;
+}
+
+function renderLoading() {
+  if (snap) return;
+  app.innerHTML = `<main class="boot-state" aria-busy="true"><div class="boot-panel"><span class="eyebrow">Lotse</span><h1>Cockpit wird verbunden …</h1><p>Lokale Daten und Status werden geladen.</p></div></main>`;
 }
 
 void listen<Snapshot>("snapshot", (s) => {
   snap = s;
   // Offenes Einstellungsformular nicht beim Tippen überschreiben
   if (!settingsOpen) render();
-});
+}).catch(() => void api.reportUiIssue("dashboard-listener").catch(() => {}));
 void listen<StorageHealth>("storage_health", (health) => {
   storageHealth = health;
   if (!settingsOpen) render();
-});
+}).catch(() => void api.reportUiIssue("dashboard-listener").catch(() => {}));
+window.addEventListener("error", () => void api.reportUiIssue("dashboard-runtime").catch(() => {}));
+window.addEventListener("unhandledrejection", () => void api.reportUiIssue("dashboard-runtime").catch(() => {}));
 void load();

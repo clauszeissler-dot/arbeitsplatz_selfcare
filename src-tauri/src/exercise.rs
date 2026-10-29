@@ -39,6 +39,10 @@ impl Exercise {
     }
 }
 
+pub fn dismiss(slot: &mut Option<Exercise>) -> Option<Exercise> {
+    slot.take()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -72,5 +76,27 @@ mod tests {
         assert!(!e.finish_if_due(now + Duration::from_secs(40)));
         e.hint.duration_seconds = None;
         assert!(e.start(now, true).is_err());
+    }
+
+    #[test]
+    fn repeatedly_dismissing_or_ignoring_a_hint_is_idempotent() {
+        let mut slot = Some(Exercise {
+            hint: Hint {
+                kind: HintKind::Eyes,
+                level: Level::Green,
+                title: "Augen".into(),
+                body: String::new(),
+                actions: vec![],
+                at: 0,
+                duration_seconds: Some(20),
+            },
+            deadline: None,
+            finished: false,
+            sound: false,
+        });
+
+        assert!(dismiss(&mut slot).is_some());
+        assert!(dismiss(&mut slot).is_none());
+        assert!(dismiss(&mut slot).is_none());
     }
 }

@@ -96,3 +96,14 @@ eine getrennte, manuell freizugebende Signier- und Notarisierungsstufe. Das
 öffentliche Solo-Repository verlangt Pull Requests und erfolgreiche Prüfungen;
 Force-Push und Löschung von `main` bleiben gesperrt. Abnahme ist der lokal
 geprüfte und remote kontrollierte Repository-Stand, nicht ein neuer Release.
+
+## Stabilität und Tagesverlauf 2026-10-29 (A-021 bis A-023)
+
+Lotse soll auch nach vielen ignorierten oder geschlossenen Hinweisen stabil und
+sichtbar bleiben. Ein schwarzes Dashboard braucht einen belegten, lokal
+diagnostizierbaren Wiederherstellungspfad. Fokus/Aktivität und Pause erhalten
+einheitliche semantische Farben. Eine kompakte Tagesübersicht zeigt lokal, wann
+erkannte Tasks/Projekte begannen, wie lange sie aktiv waren und wann Pausen
+begannen/endeten. Die Übersicht speichert keine Rohpfade, Tabtitel oder
+vollständigen Prozessargumente und bleibt auf den begrenzten lokalen Verlauf
+beschränkt.

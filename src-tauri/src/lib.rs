@@ -7,6 +7,7 @@ mod persistence;
 use lotse_core::engine::State as EngineState;
 use lotse_core::{Engine, Hint, HintKind, Level, Settings, Snapshot};
 use persistence::{mutate_and_save, Persistence};
+use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::image::Image;
@@ -25,6 +26,7 @@ struct Shared {
     storage_warning: Mutex<Option<String>>,
     exercise: Mutex<Option<exercise::Exercise>>,
     status_item: Mutex<Option<MenuItem<tauri::Wry>>>,
+    ui_issues: Mutex<VecDeque<UiIssue>>,
 }
 
 fn now() -> i64 {
@@ -39,6 +41,12 @@ fn today() -> String {
 struct StorageHealth {
     ok: bool,
     message: Option<String>,
+}
+
+#[derive(Clone, serde::Deserialize, serde::Serialize)]
+struct UiIssue {
+    at: i64,
+    context: String,
 }
 
 fn storage_health(shared: &Shared) -> StorageHealth {
@@ -183,8 +191,11 @@ fn show_toast(app: &AppHandle, hint: &Hint) -> bool {
         finished: false,
         sound: true,
     });
+    if w.show().is_err() {
+        *exercise = None;
+        return false;
+    }
     let _ = app.emit_to("toast", "hint", hint);
-    let _ = w.show();
     true
 }
 
@@ -371,6 +382,38 @@ fn get_storage_health(app: AppHandle) -> StorageHealth {
 }
 
 #[tauri::command]
+fn get_current_hint(app: AppHandle) -> Option<Hint> {
+    app.state::<Shared>()
+        .exercise
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|exercise| exercise.hint.clone())
+}
+
+#[tauri::command]
+fn report_ui_issue(app: AppHandle, context: String) -> Result<(), String> {
+    const ALLOWED: &[&str] = &[
+        "dashboard-load",
+        "dashboard-listener",
+        "dashboard-runtime",
+        "toast-load",
+        "toast-listener",
+        "toast-runtime",
+    ];
+    if !ALLOWED.contains(&context.as_str()) {
+        return Err("Unbekannter Diagnosekontext".into());
+    }
+    let shared = app.state::<Shared>();
+    let mut issues = shared.ui_issues.lock().unwrap();
+    issues.push_back(UiIssue { at: now(), context });
+    while issues.len() > 50 {
+        issues.pop_front();
+    }
+    shared.persistence.save("ui-diagnostics.json", &*issues)
+}
+
+#[tauri::command]
 fn save_settings(app: AppHandle, settings: Settings) -> Result<(), String> {
     let shared = app.state::<Shared>();
     let mut settings = settings;
@@ -403,7 +446,7 @@ fn act(app: AppHandle, action: String, kind: Option<HintKind>) -> Result<(), Str
 
 #[tauri::command]
 fn hide_toast(app: AppHandle) {
-    let ended = app.state::<Shared>().exercise.lock().unwrap().take();
+    let ended = exercise::dismiss(&mut app.state::<Shared>().exercise.lock().unwrap());
     if ended.is_some_and(|e| {
         e.deadline.is_some() && matches!(e.hint.kind, HintKind::Break | HintKind::LongBreak)
     }) {
@@ -507,6 +550,8 @@ pub fn run() {
             get_snapshot,
             get_settings,
             get_storage_health,
+            get_current_hint,
+            report_ui_issue,
             save_settings,
             act,
             hide_toast,
@@ -528,15 +573,24 @@ pub fn run() {
             let state = persistence
                 .load::<EngineState>("state.json")
                 .map_err(std::io::Error::other)?;
-            let load_warning = settings.warning.or(state.warning).map(|_| {
-                "Eine beschädigte lokale Datendatei wurde gesichert und neu angelegt.".to_string()
-            });
+            let ui_issues = persistence
+                .load::<VecDeque<UiIssue>>("ui-diagnostics.json")
+                .map_err(std::io::Error::other)?;
+            let load_warning = settings
+                .warning
+                .or(state.warning)
+                .or(ui_issues.warning)
+                .map(|_| {
+                    "Eine beschädigte lokale Datendatei wurde gesichert und neu angelegt."
+                        .to_string()
+                });
             app.manage(Shared {
                 engine: Mutex::new(Engine::new(settings.value, state.value)),
                 persistence,
                 storage_warning: Mutex::new(load_warning),
                 exercise: Mutex::new(None),
                 status_item: Mutex::new(None),
+                ui_issues: Mutex::new(ui_issues.value),
             });
 
             let status = build_tray(app.handle())?;

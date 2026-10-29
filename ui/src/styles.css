@@ -38,6 +38,10 @@ button { font: inherit; color: inherit; }
 .lvl-green { --lvl: var(--green); }
 .lvl-yellow { --lvl: var(--yellow); }
 .lvl-red { --lvl: var(--red); }
+.tone-green { --lvl: var(--green); }
+.tone-yellow { --lvl: var(--yellow); }
+.tone-red { --lvl: var(--red); }
+.tone-pause { --lvl: var(--secondary); }
 
 .eyebrow {
   font-family: var(--font-head);
@@ -74,6 +78,10 @@ button { font: inherit; color: inherit; }
 .btn:active { transform: translateY(1px); }
 .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .btn.primary:hover { background: #ff8a3a; }
+.btn.pause { background: var(--secondary); border-color: var(--secondary); color: #07191a; }
+.btn.pause:hover { background: #5ff9ff; border-color: #5ff9ff; }
+.btn.pause-outline { color: var(--secondary); border-color: rgba(0, 245, 255, 0.45); background: var(--secondary-soft); }
+.btn.pause-outline:hover { border-color: var(--secondary); background: rgba(0, 245, 255, 0.18); }
 .btn.ghost { border-color: transparent; color: var(--muted); }
 .btn.ghost:hover { color: var(--foreground); }
 .btn svg { width: 16px; height: 16px; flex: none; }

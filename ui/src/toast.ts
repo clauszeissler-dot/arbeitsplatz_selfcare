@@ -7,6 +7,7 @@ import "./toast.css";
 import { api, inTauri, listen, mockToastHint, type Hint } from "./api";
 import { playSound } from "./sounds";
 import { icons, kindIcon } from "./icons";
+import { selectNewestHint } from "./toast-model";
 
 const root = document.getElementById("toast")!;
 let hideTimer: number | undefined;
@@ -84,6 +85,10 @@ function render(h: Hint) {
   requestAnimationFrame(() => root.classList.add("in"));
   armTimer();
 }
+function acceptHint(h: Hint) {
+  const selected = selectNewestHint(current, h);
+  if (selected === h) render(h);
+}
 async function start() {
   if (running || starting || !current?.duration_seconds) return;
   starting = true;
@@ -135,7 +140,33 @@ root.addEventListener("mouseenter", () => {
   root.querySelector<HTMLElement>(".timer")?.style.setProperty("animation-play-state", "paused");
 });
 root.addEventListener("mouseleave", armTimer);
-void api.settings().then((s) => (toastSeconds = s.toast_seconds));
-void listen<Hint>("hint", render);
-void listen<{ remaining: number; finished: boolean }>("timer_update", (u) => updateTimer(u.remaining, u.finished));
-if (!inTauri) render(mockToastHint());
+
+async function recoverCurrentHint() {
+  try {
+    const hint = await api.currentHint();
+    if (hint) acceptHint(hint);
+  } catch {
+    void api.reportUiIssue("toast-load").catch(() => {});
+  }
+}
+
+async function boot() {
+  try {
+    await Promise.all([
+      listen<Hint>("hint", acceptHint),
+      listen<{ remaining: number; finished: boolean }>("timer_update", (u) => updateTimer(u.remaining, u.finished)),
+    ]);
+  } catch {
+    void api.reportUiIssue("toast-listener").catch(() => {});
+  }
+  void api.settings().then((s) => (toastSeconds = s.toast_seconds)).catch(() => {
+    void api.reportUiIssue("toast-load").catch(() => {});
+  });
+  if (inTauri) await recoverCurrentHint();
+  else acceptHint(mockToastHint());
+}
+
+window.addEventListener("focus", () => { if (inTauri) void recoverCurrentHint(); });
+window.addEventListener("error", () => void api.reportUiIssue("toast-runtime").catch(() => {}));
+window.addEventListener("unhandledrejection", () => void api.reportUiIssue("toast-runtime").catch(() => {}));
+void boot();

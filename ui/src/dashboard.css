@@ -161,6 +161,7 @@ main {
   gap: 14px;
 }
 .card.wide { gap: 16px; }
+.focus-card { border-top: 3px solid var(--lvl); }
 .card-head { display: flex; align-items: center; justify-content: space-between; }
 .card-head > svg { width: 20px; height: 20px; color: var(--dim); }
 .big { display: flex; align-items: baseline; gap: 8px; }
@@ -210,6 +211,16 @@ main {
 .ring-text { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .ring-text strong { font-family: var(--font-head); font-size: 28px; line-height: 1; }
 .ring-text span { font-size: 11px; color: var(--muted); }
+.mode-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--lvl);
+  border: 1px solid color-mix(in srgb, var(--lvl) 40%, transparent);
+  background: color-mix(in srgb, var(--lvl) 10%, transparent);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
 .facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; flex: 1; }
 .facts li { display: flex; flex-direction: column; }
 .facts span { font-size: 12px; color: var(--muted); }
@@ -294,6 +305,37 @@ main {
 .empty { margin: 0; color: var(--muted); font-size: 14px; }
 .empty.warn { color: var(--yellow); }
 
+/* ---------- Aufgaben- und Pausenzeit ---------- */
+.timeline-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.timeline-columns h3 { margin: 0 0 10px; font-family: var(--font-head); font-size: 14px; }
+.timeline-list { display: grid; gap: 8px; }
+.timeline-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg-deep);
+}
+.timeline-item.active { border-color: rgba(34, 197, 94, 0.32); }
+.timeline-item.pause-item.active { border-color: rgba(0, 245, 255, 0.4); background: var(--secondary-soft); }
+.timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.timeline-item.active .timeline-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.timeline-item.pause-item .timeline-dot { background: var(--secondary); box-shadow: 0 0 8px rgba(0, 245, 255, 0.65); }
+.timeline-item strong, .timeline-item span { display: block; }
+.timeline-item > div > strong { font-family: var(--font-head); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timeline-item span { color: var(--muted); font-size: 11px; }
+.timeline-duration { text-align: right; }
+.timeline-duration strong { font-family: var(--font-mono); font-size: 12px; }
+
+/* ---------- Sicherer Startzustand ---------- */
+.boot-state { min-height: 100vh; display: grid; place-items: center; padding: 32px; }
+.boot-panel { width: min(520px, 100%); padding: 28px; border: 1px solid var(--border); border-radius: 18px; background: var(--card); }
+.boot-panel h1 { margin: 8px 0; font-family: var(--font-head); font-size: 26px; }
+.boot-panel p { color: var(--muted); margin: 0 0 18px; }
+
 /* ---------- Verlauf ---------- */
 .hist { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .hist th {
@@ -366,5 +408,6 @@ input[type="number"]:focus { outline: 2px solid var(--primary); outline-offset: 
 }
 @media (max-width: 640px) {
   .cards, .metrics { grid-template-columns: 1fr; }
+  .timeline-columns { grid-template-columns: 1fr; }
   main { padding: 20px 16px; }
 }

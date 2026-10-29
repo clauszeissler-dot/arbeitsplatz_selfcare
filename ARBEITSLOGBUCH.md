@@ -242,3 +242,25 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Folge-PR #10: Skript liest `CFBundleExecutable` aus beiden architekturspezifischen Plists, lehnt leere, pfadhaltige oder abweichende Namen ab und verwendet den exakten Wert für `lipo`. Test danach grün; tatsächliches Bundle enthält `Contents/MacOS/lotse`, `x86_64 arm64`.
 - Lokaler Developer-ID-Test nach Korrektur: `codesign --verify --deep --strict` erfolgreich; Identifier `de.kiaffairs.lotse`, Team `ZWT6395G7Q`, erwartete Authority und Hardened Runtime bestätigt. Keine Apple-Einreichung, kein Tag und kein Release.
 - Laufzeitkontrolle: `state.json` wurde nach Start nachweislich mehrfach atomar neu geschrieben und blieb `0600`; `settings.json` `0600`, App-/Soundordner `0700`. Damit ist die Migration nicht nur testseitig, sondern mit der tatsächlich laufenden neuen Instanz belegt.
+
+
+## 2026-10-29T14:22:45+01:00 – Stabilität, Farblogik und Zeitübersicht gestartet (A-021 bis A-023)
+
+- Nutzer meldet: Klänge kamen an, aber Benachrichtigungen nicht mehr; Dashboard blieb schwarz, Neustart half. Zuvor wurden Aufforderungen wiederholt ignoriert/weggeklickt. Ursache ist offen und wird vor jeder Korrektur aus Logs, Crashreports und Zustandsfluss ermittelt.
+- Zusätzliche Wünsche: konsistente Farblogik für Fokus/Pause und sichtbarer Tagesverlauf mit Beginn/aktiver Dauer erkannter Tasks sowie Beginn/Ende/Dauer von Pausen.
+- Datenschutzannahme: „Tasks“ meint die bereits erkannten Projekte/Agenten. Nur lokale, begrenzte Anzeige mit abgeleiteten Namen und Zeitwerten; keine dauerhafte Speicherung von Rohpfaden, Tabtiteln oder vollständigen Prozessargumenten.
+- Der zuvor gestartete direkte Apple-Notarisierungsbefehl wurde vom Werkzeug/Nutzerfluss abgebrochen. Vor einer Wiederaufnahme wird geprüft, ob ein Prozess oder Teilartefakt zurückblieb. Kein erfolgreicher Apple-Status wird angenommen.
+- Arbeitsbeginn und Zielabgleich: 2026-10-29T14:22:45+01:00. Nächster Schritt: reine Phase-1-Diagnose, noch keine Produktkorrektur.
+
+
+### A-021 bis A-023 umgesetzt und lokal abgenommen · 2026-10-29T14:37:04+01:00
+
+- Diagnose: weder in DiagnosticReports/CrashReporter noch im gefilterten Unified Log lag ein Lotse-/WebKit-Crash vor. Weiterlaufender nativer Klang belegt, dass Engine/Takt aktiv waren. Der Dashboard-Start ließ bei einem einmaligen Invoke-Fehler die leere Root ohne Catch/Retry stehen; der Toast konnte sein ausschließlich flüchtig zugestelltes `hint`-Event vor dem Listener verpassen. Ein Neustart lädt beide WebViews neu und passt damit zum beobachteten Recovery. Wiederholtes Schließen/Verwerfen nimmt den Zustand idempotent; kein Beleg, dass Ignorieren den Fehler ausgelöst hat.
+- A-021: sichtbarer Lade-/Fehlerzustand, drei begrenzte Wiederholungen und „Erneut verbinden“; Toast registriert Listener vor dem Abruf und holt den aktuellen nativen Hinweis beim Start/Fokus nach. `ui-diagnostics.json` enthält höchstens 50 Einträge nur aus Zeitstempel und erlaubter Fehlerkategorie.
+- A-022: Fokusfarbe kommt aus der konfigurierten Engine-Ampel. Pause verwendet durchgehend Cyan für Chip, Kartenkante, Modus-Badge, Ring und Beenden-Aktion; Pausenstart ist cyan umrandet.
+- A-023: heutige Zeitleiste mit erkannter Aufgabe (Projekt/App/Agent), Beginn, letzter Aktivität und aktiver Dauer sowie Pausenbeginn/-ende/-dauer. Persistiert werden höchstens 50 Aufgaben und 50 Pausen; Projektpfade werden vor Speicherung auf das letzte Segment gekürzt. Tatsächliche `state.json`: Tasks vorhanden, alle Labels ohne `/` oder `\\`, Dateimodus `0600`.
+- TDD: UI-Modelle und Core-Zeitmodell zuerst rot, danach grün. Abschluss: 43 Rust-Tests, 5 UI-Tests, 12 Python-/Release-/Securitytests, TypeScript/Vite-Build, Formatierung und Clippy erfolgreich.
+- Ego Lite TaskSpace 22 mit harmlosen Mockdaten abgeschlossen: Fokuskarte `tone-yellow` mit `#f5b00b`; Pausenkarte/Knopf `tone-pause` mit `#00f5ff`; laufende Pause und Zeitleiste sichtbar, kein horizontaler Overflow. Ausschließlich Ego Lite, kein Chrome/Playwright.
+- Universal-Build `x86_64 arm64` mit Developer ID signiert. Apple Accepted: App-Submission `31d8f567-de74-4030-8f91-a648d3b44158`, DMG-Submission `bf8a1a41-0522-479b-b7ab-fe8161f93dbd`; Tickets, strikte Signatur, Gatekeeper und DMG-Integrität grün. SHA-256: ZIP `4ca8a7690cda04744da7fec3e25b036b719edc55834245fb52a08ab2ca1e3284`, DMG `43fd20755e20cb70aa0dfc2e9fc43c488baa5ddec39ea4ab70110c23dc1f3167`.
+- Zielort: alte `/Applications/Lotse.app` gezielt beendet und unter `/private/tmp/Lotse.app.before-a021-20261029` rückrollbar gesichert. Neue notarisierten App läuft aus `/Applications/Lotse.app`; Cockpit per Accessibility `background only=false`, `visible=true`. App-Datenordner `0700`, `state.json`/`settings.json` `0600`.
+- Kein Tag und kein GitHub-Release. README, DE-/EN-Anleitung und SECURITY.md an Zeitansicht, Farblogik, Recovery und Datenumfang angepasst. Nächster Schritt: geschützten PR integrieren.

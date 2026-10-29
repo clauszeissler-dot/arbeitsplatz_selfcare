@@ -78,6 +78,7 @@ Click the dot in the menu bar:
 - **Glas getrunken:** counts one glass of water.
 - **Position:** office chair (default), Swopper, standing, or balance board. After the configured interval, Lotse prompts you to change posture. Each person can add or remove local posture options in Settings.
 - **Pause starten / beenden:** start or end a break while you stay at your desk.
+- **Today · tasks & breaks:** see when detected projects, apps, and agents started, how long they were active, and when breaks started and ended. Focus uses the traffic-light colors; an active break is consistently cyan.
 - **Hinweise pausieren:** quiet time for 30 minutes, 1 hour or 2 hours.
 
 **Breaks**
@@ -105,7 +106,7 @@ Click **Speichern** (save) at the end.
 
 - **Reads:** the titles and folders of your Ghostty tabs, which programs are running and how busy they are, how long you have not typed, and whether a camera or microphone is in use anywhere.
 - **Records nothing:** Lotse does not listen and sees no camera image. It only checks whether a device is on.
-- **Stores:** your daily values and settings only on your Mac, in `~/Library/Application Support/de.kiaffairs.lotse/`. The directory is restricted to your account (`0700`) and files to owner read/write (`0600`). Lotse retains at most 60 daily summaries.
+- **Stores:** your daily values, settings, and today's task/break timeline only on your Mac, in `~/Library/Application Support/de.kiaffairs.lotse/`. The directory is restricted to your account (`0700`) and files to owner read/write (`0600`). Lotse retains at most 60 daily summaries; today's timeline is limited to 50 tasks and 50 breaks.
 - **Not encrypted:** processes running as your signed-in user can generally read the local JSON files. Lotse does not persist tab titles, working directories, or full process arguments.
 - **No internet needed:** Lotse works offline and sends nothing anywhere.
 
