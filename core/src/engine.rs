@@ -73,6 +73,31 @@ pub struct BreakRecord {
     pub end: i64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TaskKind {
+    Project,
+    App,
+    Agent,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TaskActivity {
+    pub kind: TaskKind,
+    pub label: String,
+    pub started_at: i64,
+    pub last_active_at: i64,
+    pub active_secs: u64,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BreakTimelineEntry {
+    pub start: i64,
+    pub end: Option<i64>,
+    pub duration_secs: u64,
+}
+
 impl BreakRecord {
     pub fn minutes(&self) -> i64 {
         (self.end - self.start) / 60
@@ -107,6 +132,8 @@ pub struct State {
     pub block_start: i64,
     pub last_long_break_end: i64,
     pub breaks: Vec<BreakRecord>,
+    pub pause_events: Vec<BreakRecord>,
+    pub tasks: Vec<TaskActivity>,
     pub idle_started: Option<i64>,
     pub manual_break: Option<i64>,
     pub last_tick: Option<i64>,
@@ -139,6 +166,8 @@ impl Default for State {
             block_start: 0,
             last_long_break_end: 0,
             breaks: Vec::new(),
+            pause_events: Vec::new(),
+            tasks: Vec::new(),
             idle_started: None,
             manual_break: None,
             last_tick: None,
@@ -193,6 +222,8 @@ pub struct Snapshot {
     pub postures: Vec<PostureDefinition>,
     pub breaks_today: u32,
     pub long_breaks_today: u32,
+    pub tasks_today: Vec<TaskActivity>,
+    pub break_timeline: Vec<BreakTimelineEntry>,
     pub next_water_min: Option<i64>,
     pub next_break_min: i64,
     pub observation: Observation,
@@ -246,6 +277,11 @@ impl Engine {
         if state.history.len() > 60 {
             state.history.drain(..state.history.len() - 60);
         }
+        if state.pause_events.is_empty() && !state.breaks.is_empty() {
+            state.pause_events = state.breaks.clone();
+        }
+        state.tasks.truncate(50);
+        state.pause_events.truncate(50);
         Self {
             settings,
             state,
@@ -297,9 +333,25 @@ impl Engine {
 
     fn end_break(&mut self, start: i64, end: i64) {
         let len = end - start;
+        self.record_pause_event(start, end);
         if len < self.mins(self.settings.break_min) {
             return;
         }
+        self.credit_break(start, end);
+    }
+
+    fn record_pause_event(&mut self, start: i64, end: i64) {
+        if end <= start {
+            return;
+        }
+        self.state.pause_events.push(BreakRecord { start, end });
+        if self.state.pause_events.len() > 50 {
+            self.state.pause_events.remove(0);
+        }
+    }
+
+    fn credit_break(&mut self, start: i64, end: i64) {
+        let len = end - start;
         self.state.breaks.push(BreakRecord { start, end });
         self.state.block_start = end;
         if len >= self.mins(self.settings.long_break_min) {
@@ -339,14 +391,21 @@ impl Engine {
     }
 
     pub fn start_break(&mut self, now: i64) {
-        self.state.manual_break = Some(now);
+        if self.state.manual_break.is_none() {
+            self.state.manual_break = Some(now);
+            for task in &mut self.state.tasks {
+                task.active = false;
+            }
+        }
     }
 
     pub fn finish_break(&mut self, now: i64) {
         if let Some(start) = self.state.manual_break.take() {
-            // Manuelle Pause zählt mindestens als kurze Pause
-            let start = start.min(now - self.mins(self.settings.break_min));
-            self.end_break(start, now);
+            self.record_pause_event(start, now);
+            // Eine bewusst gestartete Pause zählt weiterhin mindestens als kurze
+            // Pause; die Zeitleiste oben behält trotzdem ihre echte Startzeit.
+            let credited_start = start.min(now - self.mins(self.settings.break_min));
+            self.credit_break(credited_start, now);
         }
     }
 
@@ -417,6 +476,8 @@ impl Engine {
             }
         }
 
+        self.update_task_activity(now, dt, &obs, active);
+
         if active && self.state.manual_break.is_none() {
             self.state.active_secs += dt;
             self.state.first_active.get_or_insert(now);
@@ -463,6 +524,68 @@ impl Engine {
             return None;
         }
         self.pick_hint(now, level, &reasons)
+    }
+
+    fn update_task_activity(&mut self, now: i64, dt: u64, obs: &Observation, user_active: bool) {
+        for task in &mut self.state.tasks {
+            if task.active {
+                task.active_secs = task.active_secs.saturating_add(dt);
+            }
+            task.active = false;
+        }
+
+        if self.state.manual_break.is_some() {
+            return;
+        }
+
+        let mut current: Vec<(TaskKind, String)> = Vec::new();
+        for tab in &obs.tabs {
+            if !((tab.focused && user_active) || tab.agents.iter().any(|agent| agent.busy)) {
+                continue;
+            }
+            if let Some(project) = tab.project.as_deref().and_then(private_task_label) {
+                current.push((TaskKind::Project, project));
+            }
+        }
+        for app in obs.apps.iter().filter(|app| app.busy) {
+            if let Some(label) = private_task_label(&app.name) {
+                current.push((TaskKind::App, label));
+            }
+        }
+        for agent in obs.other_agents.iter().filter(|agent| agent.busy) {
+            if let Some(label) = private_task_label(&agent.name) {
+                current.push((TaskKind::Agent, label));
+            }
+        }
+        current.sort_by(|a, b| (a.0 as u8, &a.1).cmp(&(b.0 as u8, &b.1)));
+        current.dedup();
+
+        for (kind, label) in current {
+            if let Some(task) = self
+                .state
+                .tasks
+                .iter_mut()
+                .find(|task| task.kind == kind && task.label == label)
+            {
+                task.active = true;
+                task.last_active_at = now;
+            } else {
+                self.state.tasks.push(TaskActivity {
+                    kind,
+                    label,
+                    started_at: now,
+                    last_active_at: now,
+                    active_secs: 0,
+                    active: true,
+                });
+            }
+        }
+        if self.state.tasks.len() > 50 {
+            self.state
+                .tasks
+                .sort_by_key(|task| (task.active, task.last_active_at));
+            self.state.tasks.drain(..self.state.tasks.len() - 50);
+        }
     }
 
     fn in_break(&self, now: i64) -> bool {
@@ -826,12 +949,42 @@ impl Engine {
                 .iter()
                 .filter(|b| b.minutes() >= s.long_break_min as i64)
                 .count() as u32,
+            tasks_today: self.state.tasks.clone(),
+            break_timeline: self
+                .state
+                .pause_events
+                .iter()
+                .map(|pause| BreakTimelineEntry {
+                    start: pause.start,
+                    end: Some(pause.end),
+                    duration_secs: pause.end.saturating_sub(pause.start) as u64,
+                })
+                .chain(self.state.manual_break.map(|start| BreakTimelineEntry {
+                    start,
+                    end: None,
+                    duration_secs: now.saturating_sub(start) as u64,
+                }))
+                .collect(),
             next_water_min: self.water_due_in(now).map(|d| d.max(0) / 60),
             next_break_min: next_break,
             observation: self.last_obs.clone(),
             history: self.state.history.clone(),
         }
     }
+}
+
+fn private_task_label(value: &str) -> Option<String> {
+    let value = value.trim().trim_end_matches('/');
+    let leaf = value.rsplit('/').next().unwrap_or(value).trim();
+    if leaf.is_empty() || leaf == "." || leaf == ".." {
+        return None;
+    }
+    let label: String = leaf
+        .chars()
+        .filter(|character| !character.is_control() && *character != '\\')
+        .take(64)
+        .collect();
+    (!label.is_empty()).then_some(label)
 }
 
 #[cfg(test)]
@@ -1116,6 +1269,56 @@ mod tests {
         assert!(!reasons.is_empty());
         let hints = run(&mut e, T0 + 30, 6, &o);
         assert_eq!(hints.first().map(|h| h.kind), Some(HintKind::Load));
+    }
+
+    #[test]
+    fn timeline_tracks_project_start_and_active_duration_without_persisting_paths() {
+        let mut e = engine();
+        let mut o = obs(1);
+        let mut focused = tab("t1", "~/kunden/geheim/projekt-alpha", true);
+        focused.focused = true;
+        o.focused_key = Some(focused.key.clone());
+        o.tabs = vec![focused];
+
+        e.tick(T0, DAY, o.clone());
+        e.tick(T0 + 30, DAY, o);
+
+        let snap = e.snapshot(T0 + 30);
+        assert_eq!(snap.tasks_today.len(), 1);
+        assert_eq!(snap.tasks_today[0].label, "projekt-alpha");
+        assert_eq!(snap.tasks_today[0].started_at, T0);
+        assert_eq!(snap.tasks_today[0].active_secs, 30);
+        assert!(snap.tasks_today[0].active);
+
+        let persisted = serde_json::to_string(&e.state).unwrap();
+        assert!(!persisted.contains("kunden/geheim"), "{persisted}");
+        assert!(!persisted.contains("~/"), "{persisted}");
+    }
+
+    #[test]
+    fn timeline_keeps_finished_task_duration_and_exposes_break_times() {
+        let mut e = engine();
+        let mut working = obs(1);
+        let mut focused = tab("t1", "~/dev/lotse", false);
+        focused.focused = true;
+        working.focused_key = Some(focused.key.clone());
+        working.tabs = vec![focused];
+        e.tick(T0, DAY, working);
+        e.tick(T0 + 30, DAY, obs(1));
+
+        e.start_break(T0 + 60);
+        let running = e.snapshot(T0 + 5 * 60);
+        assert_eq!(running.break_timeline.len(), 1);
+        assert_eq!(running.break_timeline[0].start, T0 + 60);
+        assert_eq!(running.break_timeline[0].end, None);
+        assert_eq!(running.break_timeline[0].duration_secs, 4 * 60);
+        assert!(!running.tasks_today[0].active);
+        assert_eq!(running.tasks_today[0].active_secs, 30);
+
+        e.finish_break(T0 + 11 * 60);
+        let finished = e.snapshot(T0 + 11 * 60);
+        assert_eq!(finished.break_timeline[0].end, Some(T0 + 11 * 60));
+        assert_eq!(finished.break_timeline[0].duration_secs, 10 * 60);
     }
 
     #[test]

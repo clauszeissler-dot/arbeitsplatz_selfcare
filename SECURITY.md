@@ -17,11 +17,12 @@ mitschicken.
 
 ## Schutzgrenzen
 
-Lotse verarbeitet Aktivitätsdaten lokal. Einstellungen und zusammengefasste
-Verlaufsdaten liegen als unverschlüsseltes JSON im benutzerspezifischen
+Lotse verarbeitet Aktivitätsdaten lokal. Einstellungen, zusammengefasste
+Verlaufsdaten und die auf 50 Einträge begrenzte heutige Aufgaben-/Pausenzeitleiste liegen als unverschlüsseltes JSON im benutzerspezifischen
 macOS-App-Datenordner. Ordner und Dateien werden auf den angemeldeten Benutzer
 beschränkt; Prozesse desselben Benutzerkontos bleiben außerhalb dieser
-Schutzgrenze. Tabtitel, Arbeitsverzeichnisse und vollständige Prozessargumente
+Schutzgrenze. Die Zeitleiste enthält nur aus dem letzten Pfadsegment abgeleitete
+Anzeigenamen und Zeitwerte. Tabtitel, Arbeitsverzeichnisse und vollständige Prozessargumente
 werden nicht dauerhaft gespeichert und nicht an einen Server übertragen.
 
 Offizielle Downloads werden mit Developer ID signiert, von Apple notarisiert

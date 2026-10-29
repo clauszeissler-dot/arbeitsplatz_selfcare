@@ -1,5 +1,23 @@
 # Aktueller Arbeitsplan
 
+## Stabilität, Farblogik und Zeitübersicht · A-021 bis A-023
+
+**Sichtbares Ergebnis / Zielort:** Das lokale Dashboard bleibt nach wiederholtem Ignorieren/Schließen von Hinweisen funktionsfähig, Fokus und Pause folgen einer einheitlichen semantischen Farblogik, und eine kompakte Tages-Zeitleiste zeigt Startzeit/aktive Dauer erkannter Tasks sowie Beginn/Ende/Dauer von Pausen.
+**Abschlussnachweis:** belegte Fehlerursache oder ausdrücklich dokumentierte Nicht-Reproduzierbarkeit mit Diagnostik; Red/Green-Regressionen für Hinweis-Lebenszyklus und Zeitmodell; vollständige Rust-/Frontend-/Securitytests; lokaler signierter/notarisierter App-Build tatsächlich unter `/Applications` aktiv; Laufzeit- und Datenrechteprüfung. Browserprüfungen ausschließlich Ego Lite, falls für die Oberfläche nötig.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T14:22:45+01:00 / 2026-10-29T14:37:04+01:00.
+**Gates:** erst Logs, Crashberichte und Zustandsfluss auswerten, dann Ursache/Hypothese testen; ignorierte Hinweise nicht vorschnell als Absturzursache ausgeben; Zeitdaten nur lokal, begrenzt und ohne Rohpfade/Prozessargumente; bestehende drei fremde AUTO-Handoffs unangetastet; kein GitHub-Release oder Release-Tag.
+
+1. [x] A-021: Abgebrochenen Notarisierungsstand, Prozess-/Launchzustand, macOS-Unified-Logs, Crashreports und Hinweis-/Webview-Lifecycle erfassen; reproduzierbare Hypothese bilden.
+2. [x] A-021: Minimalen roten Regressionstest für die belegte Ursache und wiederholtes Verwerfen/Ignorieren von Hinweisen erstellen; gezielte Wiederherstellung/Diagnostik implementieren.
+3. [x] A-022: Alle Fokus-/Pause-Farbrollen und UI-Komponenten zuordnen; semantische Tokens und einen statischen/visuellen Regressionstest zuerst rot anlegen, dann vereinheitlichen.
+4. [x] A-023: Datenschutzarmes Tages-Zeitmodell testgetrieben ergänzen: erkannte Tasks mit erstem Start/aktiver Dauer, Pausenereignisse mit Start/Ende/Dauer; Dashboard kompakt und zugänglich darstellen.
+5. [x] Gesamttests/Build, Ego-Lite-TaskSpace, lokalen Developer-ID-/Apple-Ablauf abschließen, App unter `/Applications` aktualisieren und tatsächlichen Prozess, Dashboard, Schreibzyklen und Dateirechte prüfen.
+
+**Abschluss 2026-10-29T14:37:04+01:00:** Kein Lotse-/WebKit-Crashbericht und kein Prozessabsturz belegt. Der native Takt/Klang lief weiter; Dashboard-Start hatte keinen Catch/Retry und Toasts bezogen aktuelle Hinweise ausschließlich aus einem flüchtigen Event. Dieses Fehlerbild erklärt schwarze/fehlende WebViews bei weiterlaufendem Ton und die Heilung durch Neustart. Wiederholtes Schließen ist idempotent und nicht als Ursache belegt. 43 Rust-, 5 UI- und 12 Release-/Securitytests, Build und Clippy grün. Ego Lite bestätigt Fokus Gelb und Pause Cyan samt Zeitleiste ohne horizontalen Overflow. Universal-App/DMG Apple Accepted; installierte `/Applications/Lotse.app` besteht Signatur, Ticket und Gatekeeper, läuft sichtbar und schreibt `0600` in `0700`.
+**Nächster Schritt:** geprüften Branch committen, über den geschützten GitHub-PR integrieren und Remote-Checks kontrollieren; kein Tag und kein Release.
+
+---
+
 ## Sicherheitshärtung · A-020
 
 **Sichtbares Ergebnis / Zielort:** lokaler, vollständig geprüfter Härtungsstand im Repository sowie ein PR-fähiger GitHub-Branch; nach autorisiertem Push ein geschütztes öffentliches Repository mit PR-Pflicht, Sicherheitsfunktionen und manuell freizugebender Release-Umgebung. Kein neuer Produktrelease.

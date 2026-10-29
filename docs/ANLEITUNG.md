@@ -89,6 +89,8 @@ Klick auf den Punkt in der Menüleiste:
 **Pausen**
 
 Lotse merkt von selbst, wenn du 10 Minuten nicht an Maus oder Tastatur warst. Das zählt als Pause.
+
+Im Bereich **Heute · Aufgaben & Pausen** siehst du Startzeit und aktive Dauer der heute erkannten Projekte, Apps und Agenten. Daneben stehen Beginn, Ende und Dauer der Pausen. Eine laufende Pause ist im gesamten Cockpit Cyan; Fokus verwendet die Ampelfarben Grün, Gelb und Rot. Gespeichert werden nur kurze Anzeigenamen und Zeitwerte, keine Arbeitsverzeichnisse oder vollständigen Prozessargumente.
 Klappst du den Mac zu, zählt das auch.
 
 **Meetings**
@@ -111,7 +113,7 @@ Klick zum Schluss auf **Speichern**.
 
 - **Liest:** die Titel und Ordner deiner Ghostty-Tabs, welche Programme laufen und wie stark sie arbeiten, wie lange du nichts getippt hast und ob irgendwo Kamera oder Mikrofon an sind.
 - **Nimmt nichts auf:** Lotse hört nicht mit und sieht kein Kamerabild. Es fragt nur ab, ob ein Gerät an ist.
-- **Speichert:** deine Tageswerte und Einstellungen nur auf deinem Mac, im Ordner `~/Library/Application Support/de.kiaffairs.lotse/`. Der Ordner ist auf dein Benutzerkonto (`0700`), die Dateien sind auf Lesen/Schreiben durch dich (`0600`) begrenzt. Die letzten 60 Tageszusammenfassungen bleiben erhalten.
+- **Speichert:** deine Tageswerte, Einstellungen und die heutige Aufgaben-/Pausenzeitleiste nur auf deinem Mac, im Ordner `~/Library/Application Support/de.kiaffairs.lotse/`. Der Ordner ist auf dein Benutzerkonto (`0700`), die Dateien sind auf Lesen/Schreiben durch dich (`0600`) begrenzt. Die letzten 60 Tageszusammenfassungen bleiben erhalten; die heutige Zeitleiste ist auf 50 Aufgaben und 50 Pausen begrenzt.
 - **Nicht verschlüsselt:** Prozesse in deinem angemeldeten Benutzerkonto können die lokalen JSON-Dateien grundsätzlich lesen. Lotse speichert keine Tabtitel, Arbeitsverzeichnisse oder vollständigen Prozessargumente dauerhaft.
 - **Ohne Internet:** Lotse braucht keine Internetverbindung und schickt nichts weg.
 
@@ -127,6 +129,7 @@ Klick zum Schluss auf **Speichern**.
 | Problem | Lösung |
 |---|---|
 | Im Cockpit steht „Ghostty-Zugriff fehlt“ | Systemeinstellungen → Datenschutz & Sicherheit → Automation → bei Lotse **Ghostty** einschalten. |
+| Das Cockpit kann seine Daten nicht laden | Klicke auf **Erneut verbinden**. Lotse läuft währenddessen in der Menüleiste weiter. Falls der Fehler wiederkehrt, liegt unter `~/Library/Application Support/de.kiaffairs.lotse/ui-diagnostics.json` ein datensparsames Protokoll nur mit Zeitstempel und Fehlerkategorie. |
 | „Ghostty ist zu alt“ | Ghostty auf die neueste Version aktualisieren. |
 | Es kommen gar keine Hinweise | Prüfe, ob Hinweise pausiert sind oder ein Meeting angezeigt wird. |
 | Werte sollen neu starten | Lotse beenden und die Datei `state.json` im oben genannten Ordner löschen. |

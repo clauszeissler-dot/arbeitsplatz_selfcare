@@ -95,3 +95,14 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Konsequenz / zuständige Regel: `scripts/build-universal.sh` liest den Namen aus beiden Plists, verlangt identische sichere Werte und verwendet ihn unverändert. Kein Ableiten aus `productName` oder App-Verzeichnis.
 - Prüfpunkt: statischer Regressionstest plus realer Universal-Build, Developer-ID-Signatur und `codesign --verify --deep --strict`.
 - Wirkung: Folge-PR #10; roter Test vor Korrektur, danach `x86_64 arm64` und strikte Signaturprüfung grün. Bei Änderungen am Bundling erneut prüfen.
+
+
+### L-009 – WebView-Zustand darf nicht nur von flüchtigen Events abhängen
+
+- Datum / Status: 2026-10-29 · bestätigt/aktiv durch Nutzerbeobachtung und Codebefund.
+- Quelle: Nutzer meldet weiterlaufende Klänge bei fehlenden Hinweisen und schwarzem Dashboard; Neustart heilte den Zustand.
+- Geltung: Dashboard- und Toast-Initialisierung von Lotse.
+- Beobachtung: Für den Prozess selbst gab es keinen Crashbericht. Ein fehlgeschlagener initialer Dashboard-Aufruf ließ die leere Root dauerhaft stehen; ein Toast konnte sein einziges `hint`-Event vor dem Listener verpassen. Der native Takt und Klang liefen davon unabhängig weiter.
+- Konsequenz / zuständige Umsetzung: A-021. Dashboard zeigt sofort Lade-/Fehlerzustand, versucht die lokale Verbindung erneut und bietet manuelles Wiederverbinden. Toast registriert Listener zuerst und holt danach den aktuellen nativen Hinweis nach. Diagnose speichert höchstens 50 Einträge ausschließlich als Zeitstempel plus feste Fehlerkategorie.
+- Prüfpunkt: Regressionstests für Startfehler, verpasstes/überholtes Hinweisereignis und idempotentes mehrfaches Schließen; installierte App sichtbar und beschreibbare Daten weiterhin `0600`.
+- Wirkung: Tests grün und notarisierten Build unter `/Applications` gestartet. Langzeitwirkung beim nächsten realen transienten WebView-Ausfall bleibt offen; der neue Diagnosepfad soll ihn ohne private Inhalte belegbar machen.

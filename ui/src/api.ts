@@ -43,6 +43,19 @@ export interface DaySummary {
   max_projects: number;
   max_busy_agents: number;
 }
+export interface TaskActivity {
+  kind: "project" | "app" | "agent";
+  label: string;
+  started_at: number;
+  last_active_at: number;
+  active_secs: number;
+  active: boolean;
+}
+export interface BreakTimelineEntry {
+  start: number;
+  end: number | null;
+  duration_secs: number;
+}
 export interface Snapshot {
   at: number;
   level: Level;
@@ -67,6 +80,8 @@ export interface Snapshot {
   postures: PostureDefinition[];
   breaks_today: number;
   long_breaks_today: number;
+  tasks_today: TaskActivity[];
+  break_timeline: BreakTimelineEntry[];
   next_water_min: number | null;
   next_break_min: number;
   observation: Observation;
@@ -140,7 +155,10 @@ export const api = {
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
   act: (action: string, kind?: HintKind) => invoke<void>("act", { action, kind: kind ?? null }),
   startTimer: (sound: boolean) => invoke<void>("start_hint_timer", { sound }),
+  currentHint: () => invoke<Hint | null>("get_current_hint"),
   hideToast: () => invoke<void>("hide_toast"),
+  reportUiIssue: (context: "dashboard-load" | "dashboard-listener" | "dashboard-runtime" | "toast-load" | "toast-listener" | "toast-runtime") =>
+    invoke<void>("report_ui_issue", { context }),
   autostart: () => invoke<boolean>("autostart_enabled"),
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
   refresh: () => invoke<void>("refresh"),
@@ -201,6 +219,15 @@ function mockSnapshot(): Snapshot {
     posture_share: { office_chair: 190, swopper: 20, standing: 64, board: 12 },
     postures: structuredClone(defaultSettings.postures),
     breaks_today: 2, long_breaks_today: 0, next_water_min: 6, next_break_min: 0,
+    tasks_today: [
+      { kind: "project", label: "abrechnung", started_at: Date.now() / 1000 - 5400, last_active_at: Date.now() / 1000, active_secs: 4860, active: true },
+      { kind: "project", label: "crm-import", started_at: Date.now() / 1000 - 2700, last_active_at: Date.now() / 1000, active_secs: 2280, active: true },
+      { kind: "app", label: "ChatGPT", started_at: Date.now() / 1000 - 900, last_active_at: Date.now() / 1000 - 180, active_secs: 660, active: false },
+    ],
+    break_timeline: [
+      { start: Date.now() / 1000 - 7200, end: Date.now() / 1000 - 6540, duration_secs: 660 },
+      { start: Date.now() / 1000 - 3600, end: Date.now() / 1000 - 3000, duration_secs: 600 },
+    ],
     observation: {
       ghostty_running: true, ghostty_note: null, tabs,
       apps: [
@@ -229,6 +256,7 @@ async function mock<T>(cmd: string, _args?: Record<string, unknown>): Promise<T>
     case "get_snapshot": return mockSnapshot() as T;
     case "get_settings": return structuredClone(defaultSettings) as T;
     case "get_storage_health": return { ok: true, message: null } as T;
+    case "get_current_hint": return mockHint as T;
     case "autostart_enabled": return true as T;
     default:
       if (cmd === "act") setTimeout(() => mockListeners.filter((l) => l.event === "snapshot").forEach((l) => l.cb(mockSnapshot())), 50);
