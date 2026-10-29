@@ -58,27 +58,26 @@ npm run tauri build -- --target universal-apple-darwin
   aufgenommen, deshalb erscheint auch keine Mikrofon-/Kamera-Freigabe.
 
 
-## Lokaler Freigabestand 2026-10-29 (A-013)
+## Lokaler Apple-Freigabeablauf (A-013)
 
-- Gültige Identität: `Developer ID Application: Claus Zeissler (ZWT6395G7Q)`.
-- App und DMG werden lokal mit dieser Identität und Hardened Runtime signiert:
+Vorhandene Identität: `Developer ID Application: Claus Zeissler (ZWT6395G7Q)`.
+Vorhandenes Schlüsselbundprofil: `KI-Kennzeichnung-Notarization`.
+Dieses Profil ist bereits in früheren Projekten eingerichtet und am 2026-10-29
+mit einer Apple-History-Abfrage erfolgreich geprüft. Für Lotse sind keine neuen
+Zugangsdaten erforderlich. Das Fehlen eines profilspezifischen Namens belegt keinen
+fehlenden Apple-Zugang: vor einer Neueinrichtung vorhandene Handoffs prüfen.
+Passwörter/Schlüssel nicht auslesen, ausgeben oder in Dateien/CI-Variablen kopieren.
+
+Signierten Produktions-Build erstellen:
 
 ```sh
 APPLE_SIGNING_IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)' npm run tauri build
 ```
 
-- `codesign --verify --deep --strict` besteht. Ohne Notarisierung meldet Gatekeeper `Unnotarized Developer ID`.
-- Noch offen: Schlüsselbundprofil `lotse` für den Apple-Notarisierungsdienst. Die App wurde bisher nicht eingereicht. Kein App-Store-Release beauftragt.
-- Einmalig durch den Accountinhaber: anwendungsspezifisches Passwort unter https://account.apple.com erzeugen, dann im eigenen Terminal interaktiv hinterlegen (Passwort niemals in Repository, Chat oder Befehlsargument schreiben):
+Vorhandenen signierten Stand über den bestehenden Schlüsselbundzugang notarisieren:
 
 ```sh
-xcrun notarytool store-credentials lotse --team-id ZWT6395G7Q
-```
-
-Danach der vorbereitete Ablauf:
-
-```sh
-./scripts/notarize.sh lotse
+./scripts/notarize.sh
 ```
 
 Das Skript prüft zuerst Signatur und Zugang, reicht die signierte App als ZIP ein,
@@ -86,7 +85,23 @@ sichert Apples Ergebnis und Prüfprotokoll, heftet das Ticket an die App und pr�
 Gatekeeper. Danach erstellt es ein DMG aus der bereits mit Ticket versehenen App,
 signiert und notarisiert auch dieses und prüft das angeheftete Ticket. Finale
 Artefakte und Apple-Protokolle: `target/release/notarized/`. Keine automatische
-Veröffentlichung und kein Push. Das Skript ist syntaktisch geprüft; die tatsächliche
-Einreichung ist bis zum eingerichteten Zugang offen.
+Veröffentlichung und kein Push. Ein neuer Build benötigt eine erneute Einreichung;
+ein früheres Ticket gilt für den damals signierten Stand.
+
+Aktueller Einreichungs-/Prüfstand: [ARBEITSLOGBUCH.md](../ARBEITSLOGBUCH.md).
 
 Quelle: [Apple – Customizing the notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow), am 2026-10-29 mit Ego Lite geprüft.
+
+
+### Verifizierter Stand 2026-10-29
+
+App und DMG von Apple angenommen, beide Prüfprotokolle ohne Issues. Ticket und
+Gatekeeper auch am entpackten ZIP sowie an der App im schreibgeschützt gemounteten
+DMG bestätigt. Finale Pakete:
+
+- `target/release/notarized/Lotse.zip` — SHA-256 `57046b66075c8870c4b617e124203932f280a460b046809854f0bb445af0bde3`
+- `target/release/notarized/Lotse.dmg` — SHA-256 `05e13130616461f5d429ddde45b37329d4714ba808954757c838709a5c840475`
+
+Das ursprüngliche `target/release/bundle/dmg/Lotse_0.1.0_aarch64.dmg` ist der
+signierte Zwischenstand. Für Weitergabe das finale DMG unter `notarized/` verwenden.
+Apple-Protokolle liegen im Artefaktordner, Submission-IDs im Projekt-Arbeitslog.

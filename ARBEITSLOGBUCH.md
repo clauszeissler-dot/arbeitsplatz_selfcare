@@ -123,3 +123,25 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - A-013: Finales lokales App-Bundle und DMG mit `Developer ID Application: Claus Zeissler (ZWT6395G7Q)` signiert; Hardened Runtime, Zeitstempel und gültige Signatur nachgewiesen. DMG-Integritätsprüfung erfolgreich. Keine Apple-Einreichung erfolgt: Notarytool-Profil lotse fehlt. Gatekeeper weist das Paket derzeit ausdrücklich als Unnotarized Developer ID zurück. Sicherer Einrichtungsweg an Claus gegeben; vollständiger nachfolgender Einreichungs-/Ticket-/Prüfablauf unter `scripts/notarize.sh` vorbereitet, noch nicht gegen Apple ausgeführt.
 - A-011: Projektlog, Anforderungen, Plan, Ziel und Learning fortgeschrieben. Globaler Arbeitslogbucheintrag erfolgreich geschrieben; keine persönliche Arbeitszeit angesetzt.
 - Versionsbezug: gezielter lokaler Commit folgt; kein Push und keine Veröffentlichung. A-005 aus dem Altauftrag bleibt wie dokumentiert separat offen.
+
+
+## 2026-10-29T08:44:19+01:00 – Nutzerkorrektur zu vorhandenem Apple-Zugang (A-013)
+
+- Nutzer erinnert an frühere Einrichtung über Apple/Xcode. Gezielte Suche findet den dokumentierten Profilnamen `KI-Kennzeichnung-Notarization` im TimeAffAIrs-Handoff vom 2026-09-22.
+- Frischer Nachweis: `notarytool history --keychain-profile KI-Kennzeichnung-Notarization --output-format json` authentifiziert erfolgreich. Keine Passwörter oder Schlüssel ausgelesen; nur Profilreferenz genutzt.
+- Fehlerkorrektur: Fehlendes neues Profil lotse belegt keinen fehlenden Apple-Zugang. Aufforderung zur Passwort-Neueinrichtung war unnötig. Früherer Blocker aufgehoben; vorhandener signierter Stand wird jetzt eingereicht.
+- Skriptstandard auf das vorhandene Profil geändert. Produktcode und Binärdatei unverändert, vorhandene Tests bleiben gültig.
+
+
+### A-013 abgeschlossen · 2026-10-29T08:46:44+01:00
+
+- Bestehender Schlüsselbundzugang ohne neues Passwort wiederverwendet. `scripts/notarize.sh` vollständig erfolgreich durchgelaufen.
+- App: Apple `Accepted`, Submission `d54284b1-ce4c-41a3-9e02-4f90d0cd471f`. DMG: Apple `Accepted`, Submission `5572a356-ee23-4e09-aa22-54fb11d2d84a`. Beide Apple-Logs: `Ready for distribution`, `issues: null`.
+- Original-Bundle: Ticket angebracht, `stapler validate`, `codesign --verify --deep --strict`, `spctl --assess --type execute` erfolgreich, `source=Notarized Developer ID`.
+- Versand-ZIP erst nach Stapling neu erzeugt, anschließend in eigenen temporären Ordner entpackt: Signatur, Ticket und Gatekeeper erneut erfolgreich.
+- Finales DMG enthält bereits gestapelte App, selbst signiert/notarisiert/gestapelt, Integritätsprüfung grün. Schreibgeschützt ohne Finder-Fenster gemountet: enthaltene App besteht Signatur-, Ticket- und Gatekeeper-Prüfung; eigenen Mount danach gezielt ausgehängt.
+- Artefakte: `target/release/notarized/Lotse.zip`, `target/release/notarized/Lotse.dmg`; Apple-Resultate/Logs im selben Ordner. Frühere DMG unter `target/release/bundle/dmg/` ist nur der signierte Zwischenstand; Weitergabe des finalen Pakets aus `notarized/`.
+- ZIP SHA-256: `57046b66075c8870c4b617e124203932f280a460b046809854f0bb445af0bde3`.
+- DMG SHA-256: `05e13130616461f5d429ddde45b37329d4714ba808954757c838709a5c840475`.
+- Anforderungen: A-013 geprüft erfüllt, ursprüngliche Blockerannahme korrigiert. A-009/A-011/A-012 behalten geprüften Stand, A-010 technisch geprüft und Klanggeschmack offen. Altpunkt A-005 bleibt wie bisher getrennt offen.
+- Globaler Arbeitslog erfolgreich aktualisiert. Vorhandene Produktprüfungen aus `e5a09a5` gelten unverändert; kein Produktcode geändert, kein zusätzlicher Browserlauf erforderlich. Kein Push, keine öffentliche Veröffentlichung und keine Installation.

@@ -38,3 +38,15 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Konsequenz / zuständige Umsetzung: A-010 liefert eine eigene lokale Klangfamilie mit Klangprobe; A-012 schaltet beim Öffnen auf Regular und beim Schließen auf Accessory. Beide Entscheidungen sind konkrete Produktanforderungen, keine allgemeine Designregel.
 - Prüfpunkt: Ego-Lite-Klangprobe lädt eigene WAV-Datei; native App ist bei geöffnetem Cockpit nicht mehr background-only und nach Schließen wieder background-only.
 - Wirkung: Technische Wirkung am 2026-10-29 belegt. Subjektive Bewertung der neuen Klänge durch Claus bleibt offen; aus erfolgreichem Playback folgt keine Geschmacksabnahme.
+
+
+### L-004 – Vor neuem Apple-Zugang bestehende Einrichtung ermitteln
+
+- Datum / Status: 2026-10-29 · bestätigt/aktiv durch Nutzerkorrektur und erfolgreiche Apple-Authentifizierung.
+- Quelle: Nutzer erinnert an vorherige Einrichtung; TimeAffAIrs-Handoff `docs/handoffs/20260922_01_apple_signing_setup.md`, 2026-09-22.
+- Geltung: Lokale Apple-Signierung/Notarisierung für Lotse.
+- Beobachtung: Ein nicht vorhandenes profilspezifisches `lotse` wurde fälschlich als fehlender Apple-Zugang gewertet. Ein gültiges bestehendes Profil war vorhanden.
+- Konsequenz: Bestehende Release-/Handoff-Dokumentation prüfen und vorhandenes Notarisierungsprofil referenzieren, bevor neue Credentials oder Passwort-Reset verlangt werden. Keine Secrets auslesen.
+- Zuständige Regel / Umsetzung: `docs/RELEASE.md`, Standard in `scripts/notarize.sh` ist `KI-Kennzeichnung-Notarization`.
+- Prüfpunkt: Authentifizierter History-Aufruf und anschließende tatsächliche Einreichung.
+- Wirkung: Profil erfolgreich authentifiziert; App und DMG anschließend Accepted, Tickets und Gatekeeper erfolgreich. Dieser Fall ohne neue Credentials gelöst. Wirkung bei nächster Wiederaufnahme noch offen.

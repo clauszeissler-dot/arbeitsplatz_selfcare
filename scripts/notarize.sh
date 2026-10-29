@@ -2,7 +2,7 @@
 # Run after a signed production build and local Keychain profile setup.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PROFILE="${1:-lotse}"
+PROFILE="${1:-KI-Kennzeichnung-Notarization}"
 IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)'
 APP="$PWD/target/release/bundle/macos/Lotse.app"
 OUT="$PWD/target/release/notarized"

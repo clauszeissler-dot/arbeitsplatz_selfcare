@@ -55,5 +55,5 @@ her. Klänge werden lokal im App-Datenordner abgelegt; keine Cloud-Funktion erg�
 
 A-013 erweitert die bisherige Grenze ausdrücklich auf lokale Developer-ID-Signatur
 und Apple-Notarisierung. Dafür darf das gebaute Paket an Apple gesendet werden;
-keine Veröffentlichung im App Store oder im Repository. Das Apple-Zugangsprofil
-fehlt aktuell; Freigabe bleibt bis zum erfolgreichen Apple-Ticket offen.
+keine Veröffentlichung im App Store oder im Repository. Das vorhandene Apple-Zugangsprofil `KI-Kennzeichnung-Notarization` wird wiederverwendet;
+Freigabe ist durch Apple-Ticket und Gatekeeper-Prüfung nachzuweisen.

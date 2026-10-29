@@ -1,6 +1,15 @@
 # Aktueller Arbeitsplan
 
-## Arbeitslauf 2026-10-29 · A-009 / A-010
+## Wiederaufnahme A-013 · 2026-10-29T08:44:19+01:00
+
+**Sichtbares Ergebnis / Zielort:** Apple-notarisierte Lotse.app sowie ZIP und DMG unter `target/release/notarized/` und Ticket am lokalen App-Bundle.
+**Abschlussnachweis:** Apple Accepted, Logs, stapler validate, codesign und Gatekeeper; ZIP nach Entpacken und DMG prüfen.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T08:44:19+01:00.
+**Befund und Entscheidung:** Nutzerkorrektur bestätigt; vorhandenes Profil `KI-Kennzeichnung-Notarization` aus früheren Projektdokumenten gefunden. Apple-History-Abfrage authentifiziert erfolgreich. Kein neuer Zugang erforderlich. Frühere Blockerannahme ist aufgehoben.
+**Abschluss / letzter Zielabgleich:** 2026-10-29T08:46:44+01:00. A-013 geprüft: Apple Accepted für App und DMG, Logs ohne Issues; Tickets, Signaturen und Gatekeeper auch im entpackten ZIP und App im schreibgeschützt gemounteten DMG grün. Zielartefakte unter `target/release/notarized/`. Keine weitere Freigabe oder Zugangseinrichtung erforderlich. Vorhandene 33 Tests, Ego-Lite- und native Belege gelten weiter; keine Binäränderung.
+**Nächster Schritt:** Bei künftigem Produktupdate neu bauen und mit dem bestehenden Profil erneut notarisieren. Dieser Auftrag ist technisch abgeschlossen; persönliche Klangbewertung durch Claus steht weiterhin aus.
+
+## Vorheriger Arbeitslauf 2026-10-29 · A-009 / A-010 (Stand vor Nutzerkorrektur)
 
 **Sichtbares Ergebnis:** Zeitbezogene Übungshinweise bieten Starten, Countdown und Abschluss; eigene sanfte Klänge ersetzen Glass.
 **Zielort:** lokales `target/release/bundle/macos/Lotse.app`, Browserprüfung der Vorschau ausschließlich Ego Lite.

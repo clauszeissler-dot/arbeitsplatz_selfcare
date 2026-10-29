@@ -19,7 +19,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 | A-011 | Nutzer, 2026-10-29 | Arbeitslog während der Umsetzung führen. | Wünsche, Entscheidungen und Prüfstand sind in ARBEITSLOGBUCH.md nachvollziehbar. | geprüft | Arbeitslauf 2026-10-29 | Projektlog fortlaufend ergänzt, globaler Eintrag 2026-10-29 geschrieben |
 | A-012 | Nutzer, 2026-10-29 | Geöffnetes Dashboard über Dock und ⌘Tab wiederfinden. | Öffnen aktiviert den regulären macOS-App-Modus; Schließen versteckt das Dashboard und lässt Lotse in der Menüleiste weiterlaufen. | geprüft | Arbeitslauf 2026-10-29 | Native AX-Abfrage: Cockpit geöffnet background-only=false/visible=true; geschlossen background-only=true/visible=false |
 
-| A-013 | Nutzer, 2026-10-29 | App über Apple Developer freigeben. | Lokales Paket mit Developer ID signieren, Apple-Notarisierung erfolgreich, Ticket anheften und Gatekeeper prüfen; fehlende Identität/Zugang konkret ausweisen. | teilweise umgesetzt / blockiert | Arbeitslauf 2026-10-29 | App/DMG mit gültiger Developer ID und Hardened Runtime signiert; codesign-Prüfung grün. Profil lotse fehlt, Nutzer bestätigt fehlende Einrichtung. Notarisierung/Ticket/Gatekeeper-Freigabe offen; scripts/notarize.sh vorbereitet |
+| A-013 | Nutzer, 2026-10-29 | App über Apple Developer freigeben. | Lokales Paket mit Developer ID signieren, Apple-Notarisierung erfolgreich, Ticket anheften und Gatekeeper prüfen; fehlende Identität/Zugang konkret ausweisen. | geprüft | Wiederaufnahme A-013 | Apple Accepted für App und DMG; beide Logs ohne Issues. Tickets, Signaturen und Gatekeeper am Bundle, entpackten ZIP und App im schreibgeschützt gemounteten DMG erfolgreich, 2026-10-29. |
 
 ## Revisionen und Entscheidungen
 
@@ -48,3 +48,9 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 - A-009, A-011 und A-012 geprüft; A-010 technisch geprüft, persönliche Klangbewertung durch Claus offen.
 - A-013: signierte lokale App und DMG vorhanden. Apple-Notarisierung ist durch fehlendes Schlüsselbundprofil blockiert; nächster Schritt: Accountinhaber richtet `lotse` lokal ein, dann `scripts/notarize.sh lotse` ausführen und Apples Ergebnis prüfen.
 - Frühere IDs: A-001–A-004 und A-006–A-008 behalten ihre vorhandenen Prüfbelege; A-003 verwendet ab jetzt gemäß A-010 eigene Klänge statt Glass. A-005 bleibt mit dem früher dokumentierten separaten Sichtprüfpunkt offen und gehört nicht zu diesem Änderungsauftrag.
+
+- Revision A-013, 2026-10-29: Aus fehlendem Profil `lotse` war fälschlich auf fehlenden Apple-Zugang geschlossen worden. Das bestehende, projektübergreifend verwendbare Profil `KI-Kennzeichnung-Notarization` funktioniert. Kein neues Passwort nötig.
+
+## Aktualisierter Abschluss A-013, 2026-10-29
+
+Apple-Notarisierung abgeschlossen; früherer Blocker aufgehoben. App/ZIP/DMG geprüft. Fertige Weitergabe-Artefakte unter `target/release/notarized/`. Kein Passwort-Reset oder neues Profil nötig; keine Veröffentlichung, kein Push.
