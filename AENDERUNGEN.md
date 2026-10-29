@@ -24,7 +24,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 | A-014 | Nutzer, 2026-10-29 | Fertige signierte App im bestehenden Repository zum Download anbieten. | GitHub-Release mit geprüftem, notarisiertem DMG/ZIP; heruntergeladene Datei hat denselben Hash wie die freigegebene Quelle. Repository-Sichtbarkeit unverändert. | geprüft | Repository-Download 1/3 | Release lotse-0.1.0 veröffentlicht; DMG/ZIP/SHA256SUMS erneut über GitHub heruntergeladen und SHA-256 identisch. Heruntergeladenes DMG besteht codesign/stapler, 2026-10-29. |
 | A-015 | Nutzer, 2026-10-29 | Download direkt im README verlinken. | Prominenter Direktlink öffnet das hochgeladene DMG; Apple-Silicon/macOS-Voraussetzung und Installation erklärt, Aussage zu fehlenden Downloads entfernt. | geprüft | Repository-Download 2/3 | Remote-README auf main gelesen: Direktlink stimmt mit veröffentlichtem DMG-Asset überein. Deutsche/englische Installationshinweise aktualisiert. |
 
-| A-016 | Nutzer, 2026-10-29 | README auf neue Funktionen abgleichen. | README auf GitHub enthält Augen-/Pausentimer, drei Klangproben, Haltungsverwaltung, Aktivitätsrhythmus und Dock/⌘Tab sowie bestehenden Download. | umgesetzt | README-Funktionsabgleich | Lokale Inhalts-/Linkprüfung erfolgreich; Remote-Abgleich folgt. |
+| A-016 | Nutzer, 2026-10-29 | README auf neue Funktionen abgleichen. | README auf GitHub enthält Augen-/Pausentimer, drei Klangproben, Haltungsverwaltung, Aktivitätsrhythmus und Dock/⌘Tab sowie bestehenden Download. | geprüft | README-Funktionsabgleich | Remote-README auf main bytegleich zur lokal geprüften Fassung, inklusive Dock/⌘Tab, 20 s und drei Klängen; 2026-10-29. |
 
 ## Revisionen und Entscheidungen
 

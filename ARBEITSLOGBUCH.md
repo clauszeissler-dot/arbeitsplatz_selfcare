@@ -175,3 +175,5 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 
 - Timer, Sounds, Haltungsverwaltung und notarisierten Download waren vorhanden; Dock/⌘Tab war nur in der Anleitung beschrieben. README ergänzt: Dock/⌘Tab, optionale 20-Sekunden-Augenpause, konfigurierte Pausendauer, drei Klangproben mit getrenntem Timer-Schalter und aktivitätsbasierter Rhythmus.
 - Vorhandenen tatsächlichen Ego-Lite-Timer-Screenshot eingebunden. Lokale Inhaltsprüfung gegen Funktionsliste und alle lokalen Markdown-Dateilinks erfolgreich. Binärpakete unverändert; keine neue Signierung/Notarisierung nötig. Remote-Abgleich nach Push.
+
+- A-016 Abschluss: Commit `2cdf97c` nach main übertragen. README anschließend per GitHub-API gelesen und bytegleich mit lokal geprüfter Fassung verglichen. Alle ergänzten Funktionsangaben am Ziel vorhanden. Dokumentation geprüft, keine Produkt-/Paketänderung.

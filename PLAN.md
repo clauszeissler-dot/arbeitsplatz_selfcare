@@ -6,7 +6,8 @@
 **Abschlussnachweis:** lokale Inhalts-/Linkprüfung und nach Push Remote-README auf die ergänzten Angaben prüfen.
 **Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T09:49:22+01:00.
 **Umfang/Freigabe:** Abschluss der bereits beauftragten README-Aktualisierung; Dokumentation committen/pushen, Binärpakete unverändert. Keine neuen Build-/Browserprüfungen für reine Textkorrektur.
-**Nächster Schritt:** bestehende Texte ergänzen, Links prüfen, committen/pushen, Remote-Inhalt abgleichen.
+**Abschluss:** A-016 geprüft. README per GitHub-API auf main gelesen, bytegleich zur lokal geprüften Fassung. Alle ergänzten Funktionsangaben und lokalen Dateilinks bestätigt. Commit `2cdf97c` übertragen.
+**Nächster Schritt:** README bei künftigem Funktionsupdate gemeinsam mit der Umsetzung nachführen.
 
 ---
 
