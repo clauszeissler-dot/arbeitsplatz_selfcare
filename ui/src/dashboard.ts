@@ -7,11 +7,12 @@ import "@fontsource/space-grotesk/600.css";
 import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
-import { api, listen, type Level, type Settings, type Snapshot, type TabView } from "./api";
+import { api, listen, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
 import { icons } from "./icons";
 
 const app = document.getElementById("app")!;
 let snap: Snapshot | null = null;
+let storageHealth: StorageHealth = { ok: true, message: null };
 let settingsOpen = false;
 
 const LEVEL_WORD: Record<Level, string> = { green: "GRÜN.", yellow: "GELB.", red: "ROT." };
@@ -244,6 +245,7 @@ function render() {
     </header>
 
     <main>
+      ${storageHealth.message ? `<aside class="storage-warning" role="alert">${esc(storageHealth.message)}</aside>` : ""}
       <section class="hero lvl-${s.level}">
         ${trafficLight(s.level)}
         <div class="hero-text">
@@ -410,10 +412,14 @@ async function renderSettings(settingsOverride?: Settings, autoOverride?: boolea
     for (const b of BANDS) {
       next.thresholds[b.key] = { green: Number(fd.get(`t_${b.key}_green`)), yellow: Number(fd.get(`t_${b.key}_yellow`)) };
     }
-    await api.saveSettings(next);
-    const wantAuto = fd.get("autostart") === "on";
-    if (wantAuto !== auto) await api.setAutostart(wantAuto).catch(() => {});
-    document.getElementById("saved")!.textContent = "Gespeichert";
+    try {
+      await api.saveSettings(next);
+      const wantAuto = fd.get("autostart") === "on";
+      if (wantAuto !== auto) await api.setAutostart(wantAuto).catch(() => {});
+      document.getElementById("saved")!.textContent = "Gespeichert";
+    } catch {
+      document.getElementById("saved")!.textContent = "Speichern fehlgeschlagen";
+    }
   });
 }
 
@@ -429,17 +435,24 @@ app.addEventListener("click", (e) => {
   } else if (act === "refresh") {
     void api.refresh();
   } else {
-    void api.act(act);
+    void api.act(act).catch(() => {
+      storageHealth = { ok: false, message: "Die Aktion konnte nicht sicher gespeichert werden." };
+      render();
+    });
   }
 });
 async function load() {
-  snap = await api.snapshot();
+  [snap, storageHealth] = await Promise.all([api.snapshot(), api.storageHealth()]);
   render();
 }
 
 void listen<Snapshot>("snapshot", (s) => {
   snap = s;
   // Offenes Einstellungsformular nicht beim Tippen überschreiben
+  if (!settingsOpen) render();
+});
+void listen<StorageHealth>("storage_health", (health) => {
+  storageHealth = health;
   if (!settingsOpen) render();
 });
 void load();

@@ -105,7 +105,8 @@ Click **Speichern** (save) at the end.
 
 - **Reads:** the titles and folders of your Ghostty tabs, which programs are running and how busy they are, how long you have not typed, and whether a camera or microphone is in use anywhere.
 - **Records nothing:** Lotse does not listen and sees no camera image. It only checks whether a device is on.
-- **Stores:** your daily values and settings only on your Mac, in `~/Library/Application Support/de.kiaffairs.lotse/`.
+- **Stores:** your daily values and settings only on your Mac, in `~/Library/Application Support/de.kiaffairs.lotse/`. The directory is restricted to your account (`0700`) and files to owner read/write (`0600`). Lotse retains at most 60 daily summaries.
+- **Not encrypted:** processes running as your signed-in user can generally read the local JSON files. Lotse does not persist tab titles, working directories, or full process arguments.
 - **No internet needed:** Lotse works offline and sends nothing anywhere.
 
 ## Important limits

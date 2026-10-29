@@ -25,11 +25,15 @@ APPLE_SIGNING_IDENTITY='Developer ID Application: Dein Name (DEINTEAM)' npm run 
 
 ```sh
 APPLE_SIGNING_IDENTITY='Developer ID Application: Dein Name (DEINTEAM)' \
+  APPLE_EXPECTED_TEAM_ID='DEINTEAM' \
+  APPLE_EXPECTED_BUNDLE_ID='de.example.pausenhelfer' \
   APP_PATH="$PWD/target/release/bundle/macos/Pausenhelfer.app" \
   ./scripts/notarize.sh mein-notarisierungsprofil
 ```
 
-Das Skript verlangt die Identität und das Profil **ausdrücklich**. Es gibt keinen
+Das Skript verlangt Identität, Team-ID, Bundle-ID und Profil **ausdrücklich**
+und vergleicht sie vor dem ersten Apple-Aufruf mit der tatsächlichen App-Signatur.
+Es gibt keinen
 Default auf Claus' Developer ID oder sein Schlüsselbundprofil. `APP_PATH` wählt
 die eigene App; ZIP/DMG übernehmen deren Dateinamen. Ohne `APP_PATH` ist das lokale
 Original-Bundle `Lotse.app` der Zielpfad. Der Pfad ist keine Signierberechtigung.
@@ -69,6 +73,8 @@ Nur für Claus' offizielle Original-Releases: vorhandenen signierten Stand über
 
 ```sh
 APPLE_SIGNING_IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)' \
+  APPLE_EXPECTED_TEAM_ID='ZWT6395G7Q' \
+  APPLE_EXPECTED_BUNDLE_ID='de.kiaffairs.lotse' \
   ./scripts/notarize.sh KI-Kennzeichnung-Notarization
 ```
 
@@ -104,8 +110,9 @@ Apple-Protokolle liegen im Artefaktordner, Submission-IDs im Projekt-Arbeitslog.
 Das bereits notarisierte Apple-Silicon-Paket wird unverändert als Release
 [`lotse-0.1.0`](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/tag/lotse-0.1.0)
 angeboten. README und beide Anleitungen verlinken direkt auf `Lotse.dmg`;
-zusätzlich werden `Lotse.zip` und `SHA256SUMS` bereitgestellt. Das Repository bleibt
-privat, daher setzt der Download entsprechenden GitHub-Zugriff voraus.
+zusätzlich werden `Lotse.zip` und `SHA256SUMS` bereitgestellt. Das Repository ist
+inzwischen öffentlich; frühere Projektlogs mit „privat“ dokumentieren den damaligen
+Stand und sind keine aktuelle Zugriffsaussage.
 
 Der Tag beginnt bewusst nicht mit `v`: Der bestehende `v*`-Workflow würde einen
 separaten Universal-Build erzeugen. Dieser Release enthält exakt den lokal
@@ -116,3 +123,18 @@ Nutzerauftrag; das Notarisierungsskript veröffentlicht weiterhin nichts.
 Veröffentlicht am 2026-10-29. Tatsächlicher GitHub-Download aller drei Dateien gegen lokale Prüfsummen verglichen; DMG-Signatur und angeheftetes Ticket auch nach Download erfolgreich geprüft. Direktlink im Remote-README nachgewiesen.
 
 Die Lizenzierung vom 2026-10-29 gilt auch für die unveränderten bereits veröffentlichten Artefakte von `lotse-0.1.0`. Lizenz und Hinweise werden diesem Release separat beigefügt; das DMG/ZIP wird nicht umgepackt, sodass Signatur, Ticket und bisherige Prüfsummen erhalten bleiben. Zukünftige Releases sollen die Lizenzhinweise bereits vor dem Signieren mitliefern.
+
+## Geschützte GitHub-Releases ab A-020
+
+Zukünftige offizielle Tags folgen `vX.Y.Z`. Der Workflow wird ausschließlich
+manuell vom geschützten `main` gestartet; ein Tag-Push allein startet nichts.
+Er baut zunächst ohne Secrets, prüft Tag, Version, Tests und SHA-256 und wartet anschließend am
+GitHub-Environment `production-release` auf die manuelle Freigabe. Erst danach
+stehen Apple-Secrets zur Verfügung. Der privilegierte Job nutzt ausschließlich
+vollständig gepinnte offizielle GitHub-Actions und repositoryeigene Skripte. Er
+erzeugt einen Draft-Release; Veröffentlichung bleibt eine bewusste Handlung.
+
+Das Environment benötigt zusätzlich zu den bisherigen Werten
+`APPLE_EXPECTED_TEAM_ID` und `APPLE_EXPECTED_BUNDLE_ID`. Actions-Referenzen werden
+über Dependabot aktualisiert und müssen als vollständige Commit-SHAs geprüft
+bleiben.

@@ -198,3 +198,23 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - DMG-/ZIP-Digests der veröffentlichten Assets entsprechen weiterhin den unter A-013/A-014 geprüften SHA-256-Werten. Keine Pakete verändert oder erneut signiert.
 - Prüfung: offizielle Apache-2.0-Vorlage unverändert; Cargo-Metadaten beider Crates und npm/Lock-Metadaten Apache-2.0; lokale Dateilinks gültig. `bash -n` und drei Konfigurationstests grün. Die Tests werden in die bestehende CI übernommen; kein realer Schlüsselbund- oder Apple-Aufruf im Test. Keine getrackten `.p8`, `.p12`, `.pem` oder `.key`-Dateien gefunden (keine Aussage einer vollständigen Geheimnisprüfung).
 - Abgleich: A-017 und A-018 geprüft erfüllt, keine offenen Lizenz-/Dokumentationspunkte dieses Auftrags. Apache-Code-Rechte bleiben unverändert; Marken-/Identitätsabgrenzung wird nicht als Änderung am Standardlizenztext ausgegeben. Frühere Produktprüfungen gelten für den unveränderten Download weiter.
+
+
+## 2026-10-29T10:41:27+01:00 – Codex-Security-Audit (A-019)
+
+- Nutzerkorrektur berücksichtigt: Host ist Codex CLI, nicht Codex Desktop. Der Standardscan wurde über den CLI-geeigneten Workflow ausgeführt. Der Plugin-Advisory `not_granted` widerspricht der vom Nutzer bestätigten, Ende September verlängerten Daybreak-Freigabe und wurde nicht als Zugriffssperre behandelt.
+- Versiegelter Scan `4eb909c1-564f-4aaa-8d1c-a7a978d4af62` für Revision `0dd35bd32f51edb16642ea351387ac032c694f6a`; Bericht und SARIF im Codex-Security-Scanverzeichnis. Ergebnis: 1 hohes Finding zu mutable GitHub-Action-Tags im credentialtragenden Release-Job; 2 niedrige Findings zu Save-Reihenfolge und fehlendem App-Signer-Abgleich im Notarisierungsskript.
+- Datenspeicherung: `settings.json` und `state.json` als unverschlüsseltes JSON unter `/Users/kiaffairs/Library/Application Support/de.kiaffairs.lotse/`. Dateien aktuell `0644`, App-Ordner `0755`, aber `Library` und `Application Support` jeweils `0700`; andere lokale Konten können den Pfad daher auf diesem Mac nicht durchqueren. Prozesse desselben Nutzerkontos können die Dateien lesen. Raw Ghostty-Titel, Arbeitsverzeichnisse und Prozessargumente werden nur live verarbeitet, nicht in `state.json` persistiert.
+- Positivbefunde: keine eingebetteten Secrets/privaten Schlüssel; feste absolute Prozesse und konstantes AppleScript; CSP und Tauri-Capabilities ohne Remote-/Shell-/Dateisystemfreigabe; dynamische UI-Texte maskiert. `npm audit --json`: 0 bekannte Advisories bei 82 Abhängigkeiten.
+- GitHub-Konfiguration schreibgeschützt geprüft: Repository aktuell öffentlich; `main` ungeschützt; Secret Scanning, Push Protection und Dependabot Security Updates deaktiviert; Actions erlaubt alle Quellen und verlangt keine SHA-Pins. Frühere Projekteinträge mit „privat“ waren damit zum Prüfzeitpunkt nicht mehr aktuell; keine Einstellung wurde verändert.
+- Release-Beleg: GitHub-Asset-Digests entsprechen den dokumentierten lokalen Hashes. Unsandboxed `codesign`, `stapler validate`, Gatekeeper und DMG-Integrität grün. Frühere Fehler innerhalb der eingeschränkten Sandbox waren Fehlbefunde.
+- Offene Prüflücke: kein aktueller RustSec-Abgleich, weil GitHub-Dependabot deaktiviert und lokal weder `cargo-audit` noch eine Advisory-Datenbank vorhanden ist. Keine CVE-Freiheit für Rust-Abhängigkeiten behauptet.
+- Versionsbezug: Produktcode unverändert; Dokumentationscommit folgt lokal. Kein Push.
+
+
+## 2026-10-29T10:58:32+01:00 – Sicherheitshärtung gestartet (A-020)
+
+- Nutzer beauftragt die vollständige Umsetzung des abgestimmten Härtungsplans. Zielort ist ein lokal vollständig geprüfter, PR-fähiger Stand und danach das geschützte GitHub-Repository; ein neuer Produktrelease gehört nicht zum Auftrag.
+- Entscheidungen übernommen: Dateirechte und Datensparsamkeit statt Anwendungsverschlüsselung, manuelle GitHub-Environment-Freigabe vor Apple-Secrets, Änderungen an `main` nur über Pull Requests.
+- Verbindliche Gates: drei Scan-Findings mit Regressionstests schließen; bestehende Release-Artefakte und fremde ungetrackte Handoffs nicht verändern; keine Secrets auslesen; S1-Sicherheitsprüfung mit Missbrauchs- und Positivkontrollen vor Abschluss.
+- Arbeitsbeginn und erster Zielabgleich: 2026-10-29T10:58:32+01:00. Nächster Schritt sind Red-Tests an den drei tatsächlichen Sicherheitsgrenzen.

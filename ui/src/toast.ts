@@ -120,7 +120,14 @@ root.addEventListener("click", (e) => {
   if (!t) return;
   if (t.hasAttribute("data-start")) { void start(); return; }
   if (starting) return;
-  if (t.dataset.action && t.dataset.action !== "ok") void api.act(t.dataset.action, current?.kind);
+  if (t.dataset.action && t.dataset.action !== "ok") {
+    void api.act(t.dataset.action, current?.kind)
+      .then(hide)
+      .catch(() => {
+        root.querySelector(".error")!.textContent = "Die Aktion konnte nicht sicher gespeichert werden. Bitte erneut versuchen.";
+      });
+    return;
+  }
   hide();
 });
 root.addEventListener("mouseenter", () => {

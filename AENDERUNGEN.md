@@ -28,6 +28,8 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 
 | A-017 | Nutzer, 2026-10-29 | Nutzung und Weitergabe des Originalprodukts lizenzieren; veränderte Veröffentlichungen unter eigener Identität erlauben. | LICENSE/NOTICE, klarer Umfang und Marken-/Identitätsabgrenzung, Metadaten und README; Lizenz dem bestehenden Release zugeordnet. | geprüft | Lizenz 1/3 | LICENSE/NOTICE/BRANDING.md auf GitHub bytegleich geprüft; alle drei Release-Anhänge erneut heruntergeladen und verglichen, Metadaten Apache-2.0. |
 | A-018 | Nutzer, 2026-10-29 | Selbstbau dokumentieren, Verwendung von Claus' Entwickleridentität für Änderungen ausschließen. | Anleitung verlangt eigene App-Kennung, bei veröffentlichten Änderungen eigener Name/Marke und eigene Signierung/Notarisierung; Signierskript nutzt keine feste Claus-Identität als Default. | geprüft | Lizenz 2/3 | Eigene Bundle-ID in DE/EN-Anleitung; kein fester Claus-Identitäts-/Profil-Default im Skript. Drei Tests rot → grün; Remote-Skript geprüft. |
+| A-019 | Nutzer, 2026-10-29 | Repository mit Codex Security prüfen; Datenspeicherung, Zugriffswege, Verschlüsselung, macOS-Rechte, Prozesse, AppleScript, Secrets, Signierung und Abhängigkeiten offenlegen. | Versiegelter, quellbelegter Bericht nennt Findings, Gegenbelege, tatsächlichen Speicherort/-schutz und verbleibende Prüflücken. | geprüft | Sicherheitsaudit 2026-10-29 | Codex-Security-Scan `4eb909c1-564f-4aaa-8d1c-a7a978d4af62`: 1× hoch, 2× niedrig; Bericht erzeugt. RustSec-Abgleich ausdrücklich offen, da Dependabot deaktiviert und keine lokale Advisory-Datenbank vorhanden. |
+| A-020 | Nutzer, 2026-10-29 | Beschlossenen Härtungsplan vollständig umsetzen. | Alle drei validierten Findings sind mit Regressionstests behoben; lokale Daten werden geordnet und mit `0700`/`0600` gespeichert; Release-Secrets liegen hinter manueller Freigabe; GitHub-Sicherheitskontrollen und PR-Pflicht sind aktiv und nachgewiesen. | in Arbeit | Sicherheitshärtung 2026-10-29 | Umsetzung und frische Abschlussprüfung laufen. Kein neuer Produktrelease vorgesehen. |
 
 ## Revisionen und Entscheidungen
 
@@ -70,3 +72,7 @@ A-014/A-015 geprüft erfüllt. Release unter https://github.com/clauszeissler-do
 ## Abschluss Lizenz/Identität 2026-10-29
 
 A-017/A-018 geprüft erfüllt. Nutzerentscheidung erlaubt Änderungen unter eigener Identität. Originalpakete bleiben unverändert; Quellcode-Lizenz, Originalweitergabe und Marken-/Entwickleridentität sind getrennt beschrieben. LICENSE/NOTICE/BRANDING.md dem bestehenden Release hinzugefügt und per Download geprüft.
+
+## Abschluss Sicherheitsaudit 2026-10-29
+
+A-019 mit transparenter Teilabdeckung geprüft: vollständige statische Quellprüfung, GitHub-Konfiguration, lokale Dateirechte, npm-Advisories und vorhandene Signatur-/Notarisierungsartefakte geprüft. Drei Findings dokumentiert. Aktueller GitHub-Befund ist `public`; frühere Einträge mit „privat“ bleiben als damalige Annahme historisch erhalten. Keine Sichtbarkeit oder GitHub-Sicherheitseinstellung wurde in diesem Prüfauftrag verändert. Offener externer Prüfpunkt: aktueller RustSec-Abgleich.

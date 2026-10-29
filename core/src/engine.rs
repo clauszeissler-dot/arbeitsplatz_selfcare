@@ -243,6 +243,9 @@ impl Engine {
     pub fn new(mut settings: Settings, mut state: State) -> Self {
         settings.normalize_postures();
         normalize_state_postures(&mut state, &settings);
+        if state.history.len() > 60 {
+            state.history.drain(..state.history.len() - 60);
+        }
         Self {
             settings,
             state,
@@ -989,6 +992,24 @@ mod tests {
 
         assert_eq!(e.state.posture, "office_chair");
         assert_eq!(e.state.posture_secs.get("office_chair"), Some(&1800));
+    }
+
+    #[test]
+    fn imported_history_is_limited_to_the_latest_sixty_days() {
+        let state = State {
+            history: (0..75)
+                .map(|day| DaySummary {
+                    day: format!("day-{day}"),
+                    ..DaySummary::default()
+                })
+                .collect(),
+            ..State::default()
+        };
+        let engine = Engine::new(Settings::default(), state);
+
+        assert_eq!(engine.state.history.len(), 60);
+        assert_eq!(engine.state.history.first().unwrap().day, "day-15");
+        assert_eq!(engine.state.history.last().unwrap().day, "day-74");
     }
 
     #[test]

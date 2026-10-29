@@ -2,10 +2,11 @@ mod collect;
 mod exercise;
 #[cfg(target_os = "macos")]
 mod macos_av;
+mod persistence;
 
 use lotse_core::engine::State as EngineState;
 use lotse_core::{Engine, Hint, HintKind, Level, Settings, Snapshot};
-use std::path::PathBuf;
+use persistence::{mutate_and_save, Persistence};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::image::Image;
@@ -20,7 +21,8 @@ const TOAST_MARGIN: f64 = 14.0;
 
 struct Shared {
     engine: Mutex<Engine>,
-    dir: PathBuf,
+    persistence: Persistence,
+    storage_warning: Mutex<Option<String>>,
     exercise: Mutex<Option<exercise::Exercise>>,
     status_item: Mutex<Option<MenuItem<tauri::Wry>>>,
 }
@@ -33,20 +35,32 @@ fn today() -> String {
     chrono::Local::now().format("%Y-%m-%d").to_string()
 }
 
-fn load<T: serde::de::DeserializeOwned + Default>(path: &PathBuf) -> T {
-    std::fs::read_to_string(path)
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_default()
+#[derive(Clone, serde::Serialize)]
+struct StorageHealth {
+    ok: bool,
+    message: Option<String>,
 }
 
-fn save<T: serde::Serialize>(path: &PathBuf, value: &T) {
-    if let Ok(json) = serde_json::to_string_pretty(value) {
-        let tmp = path.with_extension("tmp");
-        if std::fs::write(&tmp, json).is_ok() {
-            let _ = std::fs::rename(tmp, path);
-        }
+fn storage_health(shared: &Shared) -> StorageHealth {
+    let message = shared.storage_warning.lock().unwrap().clone();
+    StorageHealth {
+        ok: message.is_none(),
+        message,
     }
+}
+
+fn record_storage_result(app: &AppHandle, result: Result<(), String>) -> Result<(), String> {
+    let shared = app.state::<Shared>();
+    const STORAGE_ERROR: &str = "Lokale Daten konnten nicht sicher gespeichert werden.";
+    let mut warning = shared.storage_warning.lock().unwrap();
+    match &result {
+        Err(_) => *warning = Some(STORAGE_ERROR.to_string()),
+        Ok(()) if warning.as_deref() == Some(STORAGE_ERROR) => *warning = None,
+        Ok(()) => {}
+    }
+    drop(warning);
+    let _ = app.emit("storage_health", storage_health(&shared));
+    result
 }
 
 // ---------- Tray ----------
@@ -102,6 +116,11 @@ fn status_line(s: &Snapshot) -> String {
 
 fn update_tray(app: &AppHandle, snap: &Snapshot) {
     let shared = app.state::<Shared>();
+    let line = if shared.storage_warning.lock().unwrap().is_some() {
+        "Speicherfehler · Cockpit öffnen".to_string()
+    } else {
+        status_line(snap)
+    };
     if let Some(tray) = app.tray_by_id("main") {
         let _ = tray.set_icon(Some(dot_icon(snap.level, snap.in_meeting)));
         let title = if snap.in_break {
@@ -110,11 +129,11 @@ fn update_tray(app: &AppHandle, snap: &Snapshot) {
             format!("{}′", snap.block_min)
         };
         let _ = tray.set_title(Some(title));
-        let _ = tray.set_tooltip(Some(status_line(snap)));
+        let _ = tray.set_tooltip(Some(line.clone()));
     }
     let item = shared.status_item.lock().unwrap().clone();
     if let Some(item) = item {
-        let _ = item.set_text(status_line(snap));
+        let _ = item.set_text(&line);
     }
 }
 
@@ -132,7 +151,13 @@ fn show_dashboard(app: &AppHandle) {
 
 fn show_toast(app: &AppHandle, hint: &Hint) -> bool {
     let shared = app.state::<Shared>();
-    if shared.exercise.lock().unwrap().as_ref().is_some_and(|e| e.deadline.is_some()) {
+    if shared
+        .exercise
+        .lock()
+        .unwrap()
+        .as_ref()
+        .is_some_and(|e| e.deadline.is_some())
+    {
         return false;
     }
     let Some(w) = app.get_webview_window("toast") else {
@@ -172,10 +197,10 @@ fn play_sound(app: AppHandle, name: String) -> Result<(), String> {
         "complete" => include_bytes!("../../ui/src/audio/complete.wav"),
         _ => return Err("Unbekannter Klang".into()),
     };
-    let dir = app.state::<Shared>().dir.join("sounds");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let path = dir.join(format!("{name}.wav"));
-    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    let path =
+        app.state::<Shared>()
+            .persistence
+            .write_private("sounds", &format!("{name}.wav"), bytes)?;
     #[cfg(target_os = "macos")]
     std::thread::spawn(move || {
         let _ = std::process::Command::new("/usr/bin/afplay")
@@ -201,7 +226,13 @@ fn start_hint_timer(app: AppHandle, sound: bool) -> Result<(), String> {
         exercise.hint.kind
     };
     if matches!(kind, HintKind::Break | HintKind::LongBreak) {
-        perform(&app, "break_start", Some(kind));
+        if let Err(error) = perform(&app, "break_start", Some(kind)) {
+            if let Some(exercise) = app.state::<Shared>().exercise.lock().unwrap().as_mut() {
+                exercise.deadline = None;
+                exercise.finished = false;
+            }
+            return Err(error);
+        }
     }
     if sound {
         let _ = play_sound(app, "start".into());
@@ -244,13 +275,19 @@ fn tick(app: &AppHandle) {
     let settings = shared.engine.lock().unwrap().settings.clone();
     // Sammeln ohne Lock – osascript/ps können dauern
     let obs = collect::observe(&settings);
-    let (hint, snap, state) = {
-        let mut e = shared.engine.lock().unwrap();
-        let t = now();
-        let hint = e.tick(t, &today(), obs);
-        (hint, e.snapshot(t), e.state.clone())
-    };
-    save(&shared.dir.join("state.json"), &state);
+    let persisted = mutate_and_save(
+        &shared.engine,
+        &shared.persistence,
+        "state.json",
+        |e| {
+            let t = now();
+            let hint = e.tick(t, &today(), obs);
+            (hint, e.snapshot(t))
+        },
+        |e| &e.state,
+    );
+    let (hint, snap) = persisted.value;
+    let _ = record_storage_result(app, persisted.result);
     publish(app, &snap);
     if let Some(h) = hint {
         if show_toast(app, &h) && settings.sound_enabled {
@@ -259,41 +296,53 @@ fn tick(app: &AppHandle) {
     }
 }
 
-fn with_engine<R>(app: &AppHandle, f: impl FnOnce(&mut Engine, i64) -> R) -> R {
+fn with_engine<R>(app: &AppHandle, f: impl FnOnce(&mut Engine, i64) -> R) -> Result<R, String> {
     let shared = app.state::<Shared>();
-    let (r, snap, state) = {
-        let mut e = shared.engine.lock().unwrap();
-        let t = now();
-        let r = f(&mut e, t);
-        (r, e.snapshot(t), e.state.clone())
-    };
-    save(&shared.dir.join("state.json"), &state);
+    let persisted = mutate_and_save(
+        &shared.engine,
+        &shared.persistence,
+        "state.json",
+        |e| {
+            let t = now();
+            let result = f(e, t);
+            (result, e.snapshot(t))
+        },
+        |e| &e.state,
+    );
+    let (result, snap) = persisted.value;
+    let saved = record_storage_result(app, persisted.result);
     publish(app, &snap);
-    r
+    saved.map(|()| result)
 }
 
 /// Aktionen aus Toast, Dashboard und Menü.
-fn perform(app: &AppHandle, action: &str, kind: Option<HintKind>) {
+fn perform(app: &AppHandle, action: &str, kind: Option<HintKind>) -> Result<(), String> {
     match action {
-        "drink" => with_engine(app, |e, t| e.drink(t, None)),
+        "drink" => with_engine(app, |e, t| e.drink(t, None)).map(|_| ()),
         a if a.starts_with("posture_") => {
             let id = a.trim_start_matches("posture_");
-            with_engine(app, |e, t| e.set_posture(t, id));
+            with_engine(app, |e, t| e.set_posture(t, id)).map(|_| ())
         }
-        "break_start" => with_engine(app, |e, t| e.start_break(t)),
-        "break_end" => with_engine(app, |e, t| e.finish_break(t)),
-        "resume" => with_engine(app, |e, t| e.snooze(t, 0)),
-        "dashboard" => show_dashboard(app),
-        "quit" => app.exit(0),
+        "break_start" => with_engine(app, |e, t| e.start_break(t)).map(|_| ()),
+        "break_end" => with_engine(app, |e, t| e.finish_break(t)).map(|_| ()),
+        "resume" => with_engine(app, |e, t| e.snooze(t, 0)).map(|_| ()),
+        "dashboard" => {
+            show_dashboard(app);
+            Ok(())
+        }
+        "quit" => {
+            app.exit(0);
+            Ok(())
+        }
         a if a.starts_with("snooze_") => {
             let min: u32 = a.trim_start_matches("snooze_").parse().unwrap_or(15);
             match kind {
                 // „Gleich“ an einem Hinweis verschiebt nur diesen Hinweis
-                Some(k) => with_engine(app, |e, t| e.dismiss(t, k, min)),
-                None => with_engine(app, |e, t| e.snooze(t, min)),
+                Some(k) => with_engine(app, |e, t| e.dismiss(t, k, min)).map(|_| ()),
+                None => with_engine(app, |e, t| e.snooze(t, min)).map(|_| ()),
             }
         }
-        _ => {}
+        _ => Ok(()),
     }
 }
 
@@ -317,17 +366,39 @@ fn get_settings(app: AppHandle) -> Settings {
 }
 
 #[tauri::command]
-fn save_settings(app: AppHandle, settings: Settings) {
-    let shared = app.state::<Shared>();
-    let mut settings = settings;
-    settings.normalize_postures();
-    save(&shared.dir.join("settings.json"), &settings);
-    with_engine(&app, |e, _| e.update_settings(settings));
+fn get_storage_health(app: AppHandle) -> StorageHealth {
+    storage_health(&app.state::<Shared>())
 }
 
 #[tauri::command]
-fn act(app: AppHandle, action: String, kind: Option<HintKind>) {
-    perform(&app, &action, kind);
+fn save_settings(app: AppHandle, settings: Settings) -> Result<(), String> {
+    let shared = app.state::<Shared>();
+    let mut settings = settings;
+    settings.normalize_postures();
+    let (snap, result) = {
+        let mut engine = shared.engine.lock().unwrap();
+        match shared.persistence.save("settings.json", &settings) {
+            Ok(()) => {
+                engine.update_settings(settings);
+                let snap = engine.snapshot(now());
+                (
+                    Some(snap),
+                    shared.persistence.save("state.json", &engine.state),
+                )
+            }
+            Err(error) => (None, Err(error)),
+        }
+    };
+    let saved = record_storage_result(&app, result);
+    if let Some(snap) = snap {
+        publish(&app, &snap);
+    }
+    saved
+}
+
+#[tauri::command]
+fn act(app: AppHandle, action: String, kind: Option<HintKind>) -> Result<(), String> {
+    perform(&app, &action, kind)
 }
 
 #[tauri::command]
@@ -336,7 +407,7 @@ fn hide_toast(app: AppHandle) {
     if ended.is_some_and(|e| {
         e.deadline.is_some() && matches!(e.hint.kind, HintKind::Break | HintKind::LongBreak)
     }) {
-        perform(&app, "break_end", None);
+        let _ = perform(&app, "break_end", None);
     }
     if let Some(w) = app.get_webview_window("toast") {
         let _ = w.hide();
@@ -419,7 +490,9 @@ fn build_tray(app: &AppHandle) -> tauri::Result<MenuItem<tauri::Wry>> {
         .icon_as_template(false)
         .menu(&menu)
         .show_menu_on_left_click(true)
-        .on_menu_event(|app, event| perform(app, event.id.as_ref(), None))
+        .on_menu_event(|app, event| {
+            let _ = perform(app, event.id.as_ref(), None);
+        })
         .build(app)?;
     Ok(status)
 }
@@ -433,6 +506,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             get_settings,
+            get_storage_health,
             save_settings,
             act,
             hide_toast,
@@ -446,13 +520,21 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let dir = app.path().app_data_dir()?;
-            std::fs::create_dir_all(&dir)?;
-            let settings: Settings = load(&dir.join("settings.json"));
-            let state: EngineState = load(&dir.join("state.json"));
+            let persistence =
+                Persistence::open(app.path().app_data_dir()?).map_err(std::io::Error::other)?;
+            let settings = persistence
+                .load::<Settings>("settings.json")
+                .map_err(std::io::Error::other)?;
+            let state = persistence
+                .load::<EngineState>("state.json")
+                .map_err(std::io::Error::other)?;
+            let load_warning = settings.warning.or(state.warning).map(|_| {
+                "Eine beschädigte lokale Datendatei wurde gesichert und neu angelegt.".to_string()
+            });
             app.manage(Shared {
-                engine: Mutex::new(Engine::new(settings, state)),
-                dir,
+                engine: Mutex::new(Engine::new(settings.value, state.value)),
+                persistence,
+                storage_warning: Mutex::new(load_warning),
                 exercise: Mutex::new(None),
                 status_item: Mutex::new(None),
             });

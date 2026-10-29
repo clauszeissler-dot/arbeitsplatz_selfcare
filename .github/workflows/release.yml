@@ -1,47 +1,89 @@
 name: Release
 
-# Startet bei einem Versions-Tag (z. B. v0.1.0) oder manuell.
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version_tag:
+        description: "Vorhandenes Versionstag im Format vX.Y.Z"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.version_tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
-  macos:
-    name: Mac – signieren & notarisieren
-    runs-on: macos-latest
+  build:
+    name: Geprüften Universal-Build erstellen
+    runs-on: macos-15
     permissions:
-      contents: write
+      contents: read
+    env:
+      VERSION_TAG: ${{ inputs.version_tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: refs/tags/${{ env.VERSION_TAG }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
-      - uses: Swatinem/rust-cache@v2
+      - name: Release-Referenz und Version binden
+        run: scripts/validate-release.sh "$VERSION_TAG"
+      - name: Rust installieren
+        run: |
+          rustup toolchain install 1.96.1 --profile minimal --component clippy,rustfmt --target aarch64-apple-darwin,x86_64-apple-darwin
+          rustup default 1.96.1
       - run: npm ci
-      - name: Notarisierungs-Schlüssel ablegen
+      - run: python3 -m unittest discover -s tests -p "test_*.py"
+      - run: cargo test --workspace --locked
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: npm audit --audit-level=high
+      - run: npm run build
+      - run: scripts/build-universal.sh
+      - name: Unsigniertes Artefakt mit Digest verpacken
+        run: |
+          mkdir -p target/release-input
+          ditto -c -k --keepParent target/universal-apple-darwin/release/bundle/macos/Lotse.app target/release-input/Lotse-unsigned.zip
+          cd target/release-input
+          shasum -a 256 Lotse-unsigned.zip > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Lotse-release-input-${{ env.VERSION_TAG }}
+          path: target/release-input
+          if-no-files-found: error
+
+  release:
+    name: Freigeben, signieren und notarisieren
+    needs: build
+    runs-on: macos-15
+    environment: production-release
+    permissions:
+      contents: write
+    env:
+      VERSION_TAG: ${{ inputs.version_tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: refs/tags/${{ env.VERSION_TAG }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: Lotse-release-input-${{ env.VERSION_TAG }}
+          path: target/release-input
+      - name: Artefakt-Digest prüfen
+        run: cd target/release-input && shasum -a 256 -c SHA256SUMS
+      - name: Signieren, notarisieren und Draft-Release anlegen
         env:
-          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
-        run: printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/AuthKey.p8"
-      - uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Developer ID Application-Zertifikat (.p12, base64) – siehe docs/RELEASE.md
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_EXPECTED_TEAM_ID: ${{ secrets.APPLE_EXPECTED_TEAM_ID }}
+          APPLE_EXPECTED_BUNDLE_ID: ${{ secrets.APPLE_EXPECTED_BUNDLE_ID }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-          # Notarisierung per App Store Connect API-Key
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Lotse ${{ github.ref_name }}"
-          releaseBody: "Signiert und von Apple notarisiert. DMG öffnen, Lotse in „Programme“ ziehen."
-          releaseDraft: true
-          args: --target universal-apple-darwin
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: scripts/ci-release.sh "$VERSION_TAG"

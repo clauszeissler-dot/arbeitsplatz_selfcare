@@ -6,6 +6,15 @@ body {
   min-height: 100vh;
 }
 
+.storage-warning {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 10px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.32);
+}
+
 /* ---------- Kopfzeile (Platz für die Fensterknöpfe links) ---------- */
 .top {
   position: sticky;

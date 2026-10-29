@@ -3,16 +3,34 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # Explicit inputs prevent a fork from silently selecting the original developer.
-if [[ $# -ne 1 || -z "${1:-}" || -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
-  printf '%s\n' 'Usage: APPLE_SIGNING_IDENTITY="your Developer ID identity" [APP_PATH="path/to/YourApp.app"] ./scripts/notarize.sh your-keychain-profile' >&2
+if [[ $# -ne 1 || -z "${1:-}" || -z "${APPLE_SIGNING_IDENTITY:-}" || -z "${APPLE_EXPECTED_TEAM_ID:-}" || -z "${APPLE_EXPECTED_BUNDLE_ID:-}" ]]; then
+  printf '%s\n' 'Usage: APPLE_SIGNING_IDENTITY="Developer ID Application: …" APPLE_EXPECTED_TEAM_ID="TEAMID" APPLE_EXPECTED_BUNDLE_ID="com.example.app" [APP_PATH="path/to/YourApp.app"] ./scripts/notarize.sh your-keychain-profile' >&2
   exit 2
 fi
 PROFILE="$1"
 IDENTITY="$APPLE_SIGNING_IDENTITY"
+EXPECTED_TEAM_ID="$APPLE_EXPECTED_TEAM_ID"
+EXPECTED_BUNDLE_ID="$APPLE_EXPECTED_BUNDLE_ID"
 APP="${APP_PATH:-$PWD/target/release/bundle/macos/Lotse.app}"
 APP_NAME="$(basename "$APP" .app)"
 OUT="$PWD/target/release/notarized"
 codesign --verify --deep --strict "$APP"
+SIGNATURE_METADATA="$(codesign --display --verbose=4 "$APP" 2>&1)"
+ACTUAL_IDENTITY="$(printf '%s\n' "$SIGNATURE_METADATA" | sed -n 's/^Authority=//p' | head -n 1)"
+ACTUAL_TEAM_ID="$(printf '%s\n' "$SIGNATURE_METADATA" | sed -n 's/^TeamIdentifier=//p' | head -n 1)"
+ACTUAL_BUNDLE_ID="$(printf '%s\n' "$SIGNATURE_METADATA" | sed -n 's/^Identifier=//p' | head -n 1)"
+if [[ "$ACTUAL_IDENTITY" != "$IDENTITY" ]]; then
+  printf 'Unerwartete Signieridentität: erwartet %s, gefunden %s\n' "$IDENTITY" "${ACTUAL_IDENTITY:-<leer>}" >&2
+  exit 3
+fi
+if [[ "$ACTUAL_TEAM_ID" != "$EXPECTED_TEAM_ID" ]]; then
+  printf 'Unerwartete Team-ID: erwartet %s, gefunden %s\n' "$EXPECTED_TEAM_ID" "${ACTUAL_TEAM_ID:-<leer>}" >&2
+  exit 3
+fi
+if [[ "$ACTUAL_BUNDLE_ID" != "$EXPECTED_BUNDLE_ID" ]]; then
+  printf 'Unerwartete Bundle-ID: erwartet %s, gefunden %s\n' "$EXPECTED_BUNDLE_ID" "${ACTUAL_BUNDLE_ID:-<leer>}" >&2
+  exit 3
+fi
 mkdir -p "$OUT"
 xcrun notarytool history --keychain-profile "$PROFILE" > /dev/null
 
