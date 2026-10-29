@@ -48,7 +48,7 @@ jobs:
           ditto -c -k --keepParent target/universal-apple-darwin/release/bundle/macos/Lotse.app target/release-input/Lotse-unsigned.zip
           cd target/release-input
           shasum -a 256 Lotse-unsigned.zip > SHA256SUMS
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Lotse-release-input-${{ env.VERSION_TAG }}
           path: target/release-input
