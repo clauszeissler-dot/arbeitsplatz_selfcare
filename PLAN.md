@@ -38,7 +38,7 @@ Updater-Signatur ersetzen.
    und sicheren Release-Artefaktpfad implementieren; Dokumentation ergänzen.
 4. [x] S1 SECURITY RED/GREEN: legitimes signiertes Kontrollupdate und
    manipulierte/unsignierte Gegenprobe mit unverändertem Zielzustand ausführen.
-5. [ ] Gesamttests, Universal-Build und lokale Zielprüfung; Anforderungen,
+5. [x] Gesamttests, Universal-Build und lokale Zielprüfung; Anforderungen,
    Projekt-/Global-Log aktualisieren, gezielt committen und über geschützten PR
    integrieren. Kein Tag und kein Release.
 
@@ -57,6 +57,18 @@ Ubuntu-Securityjob auf, dass der neue Artefaktvertrag macOS-`plutil` voraussetzt
 Die Plist-Prüfung verwendet jetzt portables Python-`plistlib`; ein neuer
 Regressionstest verbietet `plutil` in diesem Skript. Lokal 19/19 grün, erneuter
 CI-Lauf folgt.
+
+**Abschluss 2026-10-29T16:28:15+01:00:** PR #13 nach grünen Pflichtchecks
+gemergt (`00d5dd0`): Kernlogik/Security 3:44 Minuten, vollständiger
+Universal-Mac-Build 12:36 Minuten. Updater-Secrets im geschützten Environment
+vorhanden; Apple-Secrets bleiben absent und der Releasepfad fail-closed. Der
+Remote-Feature-Branch wurde gelöscht. Kein neuer Tag, Draft oder Release; der
+einzige veröffentlichte Stand bleibt `lotse-0.1.0`.
+
+**Nächster Schritt:** Erst bei einem gesondert beauftragten `0.2.0`-Release die
+Apple-Environment-Secrets einrichten, Releaseworkflow manuell freigeben, Draft
+prüfen und anschließend bewusst veröffentlichen. `0.1.0` muss einmalig manuell
+auf diese updaterfähige Version wechseln.
 
 ---
 

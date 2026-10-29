@@ -307,3 +307,9 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 
 - PR #13 scheiterte im Ubuntu-Job unmittelbar im Python-Vertragstest, während das macOS-Gate noch wartete. Ursache war die macOS-spezifische `plutil`-Abhängigkeit im ansonsten synthetisch plattformneutralen Artefakttest.
 - Die Versionslesung nutzt jetzt Python-`plistlib`; Regressionstest erzwingt die Linux-Testbarkeit und verbietet `plutil` im Artefaktskript. 19/19 Tests und Shellsyntax lokal grün. Korrigierter Commit/CI-Lauf folgt; der fehlgeschlagene Erstlauf wird nicht als Abnahme gezählt.
+
+### Remote-Abschluss · 2026-10-29T16:28:15+01:00
+
+- Korrigierter Run `40899540892`: `Kernlogik und Security` erfolgreich in 3:44 Minuten; `Mac-App bauen (unsigniert)` erfolgreich in 12:36 Minuten einschließlich Workspace-Tests, Clippy, npm-Audit, Frontend und echtem Universal-Build.
+- PR #13 sauber und mergefähig, danach per Squash gemergt. `main` steht auf `00d5dd029b56c0ffcdb90248b19b4e08b1155c27`; Remote-Feature-Branch gelöscht. Der veraltete bereits fehlgeschlagene Erstlauf wurde beendet, bevor sein wartender Mac-Job Ressourcen verbrauchte.
+- Remote-Kontrolle: ausschließlich die zwei Updater-Secret-Namen im geschützten Environment sichtbar; nur Release `lotse-0.1.0` vorhanden. Kein `v0.2.0`-Tag, kein Draft und keine Veröffentlichung. Die sechs fremden AUTO-Handoffs blieben ungestagt und unverändert.
