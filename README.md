@@ -34,6 +34,7 @@ DMG öffnen und **Lotse** in den Ordner **Programme** ziehen.
 - **Nur Hinweise, kein Zwang:** Eine kleine Karte oben rechts. Ohne laufenden Timer verschwindet sie nach der eingestellten Sichtdauer (standardmäßig 40 Sekunden).
 - **Selbstheilende Oberfläche:** Falls die lokale Verbindung zur Oberfläche kurz aussetzt, versucht das Cockpit sie erneut aufzubauen und bietet statt eines schwarzen Fensters **Erneut verbinden** an. Verpasste Hinweisereignisse werden beim Öffnen nachgeholt.
 - **Fenster wiederfinden:** Bei geöffnetem Cockpit erscheint Lotse im **Dock und in ⌘Tab**. Schließt du das Fenster, läuft die App in der Menüleiste weiter.
+- **Sichere Updates aus GitHub:** Ab Version 0.2.0 prüft Lotse beim Öffnen des Cockpits den offiziellen GitHub-Release-Feed. Installation und Neustart erfolgen erst nach deinem Klick; akzeptiert werden nur kryptografisch signierte Universal-Pakete.
 - **Ruhe im Meeting:** Ist deine Kamera oder dein Mikrofon an, kommen keine Hinweise.
 
 ![Hinweis-Karte von Lotse](docs/assets/hinweis.png)
@@ -43,14 +44,14 @@ DMG öffnen und **Lotse** in den Ordner **Programme** ziehen.
 ## Gut zu wissen
 
 - **Nur für den Mac:** Lotse läuft ab macOS 13. Eine Windows-Version ist geplant.
-- **Alles bleibt auf deinem Rechner:** Lotse schickt keine Daten ins Internet.
+- **Arbeitsdaten bleiben auf deinem Rechner:** Lotse überträgt keine Aktivitäts-, Tab- oder Verlaufsdaten. Für die Updateprüfung ruft die App ausschließlich die öffentlichen offiziellen Release-Dateien bei GitHub ab.
 - **Lokaler Schutz:** Einstellungen, höchstens 60 Tageszusammenfassungen und die heutige begrenzte Aufgaben-/Pausenzeitleiste liegen unverschlüsselt, aber mit Benutzerrechten `0700`/`0600` geschützt. Die Zeitleiste speichert nur gekürzte Anzeigenamen und Zeitwerte; Tabtitel, Arbeitsverzeichnisse und vollständige Prozessargumente werden nicht dauerhaft gespeichert.
 - **Keine Garantie für deine Gesundheit:** Lotse ist eine Erinnerungshilfe, kein Medizinprodukt. Die Startwerte beruhen auf Studien und Empfehlungen. Hör trotzdem auf deinen Körper.
 - **Woher die Werte kommen:** [Recherche und Quellen](docs/RECHERCHE.md)
 
 ## Stand
 
-Lotse ist eine erste Version (0.1.0). Der [fertige Download für Apple Silicon](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/download/lotse-0.1.0/Lotse.dmg) ist signiert und von Apple notarisiert.
+Der aktuelle fertige Download ist weiterhin Version 0.1.0 für Apple Silicon und ist signiert sowie von Apple notarisiert. Der Quellstand bereitet Version 0.2.0 mit Universal-Build und sicheren GitHub-Updates vor. Weil 0.1.0 noch keinen Updater enthält, muss diese erste Aktualisierung einmalig manuell installiert werden; danach kann Lotse weitere Updates selbst anbieten.
 Alternativ kannst du die App selbst bauen: [Anleitung](docs/ANLEITUNG.md#installieren).
 
 ## Lizenz und eigene Versionen

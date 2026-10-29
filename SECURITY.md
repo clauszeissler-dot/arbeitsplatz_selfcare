@@ -25,7 +25,18 @@ Schutzgrenze. Die Zeitleiste enthält nur aus dem letzten Pfadsegment abgeleitet
 Anzeigenamen und Zeitwerte. Tabtitel, Arbeitsverzeichnisse und vollständige Prozessargumente
 werden nicht dauerhaft gespeichert und nicht an einen Server übertragen.
 
+Ab Version 0.2.0 ruft Lotse zur Updateprüfung ausschließlich die statischen
+Release-Metadaten und bei ausdrücklicher Installation das Updatepaket aus dem
+offiziellen GitHub-Repository ab. Dabei werden keine lokalen Arbeitsdaten
+übertragen. Der Endpunkt ist fest auf HTTPS gebunden; jedes Paket wird vor der
+Installation mit dem in der App enthaltenen öffentlichen Schlüssel geprüft. Die
+Signatur bindet zusätzlich die angekündigte Version, sodass ein altes gültig
+signiertes Paket nicht als neuere Version ausgegeben werden kann.
+
 Offizielle Downloads werden mit Developer ID signiert, von Apple notarisiert
-und mit SHA-256-Prüfsummen veröffentlicht. Änderungen und Forks müssen gemäß
+und mit SHA-256-Prüfsummen veröffentlicht. Updater-Pakete erhalten davon getrennt
+eine Tauri-Signatur; der private Update-Schlüssel liegt nur im lokalen
+Schlüsselbund und im manuell freizugebenden GitHub-Release-Environment.
+Änderungen und Forks müssen gemäß
 [BRANDING.md](BRANDING.md) eine eigene App-Kennung, Marke und Entwickleridentität
 verwenden.

@@ -10,11 +10,18 @@ import "./dashboard.css";
 import { api, listen, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
 import { focusVisual, loadDashboardData, type FocusTone } from "./dashboard-model";
 import { icons } from "./icons";
+import { updatePresentation } from "./updater-model";
+import { LotseUpdater } from "./updater";
 
 const app = document.getElementById("app")!;
 let snap: Snapshot | null = null;
 let storageHealth: StorageHealth = { ok: true, message: null };
 let settingsOpen = false;
+const updater = new LotseUpdater(() => {
+  const panel = document.getElementById("update-panel");
+  if (panel) panel.innerHTML = updatePanelContent();
+  else if (updater.state.phase === "available" && snap) render();
+});
 
 const LEVEL_WORD: Record<Level, string> = { green: "GRÜN.", yellow: "GELB.", red: "ROT." };
 const LEVEL_LEAD: Record<Level, string> = {
@@ -28,6 +35,19 @@ function esc(s: string): string {
 const liters = (ml: number) => (ml / 1000).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.floor(min % 60)).padStart(2, "0")}`;
 const pct = (a: number, b: number) => Math.max(0, Math.min(100, b > 0 ? (a / b) * 100 : 0));
+
+function updatePanelContent(): string {
+  const presentation = updatePresentation(updater.state);
+  const button = presentation.action
+    ? `<button class="btn ghost" type="button" data-act="update-${presentation.action}" ${presentation.disabled ? "disabled" : ""}>${esc(presentation.actionLabel ?? "")}</button>`
+    : "";
+  return `<legend>Updates</legend><p class="update-status" role="status">${esc(presentation.status)}</p><div class="actions">${button}</div><p class="note">Nur signierte offizielle Pakete aus GitHub Releases werden akzeptiert.</p>`;
+}
+
+function updateNotice(): string {
+  if (updater.state.phase !== "available") return "";
+  return `<button class="btn update-notice" data-act="open-update">Update ${esc(updater.state.version)}</button>`;
+}
 
 function ring(value: number, max: number, tone: FocusTone, label: string, sub: string): string {
   const r = 52;
@@ -280,6 +300,7 @@ function render() {
       <div class="logo" data-tauri-drag-region><span class="brand-mark" role="img" aria-label="KI AffAIrs"></span><em>Lotse</em></div>
       <div class="chips">${chips(s)}</div>
       <div class="top-actions">
+        ${updateNotice()}
         <button class="btn ghost" data-act="refresh" title="Jetzt aktualisieren">${icons.refresh}</button>
         <button class="btn ghost" data-act="settings" title="Einstellungen">${icons.settings}</button>
       </div>
@@ -389,6 +410,7 @@ async function renderSettings(settingsOverride?: Settings, autoOverride?: boolea
         </div>`).join("")}
         <button type="button" class="btn ghost posture-add" data-posture-add>+ Haltung hinzufügen</button>
       </fieldset>
+      <fieldset id="update-panel">${updatePanelContent()}</fieldset>
       <fieldset><legend>Schalter</legend>
         <label class="toggle"><span>Mikrofon zur Meeting-Erkennung nutzen</span><input type="checkbox" name="meeting_use_mic" ${s.meeting_use_mic ? "checked" : ""}/></label>
         <label class="toggle"><span>Sanfter Hinweisklang</span><input type="checkbox" name="sound_enabled" ${s.sound_enabled ? "checked" : ""}/></label>
@@ -476,6 +498,13 @@ app.addEventListener("click", (e) => {
     render();
   } else if (act === "refresh") {
     void api.refresh();
+  } else if (act === "open-update") {
+    settingsOpen = true;
+    render();
+  } else if (act === "update-check") {
+    void updater.check();
+  } else if (act === "update-install") {
+    void updater.install();
   } else if (act === "retry") {
     snap = null;
     void load();
@@ -495,6 +524,7 @@ async function load() {
       snap = result.snapshot;
       storageHealth = result.storageHealth;
       render();
+      if (updater.state.phase === "idle") void updater.check();
       return;
     }
   }

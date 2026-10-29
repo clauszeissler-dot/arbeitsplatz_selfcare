@@ -3,6 +3,8 @@ mod exercise;
 #[cfg(target_os = "macos")]
 mod macos_av;
 mod persistence;
+#[cfg(test)]
+mod updater_security;
 
 use lotse_core::engine::State as EngineState;
 use lotse_core::{Engine, Hint, HintKind, Level, Settings, Snapshot};
@@ -546,6 +548,8 @@ pub fn run() {
             MacosLauncher::LaunchAgent,
             None,
         ))
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             get_settings,

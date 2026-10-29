@@ -10,6 +10,7 @@ required=(
   GH_TOKEN APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY
   APPLE_EXPECTED_TEAM_ID APPLE_EXPECTED_BUNDLE_ID KEYCHAIN_PASSWORD
   APPLE_API_ISSUER APPLE_API_KEY APPLE_API_KEY_CONTENT
+  TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 )
 for name in "${required[@]}"; do
   if [[ -z "${!name:-}" ]]; then
@@ -61,9 +62,10 @@ xcrun notarytool store-credentials "$PROFILE" \
 
 cd "$ROOT"
 APP_PATH="$APP" scripts/notarize.sh "$PROFILE"
+scripts/create-update-artifacts.sh "$TAG" "$APP" "$ROOT/target/release/notarized"
 cd target/release/notarized
-shasum -a 256 Lotse.dmg Lotse.zip > SHA256SUMS
-gh release create "$TAG" Lotse.dmg Lotse.zip SHA256SUMS \
+shasum -a 256 Lotse.dmg Lotse.zip Lotse.app.tar.gz Lotse.app.tar.gz.sig latest.json > SHA256SUMS
+gh release create "$TAG" Lotse.dmg Lotse.zip Lotse.app.tar.gz Lotse.app.tar.gz.sig latest.json SHA256SUMS \
   "$ROOT/LICENSE" "$ROOT/NOTICE" "$ROOT/BRANDING.md" \
   --draft \
   --title "Lotse $TAG" \

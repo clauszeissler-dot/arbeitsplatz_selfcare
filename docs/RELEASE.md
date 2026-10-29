@@ -134,17 +134,44 @@ stehen Apple-Secrets zur Verfügung. Der privilegierte Job nutzt ausschließlich
 vollständig gepinnte offizielle GitHub-Actions und repositoryeigene Skripte. Er
 erzeugt einen Draft-Release; Veröffentlichung bleibt eine bewusste Handlung.
 
+Ab Version 0.2.0 erzeugt der privilegierte Job nach Developer-ID-Signierung und
+Apple-Notarisierung zusätzlich `Lotse.app.tar.gz`, die versiongebundene
+`Lotse.app.tar.gz.sig` und `latest.json`. Der statische Feed verwendet den
+Custom Target `macos-universal` und verweist ausschließlich auf das Artefakt
+desselben Tags. Erst ein veröffentlichter, nicht bloß als Draft gespeicherter
+GitHub Release wird über `/releases/latest/download/latest.json` angeboten.
+Apple-Signatur/Notarisierung und Tauri-Updater-Signatur sind unabhängige
+Pflichtkontrollen und ersetzen einander nicht.
+
 Das Environment benötigt zusätzlich zu den bisherigen Werten
-`APPLE_EXPECTED_TEAM_ID` und `APPLE_EXPECTED_BUNDLE_ID`. Actions-Referenzen werden
+`APPLE_EXPECTED_TEAM_ID`, `APPLE_EXPECTED_BUNDLE_ID`,
+`TAURI_SIGNING_PRIVATE_KEY` und `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+Actions-Referenzen werden
 über Dependabot aktualisiert und müssen als vollständige Commit-SHAs geprüft
 bleiben.
 
-Stand A-020: Das Environment und seine manuelle Freigabe sind aktiv, enthalten
-aber bewusst noch keine Apple-Secrets. Damit schlägt ein Release sicher vor der
-Signierung fehl, bis `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`,
+Stand A-025: Das Environment und seine manuelle Freigabe sind aktiv. Die beiden
+Tauri-Werte wurden verdeckt direkt aus dem lokalen Schlüsselbund als
+Environment-Secrets hinterlegt; nur ihre Namen wurden kontrolliert. Die
+Apple-Secrets fehlen weiterhin bewusst. Damit schlägt ein Release sicher vor
+der Signierung fehl, bis `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`,
 `APPLE_SIGNING_IDENTITY`, `APPLE_EXPECTED_TEAM_ID`, `APPLE_EXPECTED_BUNDLE_ID`,
 `KEYCHAIN_PASSWORD`, `APPLE_API_ISSUER`, `APPLE_API_KEY` und
 `APPLE_API_KEY_CONTENT` einmalig als **Environment-Secrets** hinterlegt sind.
-Diese Werte niemals aus lokalen Schlüsselbunden auslesen oder in Repository-
-Secrets, Workflow-Dateien, Logs oder Commits kopieren. Die Einrichtung erfolgt
-erst vor einem tatsächlich beauftragten neuen offiziellen Release.
+Diese Apple-Werte niemals in Repository-Secrets, Workflow-Dateien, Logs oder
+Commits kopieren. Ihre Einrichtung erfolgt erst vor einem tatsächlich
+beauftragten neuen offiziellen Release.
+
+Das offizielle Lotse-Updater-Schlüsselpaar wurde für A-025 einmalig erzeugt. In
+App und Repository liegt nur der öffentliche Schlüssel. Privater Schlüssel und
+Passwort liegen lokal als getrennte generische Schlüsselbund-Einträge unter den
+Services `de.kiaffairs.lotse.updater.private-key` und
+`de.kiaffairs.lotse.updater.private-key-password`. Sie dürfen nur verdeckt in
+die gleichnamigen Environment-Secrets übertragen werden; niemals ihren Inhalt
+in Terminalausgabe, Dokumentation oder Dateien im Repository kopieren. Verlust
+des privaten Schlüssels verhindert Updates für bereits installierte Versionen,
+deshalb gehört er zusätzlich in die geschützte Owner-Sicherung.
+
+Die vorhandene `lotse-0.1.0` kennt den Updater nicht. Der Wechsel auf die erste
+updaterfähige `0.2.0` bleibt einmalig manuell; erst danach funktionieren direkte
+GitHub-Updates.

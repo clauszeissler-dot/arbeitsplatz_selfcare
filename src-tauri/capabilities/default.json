@@ -1,7 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Cockpit und Hinweis-Fenster",
-  "windows": ["main", "toast"],
-  "permissions": ["core:default", "core:window:allow-start-dragging"]
+  "description": "Cockpit mit bewusst ausgelösten, signierten Updates",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "updater:allow-check",
+    "updater:allow-download-and-install",
+    "process:allow-restart"
+  ]
 }

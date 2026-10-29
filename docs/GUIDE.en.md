@@ -18,6 +18,12 @@ how to set up and use Lotse.
 2. Open the DMG and drag **Lotse** into **Applications**.
 3. Open **Lotse** from Applications. The package is Developer ID signed and notarized by Apple.
 
+Version 0.1.0 does not contain the updater yet, so the first upgrade to the
+updater-enabled 0.2.0 must be installed manually from its DMG. Starting with
+0.2.0, Lotse checks the official GitHub release feed when the cockpit opens.
+You can also use **Settings → Updates**. Download, installation, and restart only
+begin after your click, and only correctly signed Universal packages are accepted.
+
 ### Build it yourself
 
 Original code, documentation and Lotse audio are licensed under [Apache-2.0](../LICENSE).
@@ -44,6 +50,9 @@ branding and app icons and clearly identify modifications.
 `--no-sign` does not produce a Developer ID signed or notarized package. Custom
 builds do not inherit the original signature or notarization. Use your own Apple
 credentials for distribution; see the [release guide](RELEASE.md).
+A maintained fork must also remove the official Lotse updater configuration or
+replace it with its own HTTPS feed and update signing key. The original private
+update key is never distributed with this repository.
 
 ## First start
 

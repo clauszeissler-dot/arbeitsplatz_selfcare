@@ -1,7 +1,12 @@
 """Static security contracts for CI, release, and Tauri configuration."""
+import base64
 import json
+import os
 from pathlib import Path
+import plistlib
 import re
+import subprocess
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +48,18 @@ class WorkflowSecurityTests(unittest.TestCase):
         self.assertIn("scripts/ci-release.sh", workflow)
         self.assertIn("--draft", (ROOT / "scripts" / "ci-release.sh").read_text())
 
+    def test_release_creates_version_bound_universal_updater_assets(self):
+        workflow = self.workflow("release.yml")
+        build, release = workflow.split("  release:", 1)
+        self.assertNotIn("TAURI_SIGNING_PRIVATE_KEY", build)
+        self.assertIn("TAURI_SIGNING_PRIVATE_KEY", release)
+        self.assertIn("TAURI_SIGNING_PRIVATE_KEY_PASSWORD", release)
+
+        script = (ROOT / "scripts" / "ci-release.sh").read_text()
+        self.assertIn('scripts/create-update-artifacts.sh "$TAG" "$APP"', script)
+        for asset in ("Lotse.app.tar.gz", "Lotse.app.tar.gz.sig", "latest.json"):
+            self.assertIn(asset, script)
+
     def test_universal_build_preserves_the_plist_executable_name(self):
         script = (ROOT / "scripts" / "build-universal.sh").read_text()
         self.assertIn("CFBundleExecutable", script)
@@ -73,6 +90,86 @@ class TauriSecurityTests(unittest.TestCase):
         self.assertNotIn("https:", csp)
         self.assertNotIn("connect-src", csp)
         self.assertNotIn("'unsafe-eval'", csp)
+
+    def test_updater_is_pinned_to_signed_official_github_releases(self):
+        config = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text())
+        updater = config["plugins"]["updater"]
+        self.assertEqual(
+            updater["endpoints"],
+            ["https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/latest/download/latest.json"],
+        )
+        self.assertTrue(updater["requireSignedVersion"])
+        self.assertNotIn("dangerousInsecureTransportProtocol", updater)
+        self.assertNotIn("PLACEHOLDER", updater["pubkey"])
+        decoded_key = base64.b64decode(updater["pubkey"], validate=True).decode()
+        self.assertRegex(decoded_key, r"^untrusted comment: minisign public key")
+
+    def test_only_the_cockpit_can_check_and_install_updates(self):
+        main = json.loads((ROOT / "src-tauri" / "capabilities" / "default.json").read_text())
+        toast = json.loads((ROOT / "src-tauri" / "capabilities" / "toast.json").read_text())
+        self.assertEqual(main["windows"], ["main"])
+        self.assertEqual(toast["windows"], ["toast"])
+        self.assertIn("updater:allow-check", main["permissions"])
+        self.assertIn("updater:allow-download-and-install", main["permissions"])
+        self.assertIn("process:allow-restart", main["permissions"])
+        self.assertNotIn("updater:default", main["permissions"])
+        self.assertFalse(any(permission.startswith(("updater:", "process:")) for permission in toast["permissions"]))
+
+
+class UpdateArtifactTests(unittest.TestCase):
+    def test_update_artifact_script_rejects_the_filesystem_root_as_output(self):
+        script = (ROOT / "scripts" / "create-update-artifacts.sh").read_text()
+        self.assertIn('[[ -z "$OUT" || "$OUT" == "/" ]]', script)
+
+    def test_update_manifest_targets_the_universal_bundle_and_embeds_signature(self):
+        with tempfile.TemporaryDirectory() as temp:
+            temp_path = Path(temp)
+            app = temp_path / "Lotse.app"
+            (app / "Contents" / "MacOS").mkdir(parents=True)
+            (app / "Contents" / "MacOS" / "lotse").write_bytes(b"synthetic universal app")
+            with (app / "Contents" / "Info.plist").open("wb") as handle:
+                plistlib.dump({"CFBundleShortVersionString": "0.2.0"}, handle)
+            out = temp_path / "out"
+            bin_dir = temp_path / "bin"
+            bin_dir.mkdir()
+            npm = bin_dir / "npm"
+            npm.write_text(
+                "#!/bin/sh\n"
+                "for last do :; done\n"
+                "printf '%s\\n' 'trusted-comment-signature-for-0.2.0' > \"$last.sig\"\n"
+            )
+            npm.chmod(0o755)
+            env = os.environ.copy()
+            env.update({
+                "PATH": f"{bin_dir}:{env['PATH']}",
+                "TAURI_SIGNING_PRIVATE_KEY": "synthetic-private-key",
+                "TAURI_SIGNING_PRIVATE_KEY_PASSWORD": "synthetic-password",
+            })
+
+            subprocess.run(
+                [str(ROOT / "scripts" / "create-update-artifacts.sh"), "v0.2.0", str(app), str(out)],
+                cwd=ROOT,
+                env=env,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            archive = out / "Lotse.app.tar.gz"
+            signature = out / "Lotse.app.tar.gz.sig"
+            manifest = json.loads((out / "latest.json").read_text())
+            self.assertTrue(archive.is_file())
+            self.assertTrue(signature.is_file())
+            self.assertEqual(manifest["version"], "0.2.0")
+            self.assertEqual(
+                manifest["platforms"],
+                {
+                    "macos-universal": {
+                        "url": "https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/download/v0.2.0/Lotse.app.tar.gz",
+                        "signature": "trusted-comment-signature-for-0.2.0",
+                    }
+                },
+            )
 
 
 if __name__ == "__main__":
