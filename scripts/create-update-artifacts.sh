@@ -25,7 +25,15 @@ if [[ ! -d "$APP" || "$APP_NAME" != "Lotse.app" ]]; then
   printf 'Ungültiges Update-App-Bundle: %s\n' "$APP" >&2
   exit 3
 fi
-APP_VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
+APP_VERSION="$(python3 - "$APP/Contents/Info.plist" <<'PY'
+import plistlib
+from pathlib import Path
+import sys
+
+with Path(sys.argv[1]).open("rb") as handle:
+    print(plistlib.load(handle)["CFBundleShortVersionString"])
+PY
+)"
 if [[ "$APP_VERSION" != "$VERSION" ]]; then
   printf 'Updateversion stimmt nicht: Tag %s, App %s\n' "$VERSION" "$APP_VERSION" >&2
   exit 3

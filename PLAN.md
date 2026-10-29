@@ -52,6 +52,12 @@ Kein Release wurde angelegt.
 **Nächster Schritt:** finale Gates und lokaler Commit; danach GitHub-Zugang
 erneuern, die zwei Updater-Secrets hinterlegen und den geschützten PR integrieren.
 
+**CI-Korrektur 2026-10-29T16:13:55+01:00:** PR #13 deckte im verpflichtenden
+Ubuntu-Securityjob auf, dass der neue Artefaktvertrag macOS-`plutil` voraussetzte.
+Die Plist-Prüfung verwendet jetzt portables Python-`plistlib`; ein neuer
+Regressionstest verbietet `plutil` in diesem Skript. Lokal 19/19 grün, erneuter
+CI-Lauf folgt.
+
 ---
 
 ## Stabilität, Farblogik und Zeitübersicht · A-021 bis A-023

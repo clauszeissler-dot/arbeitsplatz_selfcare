@@ -121,6 +121,11 @@ class UpdateArtifactTests(unittest.TestCase):
         script = (ROOT / "scripts" / "create-update-artifacts.sh").read_text()
         self.assertIn('[[ -z "$OUT" || "$OUT" == "/" ]]', script)
 
+    def test_update_artifact_contract_is_testable_on_linux_ci(self):
+        script = (ROOT / "scripts" / "create-update-artifacts.sh").read_text()
+        self.assertIn("plistlib", script)
+        self.assertNotIn("plutil", script)
+
     def test_update_manifest_targets_the_universal_bundle_and_embeds_signature(self):
         with tempfile.TemporaryDirectory() as temp:
             temp_path = Path(temp)
