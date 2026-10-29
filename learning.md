@@ -47,6 +47,17 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Geltung: Lokale Apple-Signierung/Notarisierung für Lotse.
 - Beobachtung: Ein nicht vorhandenes profilspezifisches `lotse` wurde fälschlich als fehlender Apple-Zugang gewertet. Ein gültiges bestehendes Profil war vorhanden.
 - Konsequenz: Bestehende Release-/Handoff-Dokumentation prüfen und vorhandenes Notarisierungsprofil referenzieren, bevor neue Credentials oder Passwort-Reset verlangt werden. Keine Secrets auslesen.
-- Zuständige Regel / Umsetzung: `docs/RELEASE.md`, Standard in `scripts/notarize.sh` ist `KI-Kennzeichnung-Notarization`.
+- Zuständige Regel / Umsetzung: `docs/RELEASE.md`, Profil für offizielle Owner-Releases ist `KI-Kennzeichnung-Notarization`; seit A-018 werden Identität und Profil ausdrücklich übergeben, damit Forks keine fremde Identität als Default übernehmen.
 - Prüfpunkt: Authentifizierter History-Aufruf und anschließende tatsächliche Einreichung.
 - Wirkung: Profil erfolgreich authentifiziert; App und DMG anschließend Accepted, Tickets und Gatekeeper erfolgreich. Dieser Fall ohne neue Credentials gelöst. Wirkung bei nächster Wiederaufnahme noch offen.
+
+
+### L-005 – Lizenz und Entwickleridentität bei Selbstbau klar trennen
+
+- Datum / Status: 2026-10-29 · bestätigt/aktiv durch Nutzerauftrag und Entscheidung zu eigenen Veröffentlichungen.
+- Quelle: Nutzer bemängelt fehlende Lizenz; erlaubt unveränderte Originalweitergabe und Änderungen unter eigener Identität.
+- Geltung: Lotse-Repository, Selbstbau und Release-Downloads.
+- Beobachtung: README bot Selbstbau an, Cargo nannte UNLICENSED; kein Lizenztext. Notarisierungsskript verwendete feste Originalidentität und Profil-Default.
+- Konsequenz / zuständige Regel: LICENSE/NOTICE/BRANDING.md sowie docs/RELEASE.md. Code-Lizenz, Originalweitergabe und Marken-/Entwickleridentität unterscheiden. Eigene Builds mit eigener Kennung; veröffentlichte Änderungen unter eigener Marke und eigenen Apple-Zugängen. Skript verlangt explizite Identität und Profil.
+- Prüfpunkt: Lizenz-Metadaten konsistent, Originalpakete unverändert, Lizenzhinweise am Download, fehlende Signierkonfiguration stoppt vor externen Aktionen.
+- Wirkung: Drei Konfigurationstests zuerst rot und danach grün; weitere Release-/Remote-Belege werden im Projektlog festgehalten. Nächste passende Wiederaufnahme noch offen.

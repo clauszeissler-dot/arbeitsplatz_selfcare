@@ -15,6 +15,22 @@ Auf diesem Mac ist Xcode 27 installiert. Die Projektdatei `.cargo/config.toml`
 setzt für macOS automatisch eine Linker-Option, die ungültige Bibliotheken für
 Rust-Prozedural-Makros verhindert. Daher genügt weiter `npm run tauri build`.
 
+## Eigene Builds und Veröffentlichungen
+
+Lizenz: [Apache-2.0](../LICENSE); zusätzliche Marken-/Identitätsabgrenzung:
+[BRANDING.md](../BRANDING.md). Für eigene Builds `identifier` und `productName`
+wie in der [Selbstbau-Anleitung](ANLEITUNG.md#alternativ-selbst-bauen) überschreiben.
+Für dauerhafte Forks diese Werte in `src-tauri/tauri.conf.json` ändern. Für eine
+veröffentlichte Änderung auch die Texte/Markengrafik in `ui/src/dashboard.ts`,
+`ui/src/toast.ts` und den HTML-Titeln sowie eigene Icons unter `assets/` und
+`src-tauri/icons/` anpassen. Ein zusätzlicher Copyright-Hinweis für eigene
+Änderungen ist möglich; ursprüngliche erforderliche Urheberhinweise bleiben.
+
+Für eigene Veröffentlichungen sind die Apple-Zugänge, Zertifikate und Secrets des
+eigenen Accounts zu verwenden. Die Release-Workflow-Datei enthält nur Secret-Namen;
+sie erteilt weder Zugriff auf Claus' Account noch die Berechtigung, seine
+Entwickleridentität für geänderte Produkte zu verwenden.
+
 ## Aufbau
 
 ```

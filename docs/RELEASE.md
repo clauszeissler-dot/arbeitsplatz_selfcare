@@ -1,70 +1,61 @@
-# Signieren & Notarisieren (Apple Developer ID)
+# Signieren und Notarisieren
 
-Lotse wird **außerhalb des App Stores** verteilt. Der Grund: Die App-Store-Sandbox
-verhindert praktisch, dass eine App andere Apps (Ghostty) per AppleScript abfragt.
-Mit Developer ID + Notarisierung startet die App trotzdem ohne Gatekeeper-Warnung.
+## Eigene Version veröffentlichen
 
-## Einmalig: Zertifikat & Schlüssel
+[Apache-2.0](../LICENSE) erlaubt Änderungen und deren Veröffentlichung.
+[BRANDING.md](../BRANDING.md) beschreibt die Abgrenzung zum offiziellen Original.
+Veränderte Veröffentlichungen brauchen einen eigenen Namen, eigene
+Marken-/App-Grafiken, eine eigene App-Kennung und eigene Apple-Zugänge. Die
+Entwickleridentität von Claus Zeißler / KI AffAIrs ist dafür nicht freigegeben.
+Das unveränderte offizielle Paket darfst du mit seinen Lizenzhinweisen weitergeben.
 
-1. **Developer ID Application**-Zertifikat anlegen
-   (developer.apple.com → Certificates → „+“ → *Developer ID Application*).
-   In der Schlüsselbundverwaltung exportieren als `.p12` mit Passwort.
-2. **App Store Connect API-Key** für die Notarisierung
-   (appstoreconnect.apple.com → Benutzer und Zugriff → Integrationen → Schlüssel, Rolle *Developer*).
-   `.p8` herunterladen, *Key ID* und *Issuer ID* notieren.
-3. Signier-Identität ermitteln:
-   ```sh
-   security find-identity -v -p codesigning
-   # → "Developer ID Application: Claus Zeißler (TEAMID1234)"
-   ```
-
-## GitHub-Secrets (Repository → Settings → Secrets → Actions)
-
-| Secret | Inhalt |
-|---|---|
-| `APPLE_CERTIFICATE` | `base64 -i zertifikat.p12 \| pbcopy` |
-| `APPLE_CERTIFICATE_PASSWORD` | Passwort der `.p12` |
-| `APPLE_SIGNING_IDENTITY` | `Developer ID Application: … (TEAMID)` |
-| `KEYCHAIN_PASSWORD` | beliebiges Zufallspasswort |
-| `APPLE_API_ISSUER` | Issuer ID |
-| `APPLE_API_KEY` | Key ID |
-| `APPLE_API_KEY_CONTENT` | kompletter Inhalt der `.p8` |
-
-Danach reicht ein Tag:
+1. Eigene Werte für `identifier` und `productName` in `src-tauri/tauri.conf.json`
+   setzen und Originalmarke/Icons ersetzen. Beispiele in der [Selbstbau-Anleitung](ANLEITUNG.md#alternativ-selbst-bauen).
+2. Für Apple-Freigaben ein eigenes Developer-ID-Zertifikat und ein eigenes
+   Notarisierungsprofil im lokalen Schlüsselbund verwenden. Secrets niemals im
+   Repository speichern. Ein bestehendes Profil des eigenen Accounts kann
+   wiederverwendet werden; dafür kein neues Passwort pro App anlegen.
+3. Mit der eigenen Identität bauen, zum Beispiel:
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0
+APPLE_SIGNING_IDENTITY='Developer ID Application: Dein Name (DEINTEAM)' npm run tauri -- build
 ```
 
-Der Workflow `release.yml` baut eine Universal-App (Apple Silicon + Intel), signiert
-mit Hardened Runtime, lässt sie von Apple notarisieren und legt das DMG als
-Release-Entwurf auf GitHub ab.
-
-## Lokal signieren (ohne CI)
+4. Das bereits signierte eigene Paket notarisieren:
 
 ```sh
-export APPLE_SIGNING_IDENTITY="Developer ID Application: … (TEAMID)"
-export APPLE_API_ISSUER=… APPLE_API_KEY=… APPLE_API_KEY_PATH=~/keys/AuthKey_XXXX.p8
-npm run tauri build -- --target universal-apple-darwin
+APPLE_SIGNING_IDENTITY='Developer ID Application: Dein Name (DEINTEAM)' \
+  APP_PATH="$PWD/target/release/bundle/macos/Pausenhelfer.app" \
+  ./scripts/notarize.sh mein-notarisierungsprofil
 ```
+
+Das Skript verlangt die Identität und das Profil **ausdrücklich**. Es gibt keinen
+Default auf Claus' Developer ID oder sein Schlüsselbundprofil. `APP_PATH` wählt
+die eigene App; ZIP/DMG übernehmen deren Dateinamen. Ohne `APP_PATH` ist das lokale
+Original-Bundle `Lotse.app` der Zielpfad. Der Pfad ist keine Signierberechtigung.
+Es werden keine privaten Schlüssel oder Zertifikate mit dem Projekt ausgeliefert.
+
+Das Skript prüft Signatur und Zugang, reicht eine ZIP-Datei bei Apple ein,
+liest den Prüfbericht, heftet das Ticket an, prüft Gatekeeper und erstellt danach
+ein ebenfalls signiertes/notarisiertes DMG mit der gestapelten App. Es veröffentlicht
+keine Dateien im Repository. Bei Weitergabe `LICENSE`, `NOTICE` und die geltenden
+Marken-/Identitätshinweise beilegen. Nach Binäränderungen neu signieren/notarisieren;
+vorhandene Originaltickets sind keine Freigabe für den neuen Build.
 
 ## Was im Bundle steckt
 
-- `Entitlements.plist`: `com.apple.security.automation.apple-events` – nötig, damit
-  die Hardened-Runtime-App Apple Events an Ghostty senden darf.
-- `Info.plist`: `LSUIElement` (kein Dock-Symbol) und der Text für die
-  Automation-Abfrage („Lotse möchte Ghostty steuern“).
-- Mikrofon/Kamera: Lotse fragt nur ab, *ob* ein Gerät irgendwo läuft. Es wird nichts
-  aufgenommen, deshalb erscheint auch keine Mikrofon-/Kamera-Freigabe.
-
+- `Entitlements.plist`: Apple-Events-Berechtigung zum Lesen der Ghostty-Tabs.
+- `Info.plist`: Menüleistenmodus und Erklärung der Apple-Events-Nutzung.
+- Mikrofon/Kamera: Lotse prüft nur, ob ein Gerät aktiv ist, ohne Aufnahme.
 
 ## Lokaler Apple-Freigabeablauf (A-013)
 
 Vorhandene Identität: `Developer ID Application: Claus Zeissler (ZWT6395G7Q)`.
 Vorhandenes Schlüsselbundprofil: `KI-Kennzeichnung-Notarization`.
 Dieses Profil ist bereits in früheren Projekten eingerichtet und am 2026-10-29
-mit einer Apple-History-Abfrage erfolgreich geprüft. Für Lotse sind keine neuen
-Zugangsdaten erforderlich. Das Fehlen eines profilspezifischen Namens belegt keinen
+mit einer Apple-History-Abfrage erfolgreich geprüft. Für den offiziellen Lotse-Release
+sind keine neuen Zugangsdaten erforderlich. Dieser Zugang ist ausschließlich für
+Claus' eigene Original-Releases vorgesehen. Das Fehlen eines profilspezifischen Namens belegt keinen
 fehlenden Apple-Zugang: vor einer Neueinrichtung vorhandene Handoffs prüfen.
 Passwörter/Schlüssel nicht auslesen, ausgeben oder in Dateien/CI-Variablen kopieren.
 
@@ -74,10 +65,11 @@ Signierten Produktions-Build erstellen:
 APPLE_SIGNING_IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)' npm run tauri build
 ```
 
-Vorhandenen signierten Stand über den bestehenden Schlüsselbundzugang notarisieren:
+Nur für Claus' offizielle Original-Releases: vorhandenen signierten Stand über den bestehenden Schlüsselbundzugang notarisieren:
 
 ```sh
-./scripts/notarize.sh
+APPLE_SIGNING_IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)' \
+  ./scripts/notarize.sh KI-Kennzeichnung-Notarization
 ```
 
 Das Skript prüft zuerst Signatur und Zugang, reicht die signierte App als ZIP ein,
@@ -122,3 +114,5 @@ der SHA-256-Prüfsumme verglichen. Upload/Push erfolgen hier auf ausdrücklichen
 Nutzerauftrag; das Notarisierungsskript veröffentlicht weiterhin nichts.
 
 Veröffentlicht am 2026-10-29. Tatsächlicher GitHub-Download aller drei Dateien gegen lokale Prüfsummen verglichen; DMG-Signatur und angeheftetes Ticket auch nach Download erfolgreich geprüft. Direktlink im Remote-README nachgewiesen.
+
+Die Lizenzierung vom 2026-10-29 gilt auch für die unveränderten bereits veröffentlichten Artefakte von `lotse-0.1.0`. Lizenz und Hinweise werden diesem Release separat beigefügt; das DMG/ZIP wird nicht umgepackt, sodass Signatur, Ticket und bisherige Prüfsummen erhalten bleiben. Zukünftige Releases sollen die Lizenzhinweise bereits vor dem Signieren mitliefern.

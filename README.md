@@ -49,6 +49,14 @@ DMG öffnen und **Lotse** in den Ordner **Programme** ziehen.
 Lotse ist eine erste Version (0.1.0). Der [fertige Download für Apple Silicon](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/download/lotse-0.1.0/Lotse.dmg) ist signiert und von Apple notarisiert.
 Alternativ kannst du die App selbst bauen: [Anleitung](docs/ANLEITUNG.md#installieren).
 
+## Lizenz und eigene Versionen
+
+**Nutzen und teilen ist erlaubt:** Die unveränderte offizielle, signierte und notarisierte Lotse-App darfst du verwenden und weitergeben. Die beiliegenden Lizenz- und Herkunftshinweise bleiben erhalten.
+
+**Selbst bauen und verändern ist ebenfalls erlaubt:** Der Projekt-Quellcode, die Dokumentation und die Lotse-Klänge stehen unter [Apache-2.0](LICENSE). Veröffentliche Änderungen unter **eigenem Namen, eigener App-Kennung und eigener Entwickleridentität**. Die Marke KI AffAIrs, originale Logos und Claus' Developer ID werden nicht zur Nutzung für eigene Releases freigegeben. Urheberhinweise bleiben auch bei eigenen Versionen erhalten.
+
+Details: [NOTICE](NOTICE) · [Marken, Originalweitergabe und eigene Builds](BRANDING.md).
+
 ## Für Entwickler
 
 Aufbau, Tests und Bauen: [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) ·

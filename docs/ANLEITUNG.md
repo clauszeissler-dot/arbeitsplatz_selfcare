@@ -20,7 +20,11 @@ wie du Lotse einrichtest und benutzt.
 
 ### Alternativ selbst bauen
 
-Für die Entwicklung oder einen eigenen Build:
+Quellcode, Dokumentation und eigene Klänge stehen unter [Apache-2.0](../LICENSE).
+Nutzen, Selbstbauen und Änderungen sind erlaubt. Für eigene Builds nimmst du eine
+**eigene App-Kennung**. Veröffentlichte Änderungen brauchen außerdem einen eigenen
+Namen, eigene Marken-/App-Grafiken und eine eigene Entwickleridentität; siehe
+[Marken- und Identitätsregeln](../BRANDING.md).
 
 1. Installiere die Werkzeuge, falls du sie noch nicht hast:
    - Xcode Command Line Tools: `xcode-select --install`
@@ -30,11 +34,19 @@ Für die Entwicklung oder einen eigenen Build:
 3. Gib ein:
    ```sh
    npm install
-   npm run tauri build
+   npm run tauri -- build --no-sign --config '{"identifier":"de.deinname.pausenhelfer","productName":"Pausenhelfer"}'
    ```
-4. Die fertige App liegt danach unter `target/release/bundle/macos/Lotse.app`. Zieh sie in deinen Ordner **Programme**.
+4. Die fertige App liegt danach unter `target/release/bundle/macos/Pausenhelfer.app`. Zieh sie in deinen Ordner **Programme**.
 
-Eigene Builds übernehmen die Signatur und Notarisierung des Downloads nicht automatisch.
+Ersetze `de.deinname.pausenhelfer` und `Pausenhelfer` durch deine eigene Kennung und
+deinen Produktnamen. Für einen dauerhaften Fork trägst du diese Werte auch in
+`src-tauri/tauri.conf.json` ein. Vor einer Veröffentlichung ersetzt du zusätzlich
+die Originalmarke und App-Icons durch eigene Grafiken und kennzeichnest Änderungen.
+
+`--no-sign` erzeugt keinen Developer-ID-signierten oder notarisierten Download.
+Eigene Builds übernehmen die Signatur und Notarisierung des Originals nicht.
+Für eine signierte Veröffentlichung brauchst du deine eigenen Apple-Zugänge:
+[Release-Anleitung](RELEASE.md).
 
 ## Der erste Start
 

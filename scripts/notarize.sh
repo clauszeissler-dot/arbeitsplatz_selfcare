@@ -2,12 +2,18 @@
 # Run after a signed production build and local Keychain profile setup.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PROFILE="${1:-KI-Kennzeichnung-Notarization}"
-IDENTITY='Developer ID Application: Claus Zeissler (ZWT6395G7Q)'
-APP="$PWD/target/release/bundle/macos/Lotse.app"
+# Explicit inputs prevent a fork from silently selecting the original developer.
+if [[ $# -ne 1 || -z "${1:-}" || -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+  printf '%s\n' 'Usage: APPLE_SIGNING_IDENTITY="your Developer ID identity" [APP_PATH="path/to/YourApp.app"] ./scripts/notarize.sh your-keychain-profile' >&2
+  exit 2
+fi
+PROFILE="$1"
+IDENTITY="$APPLE_SIGNING_IDENTITY"
+APP="${APP_PATH:-$PWD/target/release/bundle/macos/Lotse.app}"
+APP_NAME="$(basename "$APP" .app)"
 OUT="$PWD/target/release/notarized"
-mkdir -p "$OUT"
 codesign --verify --deep --strict "$APP"
+mkdir -p "$OUT"
 xcrun notarytool history --keychain-profile "$PROFILE" > /dev/null
 
 submit() {
@@ -18,23 +24,23 @@ submit() {
   python3 -c 'import json,sys; result=json.load(open(sys.argv[1])); print(result); sys.exit(0 if result.get("status")=="Accepted" else 1)' "$OUT/$label-result.json"
 }
 
-ditto -c -k --keepParent "$APP" "$OUT/Lotse.zip"
-submit "$OUT/Lotse.zip" app
+ditto -c -k --keepParent "$APP" "$OUT/$APP_NAME.zip"
+submit "$OUT/$APP_NAME.zip" app
 xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 codesign --verify --deep --strict "$APP"
 spctl --assess --type execute --verbose=2 "$APP"
 # Recreate the archive so the delivered copy contains its offline ticket.
-rm "$OUT/Lotse.zip"
-ditto -c -k --keepParent "$APP" "$OUT/Lotse.zip"
+rm "$OUT/$APP_NAME.zip"
+ditto -c -k --keepParent "$APP" "$OUT/$APP_NAME.zip"
 STAGING=$(mktemp -d "${TMPDIR:-/tmp}/lotse-notary.XXXXXX")
 trap 'rm -rf "$STAGING"' EXIT
-ditto "$APP" "$STAGING/Lotse.app"
+ditto "$APP" "$STAGING/$APP_NAME.app"
 ln -s /Applications "$STAGING/Applications"
-hdiutil create -volname Lotse -srcfolder "$STAGING" -ov -format UDZO "$OUT/Lotse.dmg"
-codesign --force --sign "$IDENTITY" --timestamp "$OUT/Lotse.dmg"
-submit "$OUT/Lotse.dmg" dmg
-xcrun stapler staple "$OUT/Lotse.dmg"
-xcrun stapler validate "$OUT/Lotse.dmg"
-hdiutil verify "$OUT/Lotse.dmg"
+hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO "$OUT/$APP_NAME.dmg"
+codesign --force --sign "$IDENTITY" --timestamp "$OUT/$APP_NAME.dmg"
+submit "$OUT/$APP_NAME.dmg" dmg
+xcrun stapler staple "$OUT/$APP_NAME.dmg"
+xcrun stapler validate "$OUT/$APP_NAME.dmg"
+hdiutil verify "$OUT/$APP_NAME.dmg"
 printf 'Notarized app, ZIP and DMG verified: %s\n' "$OUT"

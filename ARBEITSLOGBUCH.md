@@ -177,3 +177,15 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Vorhandenen tatsächlichen Ego-Lite-Timer-Screenshot eingebunden. Lokale Inhaltsprüfung gegen Funktionsliste und alle lokalen Markdown-Dateilinks erfolgreich. Binärpakete unverändert; keine neue Signierung/Notarisierung nötig. Remote-Abgleich nach Push.
 
 - A-016 Abschluss: Commit `2cdf97c` nach main übertragen. README anschließend per GitHub-API gelesen und bytegleich mit lokal geprüfter Fassung verglichen. Alle ergänzten Funktionsangaben am Ziel vorhanden. Dokumentation geprüft, keine Produkt-/Paketänderung.
+
+
+## 2026-10-29T10:06:05+01:00 – Lizenz und Entwickleridentität (A-017/A-018)
+
+- Nutzer erlaubt Nutzung/Weitergabe der Original-App und bestätigt ausdrücklich geänderte Veröffentlichungen unter eigener Identität. Keine Berechtigung zur Verwendung seiner Developer ID oder zum Publizieren veränderter Apps als offizielles Lotse-Produkt.
+- Befund: noch keine LICENSE-Datei; Cargo nennt UNLICENSED, npm keine Lizenz. Notarisierungsskript enthält feste Original-Identität und festen Profil-Default. Diese Vorgaben werden für externe Selbstbauer explizit gemacht statt automatisch benutzt.
+- Entscheidung: unveränderter Apache-2.0-Text für Code/Doku/eigene Klänge, separate Marken-/Identitätsrichtlinie und README-Zusammenfassung. Offizielles notarisiertes DMG/ZIP nicht verändern; zusätzliche Lizenz-Dateien als Release-Anhänge bereitstellen.
+
+- Implementierung: offizieller Apache-2.0-Text direkt von apache.org übernommen (Ego Lite TaskSpace 16); NOTICE und BRANDING.md erklären Code-Lizenz, Originalweitergabe auch für lotse-0.1.0, Marken-/Grafikausnahmen sowie eigene Identität für Forks. Apache-Abschnitte 4/6 und Apples Code-Signing-Erklärung als Primärquellen geprüft.
+- Cargo/npm/Lock-Metadaten auf Apache-2.0 gesetzt; eigene Drittkomponenten werden nicht neu lizenziert. README und beide Selbstbau-Anleitungen verlangen eigene Bundle-ID; Release-/Entwicklungsanleitung erklärt eigene Marken, Signierung und Profile.
+- Skript: keine eingebauten Claus-Zertifikats-/Profilvorgaben; Identität und Profil müssen explizit vorliegen. APP_PATH unterstützt eigene App-Namen und Paketdateien. Red/Green: drei Konfigurationstests zuerst rot (externe Aktion trotz fehlender Konfiguration/falscher App-Pfad), nach Anpassung grün. Tests nutzen nur einen lokalen codesign-Stub und stoppen vor realem Schlüsselbund/Apple-Aufruf.
+- Vorhandenes DMG/ZIP SHA-256 unverändert zu A-013. Lizenz wird separat an den bestehenden Release gehängt; kein Umverpacken, kein erneutes Signieren oder Notarisieren dieses Downloads.

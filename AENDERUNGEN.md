@@ -26,6 +26,9 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 
 | A-016 | Nutzer, 2026-10-29 | README auf neue Funktionen abgleichen. | README auf GitHub enthält Augen-/Pausentimer, drei Klangproben, Haltungsverwaltung, Aktivitätsrhythmus und Dock/⌘Tab sowie bestehenden Download. | geprüft | README-Funktionsabgleich | Remote-README auf main bytegleich zur lokal geprüften Fassung, inklusive Dock/⌘Tab, 20 s und drei Klängen; 2026-10-29. |
 
+| A-017 | Nutzer, 2026-10-29 | Nutzung und Weitergabe des Originalprodukts lizenzieren; veränderte Veröffentlichungen unter eigener Identität erlauben. | LICENSE/NOTICE, klarer Umfang und Marken-/Identitätsabgrenzung, Metadaten und README; Lizenz dem bestehenden Release zugeordnet. | in Arbeit | Lizenz 1/3 | Nutzerentscheidung: geänderte Veröffentlichungen unter eigener Identität erlaubt |
+| A-018 | Nutzer, 2026-10-29 | Selbstbau dokumentieren, Verwendung von Claus' Entwickleridentität für Änderungen ausschließen. | Anleitung verlangt eigene App-Kennung, bei veröffentlichten Änderungen eigener Name/Marke und eigene Signierung/Notarisierung; Signierskript nutzt keine feste Claus-Identität als Default. | in Arbeit | Lizenz 2/3 | Prüfung ausstehend |
+
 ## Revisionen und Entscheidungen
 
 | Datum | ID | Was wurde verändert? | Warum / Entscheidungsquelle | Nachfolge-ID, falls vorhanden |

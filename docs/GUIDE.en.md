@@ -20,7 +20,10 @@ how to set up and use Lotse.
 
 ### Build it yourself
 
-For development or a custom build:
+Original code, documentation and Lotse audio are licensed under [Apache-2.0](../LICENSE).
+You may build, modify and publish derivatives. Use your own bundle identifier for
+custom builds; published modifications also need their own product name, branding
+and developer identity. See [branding and identity rules](../BRANDING.md).
 
 1. Install the tools if you don't have them yet:
    - Xcode Command Line Tools: `xcode-select --install`
@@ -30,11 +33,17 @@ For development or a custom build:
 3. Run:
    ```sh
    npm install
-   npm run tauri build
+   npm run tauri -- build --no-sign --config '{"identifier":"com.yourname.breakhelper","productName":"BreakHelper"}'
    ```
-4. The finished app is at `target/release/bundle/macos/Lotse.app`. Drag it into your **Applications** folder.
+4. The finished app is at `target/release/bundle/macos/BreakHelper.app`. Drag it into your **Applications** folder.
 
-Once signed downloads are available, you just download the DMG file and drag Lotse into **Applications**.
+Replace the example identifier and name with your own. For a permanent fork,
+update `src-tauri/tauri.conf.json` as well. Before publication, replace the original
+branding and app icons and clearly identify modifications.
+
+`--no-sign` does not produce a Developer ID signed or notarized package. Custom
+builds do not inherit the original signature or notarization. Use your own Apple
+credentials for distribution; see the [release guide](RELEASE.md).
 
 ## First start
 
@@ -59,7 +68,7 @@ Reminders appear as a small card at the top right. You have two options:
 - Click the orange button once you have done it, for example **"Getrunken"** (drank) or **"Stehe"** (standing).
 - Click **"Gleich"** (later), and the reminder comes back later.
 
-If you want, a brief system sound can accompany the visible card. Turn **"Play reminder sound"** on in Settings; reminders always remain visible.
+If you want, a soft original Lotse sound can accompany the card. Turn **"Sanfter Hinweisklang"** on in Settings. Timers have a separate sound switch; all three sounds can be previewed under **Lotse · Klangwelt**.
 
 The card disappears on its own after 40 seconds. If you move the mouse over it, it stays.
 

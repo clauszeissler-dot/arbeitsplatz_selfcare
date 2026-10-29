@@ -1,5 +1,23 @@
 # Aktueller Arbeitsplan
 
+## Lizenz und eigene Entwickleridentität · A-017 / A-018
+
+**Sichtbares Ergebnis / Zielort:** GitHub main enthält LICENSE/NOTICE und klare Regeln für Originalweitergabe versus eigene Builds; README und Selbstbau-/Release-Anleitung verlinken sie. Bestehender Release erhält die Lizenz als separate Datei, sein notarisiertes Paket bleibt unverändert.
+**Abschlussnachweis:** vollständiger Apache-2.0-Lizenztext, passende Paket-Metadaten, eigene App-Kennung im Selbstbau-Beispiel, kein stiller Rückgriff des Signierskripts auf Claus' Identität; lokale Prüfungen und Remote-Dateien/Release-Anhänge nach Push prüfen.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T10:06:05+01:00.
+**Entscheidung:** Nutzer erlaubt Veröffentlichung von Änderungen unter eigener Identität. Apache-2.0 für Code/Dokumentation/eigene Klänge, Marken/Logo und Entwickleridentität nicht mitlizenziert; unveränderte Originalpakete dürfen mit vorhandener Signatur geteilt werden.
+**Umfang/Freigabe:** Lizenz/Anleitungen und gezielte Anpassung des Notarisierungsskripts; Commit/Push und Lizenz-Anhang zum bestehenden Release im Rahmen der beauftragten Repository-Veröffentlichung. Keine Änderung/Re-Signierung des existierenden Downloads, keine neue Nutzung privater Schlüssel.
+
+1. A-017: Standardlizenz und NOTICE einführen, Umfang/Markenrichtlinie dokumentieren, Metadaten und README aktualisieren.
+2. A-018: Selbstbau mit eigener Bundle-ID/Produktkennung zeigen; Signierskript verlangt explizite eigene Identität und Profil statt eingebauter Claus-Vorgaben. Bestehenden lokalen Owner-Zugang weiterhin dokumentieren und nur ausdrücklich nutzen.
+3. A-017/A-018: Skript-Fehlerfälle vor externen Aktionen testen, Cargo/Node-Metadaten und Links prüfen, committen/pushen; separate Lizenz-/Hinweis-Dateien am Release anbieten und remote prüfen.
+
+Zielabgleich 2026-10-29T10:12:21+01:00: LICENSE/NOTICE/BRANDING.md und Metadaten angelegt. Drei Tests für fehlende explizite Identität/Profil sowie eigenen App-Pfad waren rot und sind grün. Bau-/Release-Anleitungen angepasst. Zum Ziel fehlen Commit/Push, drei separate Release-Anhänge und Remote-Abgleich.
+
+Status: in Arbeit. Verifizierte signierte Artefakte bleiben unverändert; deren ursprüngliche Quellversion wird per Release-Notiz um die jetzt erteilte Lizenz ergänzt.
+
+---
+
 ## README-Funktionsabgleich · A-016
 
 **Sichtbares Ergebnis / Zielort:** README auf GitHub main beschreibt die tatsächlich ergänzten Funktionen vollständig: Timer/Augenpause, Klänge, Haltungen, aktivitätsbasierter Rhythmus, Dock/⌘Tab und Download.

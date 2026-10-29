@@ -6,7 +6,7 @@ members = ["core", "src-tauri"]
 version = "0.1.0"
 edition = "2021"
 authors = ["Claus Zeißler <cz.rules11@googlemail.com>"]
-license = "UNLICENSED"
+license = "Apache-2.0"
 
 [profile.release]
 codegen-units = 1
