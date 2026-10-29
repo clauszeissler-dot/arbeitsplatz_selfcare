@@ -62,3 +62,14 @@ Freigabe ist durch Apple-Ticket und Gatekeeper-Prüfung nachzuweisen.
 ## Repository-Download 2026-10-29 (A-014/A-015)
 
 Nutzer autorisiert Upload des fertigen Pakets und README-Verlinkung im bestehenden privaten GitHub-Repository. Release-Dateien aus `target/release/notarized/` unverändert bereitstellen; notwendiger Push der vorhandenen Umsetzung und Dokumentation eingeschlossen. Keine Umstellung auf öffentlich und kein neuer Build.
+
+
+## Lizenz und Selbstbau 2026-10-29 (A-017/A-018)
+
+Claus erlaubt Nutzung und Weitergabe unveränderter Original-Releases. Er erlaubt
+auch Änderungen und Veröffentlichungen unter eigener Identität. Eigenes
+Projektmaterial (Code, Dokumentation, komponierte Klänge) unter Apache-2.0;
+Originalmarke und Entwickleridentität nicht für eigene Releases mitfreigegeben.
+Selbstbau-Anleitung zeigt eigene App-Kennung; veröffentlichte Änderungen tragen
+eigenen Namen/eigene Marke und eigene Apple-Signierung. Abnahme: Lizenztexte,
+Metadaten, explizite Skript-Konfiguration und Hinweise auf GitHub/Release geprüft.

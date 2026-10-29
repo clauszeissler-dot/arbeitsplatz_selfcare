@@ -189,3 +189,12 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Cargo/npm/Lock-Metadaten auf Apache-2.0 gesetzt; eigene Drittkomponenten werden nicht neu lizenziert. README und beide Selbstbau-Anleitungen verlangen eigene Bundle-ID; Release-/Entwicklungsanleitung erklärt eigene Marken, Signierung und Profile.
 - Skript: keine eingebauten Claus-Zertifikats-/Profilvorgaben; Identität und Profil müssen explizit vorliegen. APP_PATH unterstützt eigene App-Namen und Paketdateien. Red/Green: drei Konfigurationstests zuerst rot (externe Aktion trotz fehlender Konfiguration/falscher App-Pfad), nach Anpassung grün. Tests nutzen nur einen lokalen codesign-Stub und stoppen vor realem Schlüsselbund/Apple-Aufruf.
 - Vorhandenes DMG/ZIP SHA-256 unverändert zu A-013. Lizenz wird separat an den bestehenden Release gehängt; kein Umverpacken, kein erneutes Signieren oder Notarisieren dieses Downloads.
+
+
+### A-017/A-018 abgeschlossen · 2026-10-29T10:15:07+01:00
+
+- Commit `1297a97` mit Lizenz, Nutzungs-/Markenrichtlinie, Metadaten, Anleitungen und expliziter Skript-Konfiguration nach GitHub main gepusht.
+- Remote-Abnahme: LICENSE, NOTICE, BRANDING.md, README, Cargo.toml und scripts/notarize.sh per GitHub-API bytegleich zur geprüften lokalen Fassung. Alle drei Lizenz-/Hinweis-Dateien beim bestehenden Release angehängt, erneut von GitHub heruntergeladen und identisch bestätigt. Release-Text erklärt Geltung auch für die ursprüngliche Version lotse-0.1.0 und die unveränderten Originalpakete.
+- DMG-/ZIP-Digests der veröffentlichten Assets entsprechen weiterhin den unter A-013/A-014 geprüften SHA-256-Werten. Keine Pakete verändert oder erneut signiert.
+- Prüfung: offizielle Apache-2.0-Vorlage unverändert; Cargo-Metadaten beider Crates und npm/Lock-Metadaten Apache-2.0; lokale Dateilinks gültig. `bash -n` und drei Konfigurationstests grün. Die Tests werden in die bestehende CI übernommen; kein realer Schlüsselbund- oder Apple-Aufruf im Test. Keine getrackten `.p8`, `.p12`, `.pem` oder `.key`-Dateien gefunden (keine Aussage einer vollständigen Geheimnisprüfung).
+- Abgleich: A-017 und A-018 geprüft erfüllt, keine offenen Lizenz-/Dokumentationspunkte dieses Auftrags. Apache-Code-Rechte bleiben unverändert; Marken-/Identitätsabgrenzung wird nicht als Änderung am Standardlizenztext ausgegeben. Frühere Produktprüfungen gelten für den unveränderten Download weiter.

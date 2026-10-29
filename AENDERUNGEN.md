@@ -26,8 +26,8 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 
 | A-016 | Nutzer, 2026-10-29 | README auf neue Funktionen abgleichen. | README auf GitHub enthält Augen-/Pausentimer, drei Klangproben, Haltungsverwaltung, Aktivitätsrhythmus und Dock/⌘Tab sowie bestehenden Download. | geprüft | README-Funktionsabgleich | Remote-README auf main bytegleich zur lokal geprüften Fassung, inklusive Dock/⌘Tab, 20 s und drei Klängen; 2026-10-29. |
 
-| A-017 | Nutzer, 2026-10-29 | Nutzung und Weitergabe des Originalprodukts lizenzieren; veränderte Veröffentlichungen unter eigener Identität erlauben. | LICENSE/NOTICE, klarer Umfang und Marken-/Identitätsabgrenzung, Metadaten und README; Lizenz dem bestehenden Release zugeordnet. | in Arbeit | Lizenz 1/3 | Nutzerentscheidung: geänderte Veröffentlichungen unter eigener Identität erlaubt |
-| A-018 | Nutzer, 2026-10-29 | Selbstbau dokumentieren, Verwendung von Claus' Entwickleridentität für Änderungen ausschließen. | Anleitung verlangt eigene App-Kennung, bei veröffentlichten Änderungen eigener Name/Marke und eigene Signierung/Notarisierung; Signierskript nutzt keine feste Claus-Identität als Default. | in Arbeit | Lizenz 2/3 | Prüfung ausstehend |
+| A-017 | Nutzer, 2026-10-29 | Nutzung und Weitergabe des Originalprodukts lizenzieren; veränderte Veröffentlichungen unter eigener Identität erlauben. | LICENSE/NOTICE, klarer Umfang und Marken-/Identitätsabgrenzung, Metadaten und README; Lizenz dem bestehenden Release zugeordnet. | geprüft | Lizenz 1/3 | LICENSE/NOTICE/BRANDING.md auf GitHub bytegleich geprüft; alle drei Release-Anhänge erneut heruntergeladen und verglichen, Metadaten Apache-2.0. |
+| A-018 | Nutzer, 2026-10-29 | Selbstbau dokumentieren, Verwendung von Claus' Entwickleridentität für Änderungen ausschließen. | Anleitung verlangt eigene App-Kennung, bei veröffentlichten Änderungen eigener Name/Marke und eigene Signierung/Notarisierung; Signierskript nutzt keine feste Claus-Identität als Default. | geprüft | Lizenz 2/3 | Eigene Bundle-ID in DE/EN-Anleitung; kein fester Claus-Identitäts-/Profil-Default im Skript. Drei Tests rot → grün; Remote-Skript geprüft. |
 
 ## Revisionen und Entscheidungen
 
@@ -66,3 +66,7 @@ Apple-Notarisierung abgeschlossen; früherer Blocker aufgehoben. App/ZIP/DMG gep
 ## Abschluss Repository-Download 2026-10-29
 
 A-014/A-015 geprüft erfüllt. Release unter https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/tag/lotse-0.1.0; README auf main direkt verlinkt. Repository weiterhin privat.
+
+## Abschluss Lizenz/Identität 2026-10-29
+
+A-017/A-018 geprüft erfüllt. Nutzerentscheidung erlaubt Änderungen unter eigener Identität. Originalpakete bleiben unverändert; Quellcode-Lizenz, Originalweitergabe und Marken-/Entwickleridentität sind getrennt beschrieben. LICENSE/NOTICE/BRANDING.md dem bestehenden Release hinzugefügt und per Download geprüft.

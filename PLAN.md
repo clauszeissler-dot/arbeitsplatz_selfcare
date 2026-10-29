@@ -14,7 +14,9 @@
 
 Zielabgleich 2026-10-29T10:12:21+01:00: LICENSE/NOTICE/BRANDING.md und Metadaten angelegt. Drei Tests für fehlende explizite Identität/Profil sowie eigenen App-Pfad waren rot und sind grün. Bau-/Release-Anleitungen angepasst. Zum Ziel fehlen Commit/Push, drei separate Release-Anhänge und Remote-Abgleich.
 
-Status: in Arbeit. Verifizierte signierte Artefakte bleiben unverändert; deren ursprüngliche Quellversion wird per Release-Notiz um die jetzt erteilte Lizenz ergänzt.
+Abschluss 2026-10-29T10:15:07+01:00: A-017/A-018 geprüft. Commit `1297a97` auf GitHub main. LICENSE/NOTICE/BRANDING.md sowie README, Cargo-Metadaten und Skript remote bytegleich geprüft. Alle drei Lizenzanhänge vom bestehenden Release heruntergeladen und identisch; Release-Notiz ordnet Lizenz ausdrücklich dem ursprünglichen Paket zu. DMG-/ZIP-Digests auf GitHub unverändert. Drei Konfigurationstests grün; gleicher Befehl in bestehender CI ergänzt.
+
+Status: erledigt. Nächster Einstieg: Bei künftigen Releases Lizenz-/Herkunftshinweise vor dem Signieren beilegen; Original-Owner explizit mit eigener Identität und vorhandenem eigenem Profil, Forks mit eigenen Werten. Keine Änderung/Neu-Notarisierung des bestehenden Pakets erforderlich.
 
 ---
 
