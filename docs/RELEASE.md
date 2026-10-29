@@ -109,7 +109,7 @@ Apple-Protokolle liegen im Artefaktordner, Submission-IDs im Projekt-Arbeitslog.
 
 ## Repository-Download (A-014/A-015)
 
-Das bereits notarisierten Apple-Silicon-Paket wird unverändert als Release
+Das bereits notarisierte Apple-Silicon-Paket wird unverändert als Release
 [`lotse-0.1.0`](https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/tag/lotse-0.1.0)
 angeboten. README und beide Anleitungen verlinken direkt auf `Lotse.dmg`;
 zusätzlich werden `Lotse.zip` und `SHA256SUMS` bereitgestellt. Das Repository bleibt
@@ -120,3 +120,5 @@ separaten Universal-Build erzeugen. Dieser Release enthält exakt den lokal
 geprüften ARM64-Build. Veröffentlichter Download und Quellartefakt werden anhand
 der SHA-256-Prüfsumme verglichen. Upload/Push erfolgen hier auf ausdrücklichen
 Nutzerauftrag; das Notarisierungsskript veröffentlicht weiterhin nichts.
+
+Veröffentlicht am 2026-10-29. Tatsächlicher GitHub-Download aller drei Dateien gegen lokale Prüfsummen verglichen; DMG-Signatur und angeheftetes Ticket auch nach Download erfolgreich geprüft. Direktlink im Remote-README nachgewiesen.

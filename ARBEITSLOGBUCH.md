@@ -158,3 +158,14 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 
 - Vor Upload: DMG/ZIP stimmen mit den unter A-013 dokumentierten SHA-256-Werten überein; Architektur `arm64` bestätigt. README und deutsche/englische Anleitung enthalten identischen Direktlink und passende Installationsschritte. Lokale Markdown-Dateilinks geprüft.
 - Clippy-Gate nach rein testinterner Initialisierungskorrektur grün, Core-Tests 31/31. Produktcode und signierte Binärdatei unverändert. README/Anleitungen/Release-Dokumentation bereit für autorisierten Push.
+
+
+### A-014/A-015 abgeschlossen · 2026-10-29T09:04:10+01:00
+
+- Autorisierter Push: alle zuvor lokalen Produktänderungen und Download-Dokumentation als Commit `f1244a5` nach `origin/main` übertragen. Kein fremder Stand überschrieben; Fast-Forward aus dem bisherigen Remote-Stand.
+- Release veröffentlicht: https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/tag/lotse-0.1.0, Assets `Lotse.dmg` (5890548 Byte), `Lotse.zip` (5544267 Byte) und `SHA256SUMS` (152 Byte). Repository bleibt privat.
+- Abschlussnachweis am Zielort: alle drei Dateien mit `gh release download` in eigenen temporären Ordner erneut von GitHub heruntergeladen; SHA-256 aller Dateien identisch zu den freigegebenen lokalen Quellen. Heruntergeladenes DMG besteht `stapler validate` und `codesign --verify`.
+- DMG SHA-256: `05e13130616461f5d429ddde45b37329d4714ba808954757c838709a5c840475`; ZIP SHA-256: `57046b66075c8870c4b617e124203932f280a460b046809854f0bb445af0bde3`.
+- Remote-README über GitHub-API auf main gelesen: prominenter Direktlink entspricht exakt der veröffentlichten Asset-URL `/releases/download/lotse-0.1.0/Lotse.dmg`. Beide Installationsanleitungen aktualisiert; Apple-Silicon-Voraussetzung ausdrücklich angegeben.
+- Core-Tests 31/31 und Clippy ohne Warnung. GitHub-CI-Kernlogik für `f1244a5` erfolgreich; separater unsignierter Universal-Build zu diesem Zeitpunkt noch in Arbeit. Dieser CI-Build liefert nicht das freigegebene Download-Paket. Vorhandene lokale Produktions-/Notarisierungs-/Ego-Lite-Belege bleiben gültig, da nur Testinitialisierung und Dokumentation geändert wurden.
+- Anforderungsabgleich: A-014 und A-015 geprüft erfüllt; keine offenen Punkte für Upload/README. A-005 und subjektive Klangbewertung bleiben wie zuvor getrennt dokumentiert.

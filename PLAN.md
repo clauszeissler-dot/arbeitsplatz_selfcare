@@ -14,7 +14,9 @@
 
 Zielabgleich 2026-10-29T09:01:17+01:00: Release-Erstellung verlangt einen bereits remote vorhandenen Commit; daher erst Commit/Push, dann Release-Upload. Clippy-Pflichtprüfung meldet field_reassign_with_default in bestehendem Migrations-Test; nur Testinitialisierung korrigieren, keine Produkt-/Binäränderung.
 
-Status: in Arbeit. Nächster Schritt: Testinitialisierung korrigieren, Core-Tests/Clippy, Commit/Push, dann Release-Upload und Download-Prüfung.
+Abschluss 2026-10-29T09:04:10+01:00: A-014/A-015 geprüft erfüllt. Commit f1244a5 und vorherige geprüfte Umsetzung auf main übertragen. Release lotse-0.1.0 veröffentlicht; tatsächlicher GitHub-Download für DMG/ZIP/SHA256SUMS identisch zur Quelle, heruntergeladenes DMG besteht Signatur-/Ticketprüfung. Remote-README-Link stimmt mit Asset-URL überein. Core-Tests 31/31 und Clippy grün.
+
+Status: erledigt. Repository bleibt privat, Download Apple Silicon/macOS 13+. Separater GitHub-CI-Universal-Build läuft noch; Core-CI bereits erfolgreich. Freigegebenes ARM64-Paket stammt aus dem zuvor lokal vollständig geprüften/notarisierten Build. Nächster Schritt erst beim nächsten Produktupdate: neuen Build signieren/notarisieren und als eigenen Release einstellen.
 
 ---
 

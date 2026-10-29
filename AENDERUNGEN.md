@@ -21,8 +21,8 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 
 | A-013 | Nutzer, 2026-10-29 | App über Apple Developer freigeben. | Lokales Paket mit Developer ID signieren, Apple-Notarisierung erfolgreich, Ticket anheften und Gatekeeper prüfen; fehlende Identität/Zugang konkret ausweisen. | geprüft | Wiederaufnahme A-013 | Apple Accepted für App und DMG; beide Logs ohne Issues. Tickets, Signaturen und Gatekeeper am Bundle, entpackten ZIP und App im schreibgeschützt gemounteten DMG erfolgreich, 2026-10-29. |
 
-| A-014 | Nutzer, 2026-10-29 | Fertige signierte App im bestehenden Repository zum Download anbieten. | GitHub-Release mit geprüftem, notarisiertem DMG/ZIP; heruntergeladene Datei hat denselben Hash wie die freigegebene Quelle. Repository-Sichtbarkeit unverändert. | in Arbeit | Repository-Download 1/3 | vorbereitet |
-| A-015 | Nutzer, 2026-10-29 | Download direkt im README verlinken. | Prominenter Direktlink öffnet das hochgeladene DMG; Apple-Silicon/macOS-Voraussetzung und Installation erklärt, Aussage zu fehlenden Downloads entfernt. | in Arbeit | Repository-Download 2/3 | vorbereitet |
+| A-014 | Nutzer, 2026-10-29 | Fertige signierte App im bestehenden Repository zum Download anbieten. | GitHub-Release mit geprüftem, notarisiertem DMG/ZIP; heruntergeladene Datei hat denselben Hash wie die freigegebene Quelle. Repository-Sichtbarkeit unverändert. | geprüft | Repository-Download 1/3 | Release lotse-0.1.0 veröffentlicht; DMG/ZIP/SHA256SUMS erneut über GitHub heruntergeladen und SHA-256 identisch. Heruntergeladenes DMG besteht codesign/stapler, 2026-10-29. |
+| A-015 | Nutzer, 2026-10-29 | Download direkt im README verlinken. | Prominenter Direktlink öffnet das hochgeladene DMG; Apple-Silicon/macOS-Voraussetzung und Installation erklärt, Aussage zu fehlenden Downloads entfernt. | geprüft | Repository-Download 2/3 | Remote-README auf main gelesen: Direktlink stimmt mit veröffentlichtem DMG-Asset überein. Deutsche/englische Installationshinweise aktualisiert. |
 
 ## Revisionen und Entscheidungen
 
@@ -57,3 +57,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Umsetzung: [PLAN.md](PLAN.md) · Nachweise: [ARBEIT
 ## Aktualisierter Abschluss A-013, 2026-10-29
 
 Apple-Notarisierung abgeschlossen; früherer Blocker aufgehoben. App/ZIP/DMG geprüft. Fertige Weitergabe-Artefakte unter `target/release/notarized/`. Kein Passwort-Reset oder neues Profil nötig; keine Veröffentlichung, kein Push.
+
+## Abschluss Repository-Download 2026-10-29
+
+A-014/A-015 geprüft erfüllt. Release unter https://github.com/clauszeissler-dot/arbeitsplatz_selfcare/releases/tag/lotse-0.1.0; README auf main direkt verlinkt. Repository weiterhin privat.
