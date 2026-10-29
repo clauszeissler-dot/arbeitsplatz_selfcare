@@ -97,12 +97,12 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Wirkung: Folge-PR #10; roter Test vor Korrektur, danach `x86_64 arm64` und strikte Signaturprüfung grün. Bei Änderungen am Bundling erneut prüfen.
 
 
-### L-009 – WebView-Zustand darf nicht nur von flüchtigen Events abhängen
+### L-009 – Release-WebViews müssen eingebettete Ressourcen laden
 
 - Datum / Status: 2026-10-29 · bestätigt/aktiv durch Nutzerbeobachtung und Codebefund.
 - Quelle: Nutzer meldet weiterlaufende Klänge bei fehlenden Hinweisen und schwarzem Dashboard; Neustart heilte den Zustand.
 - Geltung: Dashboard- und Toast-Initialisierung von Lotse.
-- Beobachtung: Für den Prozess selbst gab es keinen Crashbericht. Ein fehlgeschlagener initialer Dashboard-Aufruf ließ die leere Root dauerhaft stehen; ein Toast konnte sein einziges `hint`-Event vor dem Listener verpassen. Der native Takt und Klang liefen davon unabhängig weiter.
-- Konsequenz / zuständige Umsetzung: A-021. Dashboard zeigt sofort Lade-/Fehlerzustand, versucht die lokale Verbindung erneut und bietet manuelles Wiederverbinden. Toast registriert Listener zuerst und holt danach den aktuellen nativen Hinweis nach. Diagnose speichert höchstens 50 Einträge ausschließlich als Zeitstempel plus feste Fehlerkategorie.
-- Prüfpunkt: Regressionstests für Startfehler, verpasstes/überholtes Hinweisereignis und idempotentes mehrfaches Schließen; installierte App sichtbar und beschreibbare Daten weiterhin `0600`.
-- Wirkung: Tests grün und notarisierten Build unter `/Applications` gestartet. Langzeitwirkung beim nächsten realen transienten WebView-Ausfall bleibt offen; der neue Diagnosepfad soll ihn ohne private Inhalte belegbar machen.
+- Beobachtung: Für den Prozess selbst gab es keinen Crashbericht. Die erste plausible Diagnose zu flüchtigen Events war unvollständig: Nach der Installation reproduzierte der Nutzer den Ausfall erneut. Beide WebViews protokollierten `Failed provisional load`, Fehler `-1004`; die Diagnose-Datei fehlte, weil JavaScript nie startete. Der neue Universal-Build war ohne Tauri `custom-protocol` kompiliert und lud `devUrl`, während Engine und Klang nativ weiterliefen.
+- Konsequenz / zuständige Umsetzung: A-021/A-024. Event-/Start-Recovery bleibt als zusätzliche Härtung. Verbindlich ist außerdem: jeder per plain Cargo erzeugte Tauri-Release aktiviert `custom-protocol`; der Universal-Build hat dafür einen statischen Regressionstest. Ein schwarzes Fenster ohne UI-Diagnose zuerst auf Dokumentladefehler prüfen.
+- Prüfpunkt: Dev-Server beenden, final gebündelte App neu starten, im Unified Log `-1004` ausschließen und feste UI-Überschriften im nativen WebView nachweisen. Buildtest muss beide Architekturen erfassen.
+- Wirkung: Roter/grüner Buildtest; korrigiertes Universal-Bundle enthält eingebettete Ressourcen, final notarisierten Prozess ohne Dev-Server mit Cockpit/Zeitleiste nachgewiesen. Veröffentlichter 0.1.0-Release separat ohne Fehler gestartet. Bei nächstem Universal-Release erneut prüfen.

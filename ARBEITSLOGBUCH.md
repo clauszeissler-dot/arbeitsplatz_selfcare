@@ -264,3 +264,20 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Universal-Build `x86_64 arm64` mit Developer ID signiert. Apple Accepted: App-Submission `31d8f567-de74-4030-8f91-a648d3b44158`, DMG-Submission `bf8a1a41-0522-479b-b7ab-fe8161f93dbd`; Tickets, strikte Signatur, Gatekeeper und DMG-Integrität grün. SHA-256: ZIP `4ca8a7690cda04744da7fec3e25b036b719edc55834245fb52a08ab2ca1e3284`, DMG `43fd20755e20cb70aa0dfc2e9fc43c488baa5ddec39ea4ab70110c23dc1f3167`.
 - Zielort: alte `/Applications/Lotse.app` gezielt beendet und unter `/private/tmp/Lotse.app.before-a021-20261029` rückrollbar gesichert. Neue notarisierten App läuft aus `/Applications/Lotse.app`; Cockpit per Accessibility `background only=false`, `visible=true`. App-Datenordner `0700`, `state.json`/`settings.json` `0600`.
 - Kein Tag und kein GitHub-Release. README, DE-/EN-Anleitung und SECURITY.md an Zeitansicht, Farblogik, Recovery und Datenumfang angepasst. Nächster Schritt: geschützten PR integrieren.
+
+### Remote-Abschluss · 2026-10-29T14:46:18+01:00
+
+- PR #11 nach beiden geschützten Pflichtchecks per Squash gemergt; `main` steht auf `c78209e`.
+- `Kernlogik und Security` erfolgreich in 2:23 Minuten; `Mac-App bauen (unsigniert)` erfolgreich in 6:46 Minuten einschließlich Workspace-Tests, Clippy, Frontend- und Universal-Build.
+- Der lokal installierte notarisierten Stand entspricht dem integrierten Produktcode. Die vier fremden AUTO-Handoffs wurden weder gestagt noch verändert. Kein Tag, kein GitHub-Release und keine Änderung des bestehenden Downloads.
+
+### Nutzer-Reproduktion korrigiert Diagnose und Universal-Build · 2026-10-29T14:57:33+01:00 (A-024)
+
+- Direkt nach PR #11 meldete der Nutzer erneut: Cockpit schwarz, Klänge hörbar, Hinweise unsichtbar. Die erste Abschlussdiagnose war damit als vollständige Ursache widerlegt. Kein Neustart vor Spurensicherung.
+- Beleg: laufender nativer Prozess, sichtbare Fensterrahmen, aber keine `ui-diagnostics.json`. Unified Log zeigt für beide WebContents `DocumentLoader::mainReceivedError`/`Failed provisional load` mit `errorCode = -1004`. Der native Engine-/Klangpfad lief weiter.
+- Ursache: `scripts/build-universal.sh` rief für beide Architekturen `cargo build` ohne das von `tauri build` gesetzte Feature `custom-protocol` auf. Die App enthielt den Release-Code, versuchte ihre Oberfläche aber über `http://localhost:1420/` zu laden. Der kurz gestartete lokale Server plus Cmd+R stellte die Oberfläche laut Nutzer nicht wieder her; dieser Recovery-Versuch wird ausdrücklich nicht als erfolgreich gewertet.
+- TDD: neuer Test `test_universal_release_embeds_frontend_instead_of_using_dev_server` zuerst rot, danach grün. `src-tauri/Cargo.toml` definiert `custom-protocol = ["tauri/custom-protocol"]`; beide Release-Cargo-Builds aktivieren es explizit. Dokumentation erklärt die Grenze.
+- Abschlussgates erneut grün: 43 Rust-Tests, 5 UI-Tests, 13 Python-/Securitytests, Build, Formatierung, Clippy. Korrigierte architekturspezifische App-Bundles wuchsen von ca. 5,5/5,9 MiB auf 7,6/7,9 MiB, weil die Frontend-Ressourcen nun eingebettet sind.
+- Apple Accepted: App `73b7d690-8341-423b-93e8-573a376adad7`, DMG `58ccb4ac-0ef6-47f9-be12-17a028b3675d`; finale ZIP-SHA-256 `c00ad50b409d65d5435d9496eade825e7561e2da2dbca2e11bbe64779fe87b12`, DMG-SHA-256 `8706dcc49580a070d5e8a1dedf83788dea2270d86b8eab361abba4dab9d70d22`.
+- Zielprüfung ohne Dev-Server: final notarisierten `/Applications/Lotse.app`, PID 38347; Signatur/Ticket/Gatekeeper grün, keine `-1004`-Logs. Cockpit erneut geöffnet; feste Überschriften „Ampel steht auf“ und „Heute · Aufgaben & Pausen“ bei 322 Accessibility-Knoten vorhanden; `state.json` weiterhin `0600`.
+- Bestehender GitHub-Release `lotse-0.1.0` separat heruntergeladen, schreibgeschützt gemountet und kurz ohne Dev-Server gestartet: kein `-1004`. Dieser frühere Tauri-Build ist nicht betroffen; kein Austausch des veröffentlichten Downloads nötig.

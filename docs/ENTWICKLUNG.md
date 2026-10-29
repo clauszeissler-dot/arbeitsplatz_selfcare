@@ -16,11 +16,16 @@ Auf diesem Mac ist Xcode 27 installiert. Die Projektdatei `.cargo/config.toml`
 setzt für macOS automatisch die erforderliche Linker-Option. Für einen lokalen
 Build der Host-Architektur bleibt `npm run tauri build` verfügbar. Der
 reproduzierbare Universal-Build läuft über `scripts/build-universal.sh`: Das
-Skript baut ARM64 und x86_64 per Cargo in getrennten Zielverzeichnissen, lässt
+Skript baut ARM64 und x86_64 per Cargo mit dem Tauri-Produktionsfeature
+`custom-protocol` in getrennten Zielverzeichnissen, lässt
 Tauri anschließend nur noch die jeweiligen App-Bundles erzeugen und verbindet
 die beiden geprüften Binärdateien mit `lipo`. Dadurch werden Host-Prozedural-
 Makros nicht aus einem Cross-Target-Verzeichnis geladen oder zwischen den
 Architekturen überschrieben. Einmalig werden beide Ziele benötigt:
+
+`custom-protocol` ist dabei ein Pflichtbestandteil: Ohne dieses Feature versucht
+das gebündelte Programm weiterhin `devUrl` auf Port 1420 zu laden; Cockpit und
+Hinweise bleiben dann ohne laufenden Entwicklungsserver schwarz.
 
 ```sh
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
