@@ -61,3 +61,15 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Konsequenz / zuständige Regel: LICENSE/NOTICE/BRANDING.md sowie docs/RELEASE.md. Code-Lizenz, Originalweitergabe und Marken-/Entwickleridentität unterscheiden. Eigene Builds mit eigener Kennung; veröffentlichte Änderungen unter eigener Marke und eigenen Apple-Zugängen. Skript verlangt explizite Identität und Profil.
 - Prüfpunkt: Lizenz-Metadaten konsistent, Originalpakete unverändert, Lizenzhinweise am Download, fehlende Signierkonfiguration stoppt vor externen Aktionen.
 - Wirkung: Drei Konfigurationstests zuerst rot und danach grün; weitere Release-/Remote-Belege werden im Projektlog festgehalten. Nächste passende Wiederaufnahme noch offen.
+
+
+### L-006 – CLI-Host und Daybreak-Advisory getrennt belegen
+
+- Datum / Status: 2026-10-29 · bestätigt/aktiv durch Nutzerkorrektur.
+- Quelle: Nutzer stellt klar, dass die Sitzung in Codex CLI läuft und seine Daybreak-Freigabe Ende September verlängert wurde.
+- Geltung: Codex-Security-Aufrufe für Lotse.
+- Beobachtung: Aus einem Deep-Scan-Berechtigungsfehler wurde fälschlich auf Codex Desktop geschlossen. Zusätzlich meldete der Advisory-Endpunkt `not_granted`, obwohl der Nutzer den tatsächlichen Zugang bestätigt.
+- Konsequenz: Host aus dem effektiven Sitzungskontext bestimmen und den CLI-geeigneten Standardscan verwenden. Advisory-Status nicht als Sperre oder als stärkeren Beleg als die bestätigte Kontofreigabe behandeln; Widerspruch offen dokumentieren.
+- Zuständige Umsetzung: A-019 und Codex-Security-Standardscan.
+- Prüfpunkt: Scan läuft im CLI-Workflow bis zum versiegelten Bericht; Daybreak-Widerspruch wird nicht als fehlender Nutzerzugang ausgegeben.
+- Wirkung: Standardscan erfolgreich abgeschlossen und Bericht erzeugt. Ursache der falschen Advisory-Zuordnung bleibt extern ungeklärt.

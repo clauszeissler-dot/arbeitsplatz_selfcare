@@ -1,5 +1,22 @@
 # Aktueller Arbeitsplan
 
+## Sicherheitsaudit · A-019
+
+**Sichtbares Ergebnis / Zielort:** versiegelter Codex-Security-Bericht für den lokalen Repository-Stand sowie ein verständlicher Befund zu lokaler Speicherung, Zugriff, Verschlüsselung und Release-Sicherheit.
+**Abschlussnachweis:** Scan-ID `4eb909c1-564f-4aaa-8d1c-a7a978d4af62`, erzeugter `report.md`, drei validierte Findings, Dateirechte am tatsächlichen App-Datenpfad, GitHub-Sicherheitskonfiguration, npm-Audit und Apple-Signatur-/Ticketprüfung.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T10:24:00+01:00 / 2026-10-29T10:41:27+01:00.
+**Gates:** Prüfung und Dokumentation; keine Codekorrektur, GitHub-Konfigurationsänderung, Veröffentlichung oder Push beauftragt. Quellstand während des Scans unverändert. Daybreak-Advisory des Plugins widersprach der bestätigten Nutzerfreigabe und war kein Scan-Gate.
+
+1. Architektur, Datenpfade, Berechtigungen, Befehls-/AppleScript-Grenzen und Release-Kette quellgestützt erfassen.
+2. Unabhängigen Baseline- und fokussierte Teilreviews zusammenführen; Findings gegen Gegenbelege validieren.
+3. Tatsächliche App-Datenrechte, aktuelle GitHub-Kontrollen, npm-Advisories und vorhandene Release-Signatur/Tickets prüfen.
+4. Semantischen Bericht versiegeln und Anforderungen/Logs aktualisieren.
+
+**Abschluss:** 1 hohes Finding (mutable GitHub Actions mit Release-Secrets) und 2 niedrige Findings (persistente Zustands-Race, fehlende Signer-Bindung im lokalen Notarisierungsskript). App-Daten liegen als unverschlüsseltes JSON unter `~/Library/Application Support/de.kiaffairs.lotse/`; die übergeordneten Ordner sind auf diesem Mac `0700`, Rohdaten aus Ghostty/Prozessargumenten werden nicht dauerhaft gespeichert. Keine eingebetteten Secrets, kein belegter XSS-/Command-Injection-Pfad; npm-Audit 0 Findings. Aktueller RustSec-Abgleich und GitHub-Härtung bleiben als konkrete Folgepunkte offen.
+**Nächster Schritt:** Nutzer entscheidet, ob Findings behoben und GitHub-Schutzfunktionen aktiviert werden sollen; danach RustSec/Dependabot neu prüfen.
+
+---
+
 ## Lizenz und eigene Entwickleridentität · A-017 / A-018
 
 **Sichtbares Ergebnis / Zielort:** GitHub main enthält LICENSE/NOTICE und klare Regeln für Originalweitergabe versus eigene Builds; README und Selbstbau-/Release-Anleitung verlinken sie. Bestehender Release erhält die Lizenz als separate Datei, sein notarisiertes Paket bleibt unverändert.

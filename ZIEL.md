@@ -73,3 +73,15 @@ Originalmarke und Entwickleridentität nicht für eigene Releases mitfreigegeben
 Selbstbau-Anleitung zeigt eigene App-Kennung; veröffentlichte Änderungen tragen
 eigenen Namen/eigene Marke und eigene Apple-Signierung. Abnahme: Lizenztexte,
 Metadaten, explizite Skript-Konfiguration und Hinweise auf GitHub/Release geprüft.
+
+
+## Sicherheitsprüfung 2026-10-29 (A-019)
+
+Lotse erhält einen belegten Sicherheitsstatus für den aktuellen Quellstand und die
+veröffentlichte Release-Kette. Die Prüfung verändert keine Produktfunktion und
+keine GitHub-Einstellung. Abnahme: versiegelter Bericht mit validierten Findings,
+konkreter Beschreibung der lokal gespeicherten Daten und Zugriffsrechte sowie
+ehrlich benannten Prüflücken. Aktueller Remote-Befund: Repository öffentlich;
+frühere historische Zielangaben „privat“ sind keine Aussage über den heutigen
+GitHub-Zustand. RustSec-Advisories bleiben offen, bis eine aktuelle Datenquelle
+verfügbar bzw. Dependabot aktiviert ist.
