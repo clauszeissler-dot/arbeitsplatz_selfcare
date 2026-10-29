@@ -111,7 +111,8 @@ Klick zum Schluss auf **Speichern**.
 
 - **Liest:** die Titel und Ordner deiner Ghostty-Tabs, welche Programme laufen und wie stark sie arbeiten, wie lange du nichts getippt hast und ob irgendwo Kamera oder Mikrofon an sind.
 - **Nimmt nichts auf:** Lotse hört nicht mit und sieht kein Kamerabild. Es fragt nur ab, ob ein Gerät an ist.
-- **Speichert:** deine Tageswerte und Einstellungen nur auf deinem Mac, im Ordner `~/Library/Application Support/de.kiaffairs.lotse/`.
+- **Speichert:** deine Tageswerte und Einstellungen nur auf deinem Mac, im Ordner `~/Library/Application Support/de.kiaffairs.lotse/`. Der Ordner ist auf dein Benutzerkonto (`0700`), die Dateien sind auf Lesen/Schreiben durch dich (`0600`) begrenzt. Die letzten 60 Tageszusammenfassungen bleiben erhalten.
+- **Nicht verschlüsselt:** Prozesse in deinem angemeldeten Benutzerkonto können die lokalen JSON-Dateien grundsätzlich lesen. Lotse speichert keine Tabtitel, Arbeitsverzeichnisse oder vollständigen Prozessargumente dauerhaft.
 - **Ohne Internet:** Lotse braucht keine Internetverbindung und schickt nichts weg.
 
 ## Wichtige Grenzen

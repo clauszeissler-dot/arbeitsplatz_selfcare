@@ -1,5 +1,24 @@
 # Aktueller Arbeitsplan
 
+## Sicherheitshärtung · A-020
+
+**Sichtbares Ergebnis / Zielort:** lokaler, vollständig geprüfter Härtungsstand im Repository sowie ein PR-fähiger GitHub-Branch; nach autorisiertem Push ein geschütztes öffentliches Repository mit PR-Pflicht, Sicherheitsfunktionen und manuell freizugebender Release-Umgebung. Kein neuer Produktrelease.
+**Abschlussnachweis:** Regressionstests für die drei Findings, vollständige Workspace-/Frontend-/Security-Prüfungen, macOS-Universal-Build, überprüfte GitHub-Regeln/Einstellungen und Anforderungsabgleich.
+**Arbeitsbeginn / letzter Zielabgleich:** 2026-10-29T10:58:32+01:00 / 2026-10-29T11:32:58+01:00.
+**Gates:** bestehende ungetrackte Handoff-Dateien unangetastet lassen; keine vorhandenen Release-Artefakte verändern; Apple-Secrets niemals auslesen oder protokollieren; vor GitHub-Änderungen lokale Prüfungen abschließen; kein Release-Tag und keine Veröffentlichung erzeugen.
+**Sicherheitsgate:** S1 für Persistenz-, Signier- und Deployment-Grenzen. Invarianten: ältere Zustände überschreiben keine neueren; lokale Dateien sind nur für den Benutzer zugänglich; falsche Signieridentität/Team-/Bundle-ID stoppt vor Apple; kein veränderlicher Action-Code erhält Release-Zugangsdaten.
+
+1. A-020/F1: Tests für unveränderliche Action-Referenzen, Geheimnisgrenzen und geschütztes Release-Environment zuerst rot ausführen; Release-Workflow auf getrennten Build-/Signierpfad mit minimalen Rechten umstellen.
+2. A-020/F2: Persistenztests für Reihenfolge, atomare Dateien, Rechte, Symlinks und beschädigte Daten zuerst rot ausführen; zentralen Persistenzpfad implementieren und Fehler sichtbar machen.
+3. A-020/F3: Signer-/Team-/Bundle-Prüfungen im Notarisierungsskript zuerst rot ausführen; vor jeder Einreichung verbindlich prüfen und temporäre Secrets bereinigen.
+4. A-020/Härtung: Prozessausgaben begrenzen, Tauri-Konfiguration absichern, RustSec/npm-Prüfungen, Dependabot und SECURITY.md ergänzen.
+5. Gesamtdiff unabhängig prüfen, vollständige Tests/Builds ausführen, Anforderungen und Logs aktualisieren, gezielt committen; danach autorisierten GitHub-Branch/PR und Repository-Regeln einrichten und remote kontrollieren.
+
+**Zielabgleich 2026-10-29T11:32:58+01:00:** Die drei Findings sind implementiert und ihre fokussierten Red/Green-Tests bestanden. Der unabhängige Nachreview führte zusätzlich zur Entfernung des automatischen Tag-Triggers und zur sichtbaren Behandlung fehlgeschlagener UI-Aktionen. Der Universal-Build ist nach Trennung von direktem Cargo-Build und Tauri-Bundling nachweislich `x86_64 arm64`. Zum sichtbaren Ergebnis fehlen jetzt Gesamttest, lokale Datenmigration, GitHub-Regeln/PR und Remote-Kontrolle.
+**Nächster Schritt:** vollständige lokale Gates erneut ausführen; danach den geprüften Branch pushen, Repository-Schutz konfigurieren und den PR bis zu grünen Checks kontrollieren.
+
+---
+
 ## Sicherheitsaudit · A-019
 
 **Sichtbares Ergebnis / Zielort:** versiegelter Codex-Security-Bericht für den lokalen Repository-Stand sowie ein verständlicher Befund zu lokaler Speicherung, Zugriff, Verschlüsselung und Release-Sicherheit.

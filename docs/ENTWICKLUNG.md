@@ -2,7 +2,8 @@
 
 [Zurück zur Übersicht](../README.md)
 
-Voraussetzungen: Xcode Command Line Tools, Rust (stable), Node 22.
+Voraussetzungen: Xcode Command Line Tools, die in `rust-toolchain.toml`
+festgelegte Rust-Version und Node 22.
 
 ```sh
 npm install
@@ -12,8 +13,14 @@ npm run dev                # nur Oberfläche im Browser, mit Beispieldaten
 ```
 
 Auf diesem Mac ist Xcode 27 installiert. Die Projektdatei `.cargo/config.toml`
-setzt für macOS automatisch eine Linker-Option, die ungültige Bibliotheken für
-Rust-Prozedural-Makros verhindert. Daher genügt weiter `npm run tauri build`.
+setzt für macOS automatisch die erforderliche Linker-Option. Für einen lokalen
+Build der Host-Architektur bleibt `npm run tauri build` verfügbar. Der
+reproduzierbare Universal-Build läuft über `scripts/build-universal.sh`: Das
+Skript baut ARM64 und x86_64 per Cargo in getrennten Zielverzeichnissen, lässt
+Tauri anschließend nur noch die jeweiligen App-Bundles erzeugen und verbindet
+die beiden geprüften Binärdateien mit `lipo`. Dadurch werden Host-Prozedural-
+Makros nicht aus einem Cross-Target-Verzeichnis geladen oder zwischen den
+Architekturen überschrieben.
 
 ## Eigene Builds und Veröffentlichungen
 
@@ -29,7 +36,9 @@ veröffentlichte Änderung auch die Texte/Markengrafik in `ui/src/dashboard.ts`,
 Für eigene Veröffentlichungen sind die Apple-Zugänge, Zertifikate und Secrets des
 eigenen Accounts zu verwenden. Die Release-Workflow-Datei enthält nur Secret-Namen;
 sie erteilt weder Zugriff auf Claus' Account noch die Berechtigung, seine
-Entwickleridentität für geänderte Produkte zu verwenden.
+Entwickleridentität für geänderte Produkte zu verwenden. Der offizielle
+Signierjob ist zusätzlich durch das manuell freizugebende GitHub-Environment
+`production-release` geschützt.
 
 ## Aufbau
 

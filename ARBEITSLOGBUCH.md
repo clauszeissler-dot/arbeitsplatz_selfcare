@@ -210,3 +210,11 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Release-Beleg: GitHub-Asset-Digests entsprechen den dokumentierten lokalen Hashes. Unsandboxed `codesign`, `stapler validate`, Gatekeeper und DMG-Integrität grün. Frühere Fehler innerhalb der eingeschränkten Sandbox waren Fehlbefunde.
 - Offene Prüflücke: kein aktueller RustSec-Abgleich, weil GitHub-Dependabot deaktiviert und lokal weder `cargo-audit` noch eine Advisory-Datenbank vorhanden ist. Keine CVE-Freiheit für Rust-Abhängigkeiten behauptet.
 - Versionsbezug: Produktcode unverändert; Dokumentationscommit folgt lokal. Kein Push.
+
+
+## 2026-10-29T10:58:32+01:00 – Sicherheitshärtung gestartet (A-020)
+
+- Nutzer beauftragt die vollständige Umsetzung des abgestimmten Härtungsplans. Zielort ist ein lokal vollständig geprüfter, PR-fähiger Stand und danach das geschützte GitHub-Repository; ein neuer Produktrelease gehört nicht zum Auftrag.
+- Entscheidungen übernommen: Dateirechte und Datensparsamkeit statt Anwendungsverschlüsselung, manuelle GitHub-Environment-Freigabe vor Apple-Secrets, Änderungen an `main` nur über Pull Requests.
+- Verbindliche Gates: drei Scan-Findings mit Regressionstests schließen; bestehende Release-Artefakte und fremde ungetrackte Handoffs nicht verändern; keine Secrets auslesen; S1-Sicherheitsprüfung mit Missbrauchs- und Positivkontrollen vor Abschluss.
+- Arbeitsbeginn und erster Zielabgleich: 2026-10-29T10:58:32+01:00. Nächster Schritt sind Red-Tests an den drei tatsächlichen Sicherheitsgrenzen.

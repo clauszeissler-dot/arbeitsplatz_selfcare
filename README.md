@@ -41,6 +41,7 @@ DMG öffnen und **Lotse** in den Ordner **Programme** ziehen.
 
 - **Nur für den Mac:** Lotse läuft ab macOS 13. Eine Windows-Version ist geplant.
 - **Alles bleibt auf deinem Rechner:** Lotse schickt keine Daten ins Internet.
+- **Lokaler Schutz:** Einstellungen und höchstens 60 Tageszusammenfassungen liegen unverschlüsselt, aber mit Benutzerrechten `0700`/`0600` geschützt. Tabtitel, Arbeitsverzeichnisse und vollständige Prozessargumente werden nicht dauerhaft gespeichert.
 - **Keine Garantie für deine Gesundheit:** Lotse ist eine Erinnerungshilfe, kein Medizinprodukt. Die Startwerte beruhen auf Studien und Empfehlungen. Hör trotzdem auf deinen Körper.
 - **Woher die Werte kommen:** [Recherche und Quellen](docs/RECHERCHE.md)
 
@@ -55,7 +56,7 @@ Alternativ kannst du die App selbst bauen: [Anleitung](docs/ANLEITUNG.md#install
 
 **Selbst bauen und verändern ist ebenfalls erlaubt:** Der Projekt-Quellcode, die Dokumentation und die Lotse-Klänge stehen unter [Apache-2.0](LICENSE). Veröffentliche Änderungen unter **eigenem Namen, eigener App-Kennung und eigener Entwickleridentität**. Die Marke KI AffAIrs, originale Logos und Claus' Developer ID werden nicht zur Nutzung für eigene Releases freigegeben. Urheberhinweise bleiben auch bei eigenen Versionen erhalten.
 
-Details: [NOTICE](NOTICE) · [Marken, Originalweitergabe und eigene Builds](BRANDING.md).
+Details: [NOTICE](NOTICE) · [Marken, Originalweitergabe und eigene Builds](BRANDING.md) · [Sicherheitsrichtlinie](SECURITY.md).
 
 ## Für Entwickler
 

@@ -6,7 +6,29 @@ use lotse_core::procs::{self, ProcIndex};
 use lotse_core::{Observation, Settings};
 use std::io::Read;
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+const MAX_STDOUT_BYTES: usize = 4 * 1024 * 1024;
+const MAX_STDERR_BYTES: usize = 64 * 1024;
+
+fn read_bounded(mut reader: impl Read, limit: usize, overflow: &AtomicBool) -> Vec<u8> {
+    let mut kept = Vec::with_capacity(limit.min(64 * 1024));
+    let mut buffer = [0_u8; 16 * 1024];
+    while let Ok(read) = reader.read(&mut buffer) {
+        if read == 0 {
+            break;
+        }
+        let available = limit.saturating_sub(kept.len());
+        let copy = available.min(read);
+        kept.extend_from_slice(&buffer[..copy]);
+        if copy < read {
+            overflow.store(true, Ordering::Relaxed);
+        }
+    }
+    kept
+}
 
 /// Führt ein Kommando mit Zeitlimit aus (osascript kann z. B. an einem
 /// Berechtigungsdialog hängen).
@@ -18,18 +40,22 @@ fn run(cmd: &str, args: &[&str], timeout: Duration) -> Result<String, String> {
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|e| e.to_string())?;
-    let mut stdout = child.stdout.take().ok_or_else(|| "stdout nicht verfügbar".to_string())?;
-    let mut stderr = child.stderr.take().ok_or_else(|| "stderr nicht verfügbar".to_string())?;
-    let stdout_reader = std::thread::spawn(move || {
-        let mut out = Vec::new();
-        let _ = stdout.read_to_end(&mut out);
-        out
-    });
-    let stderr_reader = std::thread::spawn(move || {
-        let mut out = Vec::new();
-        let _ = stderr.read_to_end(&mut out);
-        out
-    });
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "stdout nicht verfügbar".to_string())?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "stderr nicht verfügbar".to_string())?;
+    let stdout_overflow = Arc::new(AtomicBool::new(false));
+    let stderr_overflow = Arc::new(AtomicBool::new(false));
+    let stdout_flag = Arc::clone(&stdout_overflow);
+    let stderr_flag = Arc::clone(&stderr_overflow);
+    let stdout_reader =
+        std::thread::spawn(move || read_bounded(&mut stdout, MAX_STDOUT_BYTES, &stdout_flag));
+    let stderr_reader =
+        std::thread::spawn(move || read_bounded(&mut stderr, MAX_STDERR_BYTES, &stderr_flag));
     let start = Instant::now();
     let status = loop {
         match child.try_wait() {
@@ -49,8 +75,15 @@ fn run(cmd: &str, args: &[&str], timeout: Duration) -> Result<String, String> {
             }
         }
     };
-    let stdout = stdout_reader.join().map_err(|_| "stdout-Leser abgebrochen".to_string())?;
-    let stderr = stderr_reader.join().map_err(|_| "stderr-Leser abgebrochen".to_string())?;
+    let stdout = stdout_reader
+        .join()
+        .map_err(|_| "stdout-Leser abgebrochen".to_string())?;
+    let stderr = stderr_reader
+        .join()
+        .map_err(|_| "stderr-Leser abgebrochen".to_string())?;
+    if stdout_overflow.load(Ordering::Relaxed) || stderr_overflow.load(Ordering::Relaxed) {
+        return Err("Befehlsausgabe zu groß".into());
+    }
     if status.success() {
         Ok(String::from_utf8_lossy(&stdout).into_owned())
     } else {
@@ -151,5 +184,15 @@ mod tests {
             "große Prozesslisten dürfen nicht am Pipe-Puffer blockieren: {output:?}"
         );
         assert!(output.unwrap().len() > 100_000);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn run_rejects_output_above_the_memory_limit() {
+        let output = run("/usr/bin/jot", &["800000"], Duration::from_secs(3));
+        assert!(
+            output.is_err() && output.unwrap_err().contains("zu groß"),
+            "übergroße lokale Metadaten müssen kontrolliert abgewiesen werden"
+        );
     }
 }

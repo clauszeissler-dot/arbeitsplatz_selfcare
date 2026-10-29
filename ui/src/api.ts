@@ -107,6 +107,7 @@ export interface Settings {
   eyes_interval_min: number;
   thresholds: Record<"projects" | "tabs" | "busy_agents" | "block_minutes" | "switches_10min" | "day_hours", Band>;
 }
+export interface StorageHealth { ok: boolean; message: string | null }
 
 export const inTauri = "__TAURI_INTERNALS__" in window;
 
@@ -135,6 +136,7 @@ export async function listen<T>(event: string, cb: (payload: T) => void): Promis
 export const api = {
   snapshot: () => invoke<Snapshot>("get_snapshot"),
   settings: () => invoke<Settings>("get_settings"),
+  storageHealth: () => invoke<StorageHealth>("get_storage_health"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
   act: (action: string, kind?: HintKind) => invoke<void>("act", { action, kind: kind ?? null }),
   startTimer: (sound: boolean) => invoke<void>("start_hint_timer", { sound }),
@@ -226,6 +228,7 @@ async function mock<T>(cmd: string, _args?: Record<string, unknown>): Promise<T>
   switch (cmd) {
     case "get_snapshot": return mockSnapshot() as T;
     case "get_settings": return structuredClone(defaultSettings) as T;
+    case "get_storage_health": return { ok: true, message: null } as T;
     case "autostart_enabled": return true as T;
     default:
       if (cmd === "act") setTimeout(() => mockListeners.filter((l) => l.event === "snapshot").forEach((l) => l.cb(mockSnapshot())), 50);
