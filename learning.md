@@ -84,3 +84,14 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Konsequenz / zuständige Regel: Ubuntu prüft `lotse-core` und RustSec; vollständige Workspace-Tests, Clippy und Universal-App-Build laufen im macOS-Job. macOS-Cross-Targets werden nur im macOS-Job installiert.
 - Prüfpunkt: PR muss sowohl `Kernlogik und Security` als auch `Mac-App bauen (unsigniert)` bestehen.
 - Wirkung: Korrigierter Lauf `40859430217` grün; Kernjob 2:51 Minuten, macOS-Job 9:18 Minuten. Nächste passende CI-Änderung muss diese Plattformgrenze erhalten.
+
+
+### L-008 – Bundle-Executable niemals aus dem Produktnamen ableiten
+
+- Datum / Status: 2026-10-29 · bestätigt/aktiv durch fehlgeschlagenen strikten Signaturtest.
+- Quelle: A-020-Nachkontrolle; `Info.plist` enthielt `CFBundleExecutable=lotse`, während `build-universal.sh` `Contents/MacOS/Lotse` verwendete.
+- Geltung: Universal-Builds und Signierung von Lotse.
+- Beobachtung: Das standardmäßig case-insensitive macOS-Dateisystem kaschiert abweichende Groß-/Kleinschreibung. `lipo` kann dadurch ein scheinbar funktionierendes Bundle erzeugen, dessen Code-Signatur die Info.plist-Bindung ablehnt.
+- Konsequenz / zuständige Regel: `scripts/build-universal.sh` liest den Namen aus beiden Plists, verlangt identische sichere Werte und verwendet ihn unverändert. Kein Ableiten aus `productName` oder App-Verzeichnis.
+- Prüfpunkt: statischer Regressionstest plus realer Universal-Build, Developer-ID-Signatur und `codesign --verify --deep --strict`.
+- Wirkung: Folge-PR #10; roter Test vor Korrektur, danach `x86_64 arm64` und strikte Signaturprüfung grün. Bei Änderungen am Bundling erneut prüfen.

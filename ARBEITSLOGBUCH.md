@@ -232,3 +232,13 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Release-Environment: `production-release` verlangt Claus' manuelle Freigabe und geschützte Branches. Noch keine Apple-Secrets vorhanden; Workflow ist dadurch fail-closed. Einmalige Secret-Einrichtung ist in `docs/RELEASE.md` dokumentiert und erst vor einem tatsächlich beauftragten neuen Release nötig.
 - Kein Release-Tag, kein neuer Release und keine Änderung vorhandener Release-Artefakte. Die drei fremden ungetrackten AUTO-Handoffs blieben unangetastet.
 - Anforderungsabgleich: A-020 geprüft erfüllt. Einziger Betriebsrest ist die bewusst vertagte Environment-Secret-Einrichtung; keine offene Code- oder Repository-Härtung.
+
+
+### A-020 Nachkontrolle · 2026-10-29T12:21:52+01:00
+
+- Letzter Echtzustandscheck fand `state.json` erneut als `0644`. Ursache war die seit 08:31 Uhr weiterlaufende alte lokale Entwicklungsinstanz aus `target/release/bundle/macos/Lotse.app`; die notarisiert installierte App unter `/Applications` lief nicht.
+- Die alte Instanz wurde gezielt über Bundle-ID beendet, nicht global gekillt. Der gehärtete neue Universal-Build wurde lokal mit `Developer ID Application: Claus Zeissler (ZWT6395G7Q)` signiert und gestartet. Neuer Prozesspfad: `target/universal-apple-darwin/release/bundle/macos/Lotse.app`.
+- Beim ersten strikten Signaturtest fiel auf, dass `Info.plist` `CFBundleExecutable=lotse` nennt, das Universal-Skript aber hart `Contents/MacOS/Lotse` schrieb. Auf dem case-insensitiven Dateisystem lief das Bundle, die Signaturbindung war jedoch ungültig. Regressionstest zuerst rot.
+- Folge-PR #10: Skript liest `CFBundleExecutable` aus beiden architekturspezifischen Plists, lehnt leere, pfadhaltige oder abweichende Namen ab und verwendet den exakten Wert für `lipo`. Test danach grün; tatsächliches Bundle enthält `Contents/MacOS/lotse`, `x86_64 arm64`.
+- Lokaler Developer-ID-Test nach Korrektur: `codesign --verify --deep --strict` erfolgreich; Identifier `de.kiaffairs.lotse`, Team `ZWT6395G7Q`, erwartete Authority und Hardened Runtime bestätigt. Keine Apple-Einreichung, kein Tag und kein Release.
+- Laufzeitkontrolle: `state.json` wurde nach Start nachweislich mehrfach atomar neu geschrieben und blieb `0600`; `settings.json` `0600`, App-/Soundordner `0700`. Damit ist die Migration nicht nur testseitig, sondern mit der tatsächlich laufenden neuen Instanz belegt.
