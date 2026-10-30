@@ -1,3 +1,4 @@
+mod build_info;
 mod collect;
 mod exercise;
 #[cfg(target_os = "macos")]
@@ -404,6 +405,11 @@ fn get_settings(app: AppHandle) -> Settings {
 }
 
 #[tauri::command]
+fn get_build_info() -> build_info::BuildInfo {
+    build_info::current()
+}
+
+#[tauri::command]
 fn get_storage_health(app: AppHandle) -> StorageHealth {
     storage_health(&app.state::<Shared>())
 }
@@ -584,6 +590,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
+            get_build_info,
             get_settings,
             get_storage_health,
             get_current_hint,

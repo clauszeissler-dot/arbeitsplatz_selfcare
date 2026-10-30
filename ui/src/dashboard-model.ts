@@ -75,3 +75,17 @@ export function daySummaryText(
   if (day.pauses.length) parts.push(`${day.pauses.length} ${day.pauses.length === 1 ? "Pause" : "Pausen"}`);
   return parts.length ? parts.join(" · ") : "keine Details";
 }
+
+export interface BuildInfo {
+  version: string;
+  build: string;
+}
+
+/** Version samt Build-Art: Release nur als Nummer, alles andere erkennbar als Testbuild. */
+export function versionLabel(info: BuildInfo): string {
+  if (info.build === "release") return info.version;
+  const local = /^local-([0-9a-f]+)(-dirty)?$/.exec(info.build);
+  if (local) return `${info.version} · lokaler Build (${local[1]}${local[2] ? ", mit Änderungen" : ""})`;
+  if (info.build === "ci") return `${info.version} · Test-Build (CI)`;
+  return `${info.version} · Entwicklungsbuild`;
+}

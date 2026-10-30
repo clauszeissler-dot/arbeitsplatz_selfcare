@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { daySummaryText, focusVisual, formatElapsed, liveSeconds, loadDashboardData, runningClock } from "./dashboard-model.ts";
+import { daySummaryText, focusVisual, formatElapsed, liveSeconds, loadDashboardData, runningClock, versionLabel } from "./dashboard-model.ts";
 
 test("pause uses one calm cyan semantic instead of a focus warning color", () => {
   assert.deepEqual(focusVisual(true, 95, "red"), {
@@ -64,4 +64,16 @@ test("a day log summary names time span, tasks and pauses", () => {
   const text = daySummaryText({ first_active: 1000, ended_at: 4600, tasks: [1, 2], pauses: [1] }, (t) => `t${t}`);
   assert.equal(text, "t1000–t4600 · 2 Aufgaben · 1 Pause");
   assert.equal(daySummaryText({ first_active: null, ended_at: null, tasks: [], pauses: [] }, (t) => `t${t}`), "keine Details");
+});
+
+test("a release shows only its version number", () => {
+  assert.equal(versionLabel({ version: "0.3.0", build: "release" }), "0.3.0");
+});
+
+test("local, CI and development builds are never mistaken for a release", () => {
+  assert.equal(versionLabel({ version: "0.3.0", build: "local-ce807fb" }), "0.3.0 · lokaler Build (ce807fb)");
+  assert.equal(versionLabel({ version: "0.3.0", build: "local-ce807fb-dirty" }), "0.3.0 · lokaler Build (ce807fb, mit Änderungen)");
+  assert.equal(versionLabel({ version: "0.3.0", build: "ci" }), "0.3.0 · Test-Build (CI)");
+  assert.equal(versionLabel({ version: "0.3.0", build: "dev" }), "0.3.0 · Entwicklungsbuild");
+  assert.equal(versionLabel({ version: "0.3.0", build: "irgendwas" }), "0.3.0 · Entwicklungsbuild");
 });

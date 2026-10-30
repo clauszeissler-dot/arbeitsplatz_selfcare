@@ -266,7 +266,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 20 | A-027 | Laufende Uhren für Fokus, Pause, Haltung und aktive Aufgaben (Snapshot-Startzeiten, Modell, Dashboard). | Schritt 19 | erledigt | Core- und UI-Tests rot→grün; Screenshot der installierten App |
 | 21 | A-028 | „Tag beenden“ (Engine `end_day`, Tauri-Aktion, Kopfzeile mit Rückfrage, Menüleiste, Hinweis „Arbeitstag ist voll“). | Schritt 19 | erledigt | 7 Core-Tests rot→grün; Klicktest am laufenden Tag bewusst nicht ausgeführt |
 | 22 | A-029 | Tagesprotokolle (Aufgaben, Pausen, Zeitraum) in der Historie aufklappbar anzeigen. | Schritt 21 | erledigt | Core-Test Tagesprotokoll; UI-Build grün |
-| 23 | A-030 | Versionsschema festlegen (SemVer, Versionsquelle, Tags, CHANGELOG, Dev-Kennzeichnung, Anzeige im Cockpit, Konsistenztest). | Freigabe des Schemas durch Claus | offen | Noch nicht begonnen |
+| 23 | A-030 | Versionsschema festlegen (SemVer, Versionsquelle, Tags, CHANGELOG, Dev-Kennzeichnung, Anzeige im Cockpit, Konsistenztest). | Freigabe des Schemas durch Claus | erledigt | Tests grün: 32 Python-, 13 Rust-, 16 UI-Tests; Skripte nur per Syntaxprüfung und Tests, nicht live \|
 
 ## Blockaden und Entscheidungen
 
@@ -305,3 +305,8 @@ Bei erneut vorliegender 8-Tab-Arbeitslage A-005 sichtbar bestätigen; A-006 bis 
 - Sichtbares Ergebnis: Cockpit der aktuellen App zeigt bei Fokus, Pause und Haltung Startzeit und laufende Uhr; „Tag beenden“ protokolliert den Tag und beendet Lotse. Zielort: `/Applications/Lotse.app`. Abschlussnachweis: Tests grün, Prozesspfad, Screenshot.
 - Gestartet 2026-10-30 11:30, Zwischenabgleich 11:50: Ursache A-026 gefunden und behoben, Engine/UI/Tauri umgesetzt, lokal gebaut, Developer-ID-signiert (nicht notarisiert) und installiert.
 - Offen: Autostart über Einstellungsschalter neu setzen (A-026); Klicktest „Tag beenden“ durch Claus (A-028); Granularität der Chat-Logs klären (A-029). Backup der notarisierten 0.1.0 liegt im Scratchpad der Sitzung.
+
+### Versionierung A-030 – Stand und nächste Schritte (nur auf Auftrag)
+
+- Umgesetzt 2026-10-30 nach freigegebenem Plan: `scripts/versioning.py`, `set-version.sh`, `build-local.sh`, Release-Validierung (fünf Versionsstellen, Changelog, höhere Version), Build-Marker `LOTSE_BUILD`, Anzeige in Einstellungen/Fußzeile, `CHANGELOG.md`, Doku.
+- Offen: Push und PR; Apple-Secrets; `set-version.sh 0.3.0`, Changelog-Datum, Tag `v0.3.0`, Workflow, Entwurf prüfen, veröffentlichen; Live-Update-Test 0.2.0 → 0.3.0; Autostart über Einstellungsschalter neu setzen (A-026).

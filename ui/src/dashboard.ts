@@ -8,7 +8,7 @@ import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
 import { api, listen, type DaySummary, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
-import { daySummaryText, focusVisual, formatElapsed, liveSeconds, loadDashboardData, runningClock, type FocusTone } from "./dashboard-model";
+import { daySummaryText, focusVisual, formatElapsed, liveSeconds, loadDashboardData, runningClock, versionLabel, type FocusTone } from "./dashboard-model";
 import { icons } from "./icons";
 import { updatePresentation } from "./updater-model";
 import { LotseUpdater } from "./updater";
@@ -18,6 +18,7 @@ let snap: Snapshot | null = null;
 let storageHealth: StorageHealth = { ok: true, message: null };
 let settingsOpen = false;
 let confirmDayEnd = false;
+let buildLabel = "";
 const openDays = new Set<string>();
 const updater = new LotseUpdater(() => {
   const panel = document.getElementById("update-panel");
@@ -49,7 +50,7 @@ function updatePanelContent(): string {
   const button = presentation.action
     ? `<button class="btn ghost" type="button" data-act="update-${presentation.action}" ${presentation.disabled ? "disabled" : ""}>${esc(presentation.actionLabel ?? "")}</button>`
     : "";
-  return `<legend>Updates</legend><p class="update-status" role="status">${esc(presentation.status)}</p><div class="actions">${button}</div><p class="note">Nur signierte offizielle Pakete aus GitHub Releases werden akzeptiert.</p>`;
+  return `<legend>Updates</legend><p class="update-status" role="status">${esc(presentation.status)}</p><div class="actions">${button}</div><p class="note">Nur signierte offizielle Pakete aus GitHub Releases werden akzeptiert.</p>${buildLabel ? `<p class="note build-label">Diese App: ${esc(buildLabel)}</p>` : ""}`;
 }
 
 function updateNotice(): string {
@@ -393,6 +394,7 @@ function render() {
       ${history(s)}
 
       <footer>
+        ${buildLabel ? `<span class="mono">Lotse ${esc(buildLabel)}</span><br />` : ""}
         <span class="mono">Grundlagen</span>
         Fluglotsen-Pausenregel (max. 2 h, dann 30 min – NATS/ICAO) · Sitz-Steh-Rhythmus 30/15 (Griffith University 2025) ·
         „AI Brain Fry“ (BCG/HBR 2026) · Parallele Projekte (Clark &amp; Wheelwright) · Wasserbedarf (EFSA) · Mikropausen (Albulescu 2022)
@@ -587,6 +589,10 @@ app.addEventListener("click", (e) => {
 });
 async function load() {
   renderLoading();
+  void api.buildInfo().then((info) => {
+    buildLabel = versionLabel(info);
+    if (snap && !settingsOpen) render();
+  }).catch(() => {});
   for (const delay of [0, 250, 750]) {
     if (delay) await new Promise((resolve) => window.setTimeout(resolve, delay));
     const result = await loadDashboardData(api);

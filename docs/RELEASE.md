@@ -175,3 +175,36 @@ deshalb gehört er zusätzlich in die geschützte Owner-Sicherung.
 Die vorhandene `lotse-0.1.0` kennt den Updater nicht. Der Wechsel auf die erste
 updaterfähige `0.2.0` bleibt einmalig manuell; erst danach funktionieren direkte
 GitHub-Updates.
+
+## Versionierung (A-030)
+
+**Schema:** SemVer `X.Y.Z`. Neue Funktion erhöht Y, Fehlerkorrektur erhöht Z, ein Bruch erhöht X;
+vor 1.0 dürfen Y-Schritte Brüche enthalten. Suffixe wie `-dev` gibt es in den Dateien nicht, damit das
+macOS-Bundle immer eine gültige Version trägt.
+
+**Eine Quelle:** `[workspace.package] version` in `Cargo.toml`. Dieselbe Version steht in `Cargo.lock`,
+`package.json`, `package-lock.json` und `src-tauri/tauri.conf.json`. Geändert wird sie nur mit
+
+```sh
+scripts/set-version.sh 0.3.0     # schreibt alle fünf Stellen
+python3 scripts/versioning.py check   # gibt die Version aus, Exit 1 bei Abweichung (läuft in der CI)
+```
+
+**Release-Ablauf:**
+
+1. `scripts/set-version.sh X.Y.Z`, danach in `CHANGELOG.md` den Abschnitt `## [X.Y.Z] – Datum` fertigstellen.
+   Der Abschnitt wird zum Release-Text; ohne Inhalt bricht `scripts/validate-release.sh` ab.
+2. Pull-Request, geschützter Merge nach `main`.
+3. Tag `vX.Y.Z` auf dem Merge-Commit, Workflow manuell starten, Entwurf prüfen, bewusst veröffentlichen.
+
+`validate-release.sh` verlangt zusätzlich, dass die Version **höher** ist als jeder bereits veröffentlichte
+Tag (`vX.Y.Z` oder der historische `lotse-0.1.0`). Ein Update wird nur angeboten, wenn die Release-Version
+größer ist als die installierte. Ein Update-Test braucht deshalb immer eine höhere Nummer.
+
+**Build-Art sichtbar:** Die App zeigt in den Einstellungen und der Fußzeile `0.3.0` (Release),
+`0.3.0 · lokaler Build (abc1234)`, `0.3.0 · Test-Build (CI)` oder `0.3.0 · Entwicklungsbuild`. Den Marker setzt
+die Umgebungsvariable `LOTSE_BUILD` zur Compile-Zeit: nur der Release-Workflow setzt `release`,
+`scripts/build-universal.sh` standardmäßig `ci`, `scripts/build-local.sh` `local-<Git-Hash>`.
+
+**Tags:** Pflicht ist `vX.Y.Z`. `lotse-0.1.0` bleibt als dokumentierte Ausnahme bestehen (siehe oben).
+

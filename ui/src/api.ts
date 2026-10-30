@@ -95,6 +95,7 @@ export interface Snapshot {
   observation: Observation;
   history: DaySummary[];
 }
+export interface BuildInfo { version: string; build: string }
 export interface HintAction { id: string; label: string }
 export interface Hint {
   kind: HintKind;
@@ -158,6 +159,7 @@ export async function listen<T>(event: string, cb: (payload: T) => void): Promis
 
 export const api = {
   snapshot: () => invoke<Snapshot>("get_snapshot"),
+  buildInfo: () => invoke<BuildInfo>("get_build_info"),
   settings: () => invoke<Settings>("get_settings"),
   storageHealth: () => invoke<StorageHealth>("get_storage_health"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
@@ -263,6 +265,7 @@ const mockHint: Hint = {
 async function mock<T>(cmd: string, _args?: Record<string, unknown>): Promise<T> {
   switch (cmd) {
     case "get_snapshot": return mockSnapshot() as T;
+    case "get_build_info": return { version: "0.3.0", build: "dev" } as T;
     case "get_settings": return structuredClone(defaultSettings) as T;
     case "get_storage_health": return { ok: true, message: null } as T;
     case "get_current_hint": return mockHint as T;

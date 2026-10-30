@@ -323,3 +323,9 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Nicht ausgeführt: Klick auf „Tag beenden“ (hätte den laufenden Tag beendet); Universal-Build, Notarisierung, Release.
 - Konsistenznachtrag: A-002 (Erinnerungsrhythmus, Hinweis-Karte) war bereits am 2026-10-28 geprüft (`cargo test -p lotse-core` 25/25) und blieb unverändert; die Laufzeit-Änderungen berühren seine Auslöselogik nicht.
 - Status je ID: A-026 umgesetzt (Autostart-Neusetzung offen), A-027 geprüft (Screenshot), A-028 umgesetzt (Klicktest offen), A-029 umgesetzt (Granularität mit Claus klären).
+
+## 2026-10-30T13:00:00+02:00 – Versionierung umgesetzt (A-030)
+
+- Nach freigegebenem Plan: gemeinsames Werkzeug `scripts/versioning.py` (check/set/changelog/newer), Wrapper `set-version.sh`, `build-local.sh` (liest den Autostart-Pfad nur, ändert ihn nie), erweiterte `validate-release.sh`, Release-Text aus dem Changelog, Build-Marker `LOTSE_BUILD` (nur `release.yml` setzt `release`).
+- TDD: 13 neue Python-Tests (zuerst 8 Fehlschläge/2 Fehler), 3 Rust- und 2 UI-Tests zuerst rot. Ein Regex-Fehler (`(?s)`, katastrophales Backtracking) ließ den ersten Testlauf hängen; Flag entfernt, dann grün. Gates: 32 Python-, 13 Rust-, 16 UI-Tests, Clippy `-D warnings`, `cargo fmt`, `npm run build`.
+- Bewusst nicht ausgeführt: `build-local.sh` (hätte die installierte 0.2.0 ersetzt, die für den Live-Update-Test erhalten bleiben soll), `validate-release.sh` (braucht Tag und `origin/main`). Version in den Dateien bleibt 0.2.0 bis zum Release. Kein Push.

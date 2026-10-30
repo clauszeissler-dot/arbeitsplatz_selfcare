@@ -24,21 +24,16 @@ git merge-base --is-ancestor "$TAG_COMMIT" origin/main || {
   exit 3
 }
 
-python3 - "$VERSION" <<'PY'
-import json
-import pathlib
-import re
-import sys
-
-expected = sys.argv[1]
-root = pathlib.Path.cwd()
-package = json.loads((root / "package.json").read_text())["version"]
-tauri = json.loads((root / "src-tauri" / "tauri.conf.json").read_text())["version"]
-cargo_text = (root / "Cargo.toml").read_text()
-cargo_match = re.search(r'^version\s*=\s*"([^"]+)"', cargo_text, re.MULTILINE)
-cargo = cargo_match.group(1) if cargo_match else None
-actual = {"Cargo.toml": cargo, "package.json": package, "tauri.conf.json": tauri}
-wrong = {name: value for name, value in actual.items() if value != expected}
-if wrong:
-    raise SystemExit(f"Versionsabweichung zu {expected}: {wrong}")
-PY
+# Alle fünf Versionsstellen müssen mit dem Tag übereinstimmen
+ACTUAL="$(python3 "$(dirname "$0")/versioning.py" check)"
+if [[ "$ACTUAL" != "$VERSION" ]]; then
+  printf 'Versionsabweichung: Tag %s, Quelle %s\n' "$VERSION" "$ACTUAL" >&2
+  exit 3
+fi
+# Ohne Changelog-Abschnitt gibt es keinen Release
+python3 "$(dirname "$0")/versioning.py" changelog "$VERSION" > /dev/null
+# Nur eine höhere Version als jede veröffentlichte wird als Update angeboten
+git fetch --tags --quiet origin
+PUBLISHED="$(git tag --list | grep -vxF "$TAG" || true)"
+# shellcheck disable=SC2086
+python3 "$(dirname "$0")/versioning.py" newer "$VERSION" $PUBLISHED
