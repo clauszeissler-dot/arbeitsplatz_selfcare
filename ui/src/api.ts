@@ -42,6 +42,10 @@ export interface DaySummary {
   red_min: number;
   max_projects: number;
   max_busy_agents: number;
+  first_active: number | null;
+  ended_at: number | null;
+  tasks: TaskActivity[];
+  pauses: { start: number; end: number }[];
 }
 export interface TaskActivity {
   kind: "project" | "app" | "agent";
@@ -67,6 +71,9 @@ export interface Snapshot {
   active_min: number;
   workday_min: number;
   block_min: number;
+  block_started_at: number;
+  pause_started_at: number | null;
+  day_ended_at: number | null;
   since_long_break_min: number;
   water_ml: number;
   water_target_ml: number;
@@ -75,6 +82,7 @@ export interface Snapshot {
   posture: string;
   posture_label: string;
   posture_min: number;
+  posture_started_at: number;
   posture_limit_min: number;
   posture_share: Record<string, number>;
   postures: PostureDefinition[];
@@ -214,8 +222,9 @@ function mockSnapshot(): Snapshot {
     reasons: ["Parallele Projekte: 10", "KI arbeitet gerade: 4 / 7", "Offene Tabs: 12"],
     in_meeting: false, in_break: false, snoozed_until: null,
     active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104,
+    block_started_at: Date.now() / 1000 - 68 * 60 - 12, pause_started_at: null, day_ended_at: null,
     water_ml: 750, water_target_ml: 2000, water_expected_ml: 1150, glass_ml: 250,
-    posture: "office_chair", posture_label: "Bürostuhl", posture_min: 24, posture_limit_min: 30,
+    posture: "office_chair", posture_label: "Bürostuhl", posture_min: 24, posture_started_at: Date.now() / 1000 - 24 * 60 - 31, posture_limit_min: 30,
     posture_share: { office_chair: 190, swopper: 20, standing: 64, board: 12 },
     postures: structuredClone(defaultSettings.postures),
     breaks_today: 2, long_breaks_today: 0, next_water_min: 6, next_break_min: 0,
@@ -237,9 +246,9 @@ function mockSnapshot(): Snapshot {
       other_agents: [], focused_key: "w1:1", idle_secs: 4, mic_active: false, camera_active: false,
     },
     history: [
-      { day: "2026-10-20", active_min: 562, water_ml: 1000, breaks: 2, long_breaks: 0, posture_min: { office_chair: 470, standing: 80, board: 12 }, red_min: 240, max_projects: 9, max_busy_agents: 5 },
-      { day: "2026-10-21", active_min: 505, water_ml: 1500, breaks: 4, long_breaks: 1, posture_min: { office_chair: 330, swopper: 40, standing: 110, board: 25 }, red_min: 110, max_projects: 7, max_busy_agents: 4 },
-      { day: "2026-10-22", active_min: 468, water_ml: 2000, breaks: 5, long_breaks: 2, posture_min: { office_chair: 290, standing: 150, board: 28 }, red_min: 45, max_projects: 5, max_busy_agents: 3 },
+      { day: "2026-10-20", active_min: 562, water_ml: 1000, breaks: 2, long_breaks: 0, posture_min: { office_chair: 470, standing: 80, board: 12 }, red_min: 240, max_projects: 9, max_busy_agents: 5, first_active: null, ended_at: null, tasks: [], pauses: [] },
+      { day: "2026-10-21", active_min: 505, water_ml: 1500, breaks: 4, long_breaks: 1, posture_min: { office_chair: 330, swopper: 40, standing: 110, board: 25 }, red_min: 110, max_projects: 7, max_busy_agents: 4, first_active: null, ended_at: null, tasks: [], pauses: [] },
+      { day: "2026-10-22", active_min: 468, water_ml: 2000, breaks: 5, long_breaks: 2, posture_min: { office_chair: 290, standing: 150, board: 28 }, red_min: 45, max_projects: 5, max_busy_agents: 3, first_active: null, ended_at: null, tasks: [], pauses: [] },
     ],
   };
 }

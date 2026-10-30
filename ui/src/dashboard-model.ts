@@ -36,3 +36,42 @@ export async function loadDashboardData(source: DashboardSource): Promise<Dashbo
   }
 }
 
+
+/** Laufzeit als m:ss, ab einer Stunde als h:mm:ss. */
+export function formatElapsed(seconds: number): string {
+  const total = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = String(total % 60).padStart(2, "0");
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${secs}` : `${minutes}:${secs}`;
+}
+
+export interface RunningClock {
+  mode: "focus" | "pause";
+  since: number;
+}
+
+/** Welche Uhr läuft gerade: Fokus seit dem letzten Pausenende, in der Pause seit Pausenbeginn. */
+export function runningClock(
+  s: Pick<Snapshot, "in_break" | "block_started_at" | "pause_started_at">,
+): RunningClock {
+  if (s.in_break) return { mode: "pause", since: s.pause_started_at ?? s.block_started_at };
+  return { mode: "focus", since: s.block_started_at };
+}
+
+/** Gemeldete Sekunden plus die Zeit, die seit dem letzten Snapshot vergangen ist. */
+export function liveSeconds(source: { reported: number; reportedAt: number }, nowSeconds: number): number {
+  return source.reported + Math.max(0, nowSeconds - source.reportedAt);
+}
+
+/** Kurzfassung eines Tagesprotokolls für die Verlaufsliste. */
+export function daySummaryText(
+  day: { first_active: number | null; ended_at: number | null; tasks: unknown[]; pauses: unknown[] },
+  clock: (epochSeconds: number) => string,
+): string {
+  const parts: string[] = [];
+  if (day.first_active !== null && day.ended_at !== null) parts.push(`${clock(day.first_active)}–${clock(day.ended_at)}`);
+  if (day.tasks.length) parts.push(`${day.tasks.length} ${day.tasks.length === 1 ? "Aufgabe" : "Aufgaben"}`);
+  if (day.pauses.length) parts.push(`${day.pauses.length} ${day.pauses.length === 1 ? "Pause" : "Pausen"}`);
+  return parts.length ? parts.join(" · ") : "keine Details";
+}

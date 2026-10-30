@@ -105,6 +105,7 @@ impl BreakRecord {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct DaySummary {
     pub day: String,
     pub active_min: u64,
@@ -115,6 +116,12 @@ pub struct DaySummary {
     pub red_min: u64,
     pub max_projects: u32,
     pub max_busy_agents: u32,
+    /// Tagesprotokoll: erster Aktivitätszeitpunkt, Ende, Aufgaben und Pausen.
+    /// Ältere Historien ohne diese Felder bleiben ladbar.
+    pub first_active: Option<i64>,
+    pub ended_at: Option<i64>,
+    pub tasks: Vec<TaskActivity>,
+    pub pauses: Vec<BreakRecord>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -149,6 +156,8 @@ pub struct State {
     pub max_projects: u32,
     pub max_busy_agents: u32,
     pub history: Vec<DaySummary>,
+    /// Gesetzt, solange der Tag über „Tag beenden“ abgeschlossen ist.
+    pub day_closed_at: Option<i64>,
 }
 
 impl Default for State {
@@ -183,6 +192,7 @@ impl Default for State {
             max_projects: 0,
             max_busy_agents: 0,
             history: Vec::new(),
+            day_closed_at: None,
         }
     }
 }
@@ -209,6 +219,9 @@ pub struct Snapshot {
     pub active_min: u64,
     pub workday_min: u32,
     pub block_min: i64,
+    pub block_started_at: i64,
+    pub pause_started_at: Option<i64>,
+    pub day_ended_at: Option<i64>,
     pub since_long_break_min: i64,
     pub water_ml: u32,
     pub water_target_ml: u32,
@@ -217,6 +230,7 @@ pub struct Snapshot {
     pub posture: String,
     pub posture_label: String,
     pub posture_min: i64,
+    pub posture_started_at: i64,
     pub posture_limit_min: u32,
     pub posture_share: BTreeMap<String, u64>,
     pub postures: Vec<PostureDefinition>,
@@ -295,31 +309,9 @@ impl Engine {
 
     fn start_day(&mut self, day: &str, now: i64) {
         if !self.state.day.is_empty() {
-            let s = &self.state;
-            let summary = DaySummary {
-                day: s.day.clone(),
-                active_min: s.active_secs / 60,
-                water_ml: s.water_ml,
-                breaks: s.breaks.len() as u32,
-                long_breaks: s
-                    .breaks
-                    .iter()
-                    .filter(|b| b.minutes() >= self.settings.long_break_min as i64)
-                    .count() as u32,
-                posture_min: s
-                    .posture_secs
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v / 60))
-                    .collect(),
-                red_min: s.red_secs / 60,
-                max_projects: s.max_projects,
-                max_busy_agents: s.max_busy_agents,
-            };
-            let mut history = std::mem::take(&mut self.state.history);
-            history.push(summary);
-            if history.len() > 60 {
-                history.remove(0);
-            }
+            let ended_at = self.state.day_closed_at.or(self.state.last_tick);
+            self.store_day_summary(ended_at);
+            let history = std::mem::take(&mut self.state.history);
             self.state = State {
                 history,
                 ..State::default()
@@ -329,6 +321,68 @@ impl Engine {
         self.state.block_start = now;
         self.state.last_long_break_end = now;
         self.state.posture_since = now;
+    }
+
+    fn day_summary(&self, ended_at: Option<i64>) -> DaySummary {
+        let s = &self.state;
+        DaySummary {
+            day: s.day.clone(),
+            active_min: s.active_secs / 60,
+            water_ml: s.water_ml,
+            breaks: s.breaks.len() as u32,
+            long_breaks: s
+                .breaks
+                .iter()
+                .filter(|b| b.minutes() >= self.settings.long_break_min as i64)
+                .count() as u32,
+            posture_min: s
+                .posture_secs
+                .iter()
+                .map(|(k, v)| (k.clone(), v / 60))
+                .collect(),
+            red_min: s.red_secs / 60,
+            max_projects: s.max_projects,
+            max_busy_agents: s.max_busy_agents,
+            first_active: s.first_active,
+            ended_at,
+            tasks: s.tasks.clone(),
+            pauses: s.pause_events.clone(),
+        }
+    }
+
+    /// Schreibt das Tagesprotokoll in die Historie; ein vorhandener Eintrag
+    /// desselben Tages wird ersetzt, damit nichts doppelt gezählt wird.
+    fn store_day_summary(&mut self, ended_at: Option<i64>) {
+        let summary = self.day_summary(ended_at);
+        match self
+            .state
+            .history
+            .iter_mut()
+            .find(|day| day.day == summary.day)
+        {
+            Some(existing) => *existing = summary,
+            None => self.state.history.push(summary),
+        }
+        if self.state.history.len() > 60 {
+            let excess = self.state.history.len() - 60;
+            self.state.history.drain(..excess);
+        }
+    }
+
+    /// „Tag beenden“: protokolliert den Tag, ohne den Tageszustand zu löschen.
+    /// Wer am selben Tag weiterarbeitet, setzt ihn dort fort.
+    pub fn end_day(&mut self, now: i64) {
+        if self.state.day.is_empty() {
+            return;
+        }
+        if let Some(start) = self.state.manual_break.take() {
+            self.record_pause_event(start, now);
+        }
+        for task in &mut self.state.tasks {
+            task.active = false;
+        }
+        self.state.day_closed_at = Some(now);
+        self.store_day_summary(Some(now));
     }
 
     fn end_break(&mut self, start: i64, end: i64) {
@@ -479,6 +533,12 @@ impl Engine {
         self.update_task_activity(now, dt, &obs, active);
 
         if active && self.state.manual_break.is_none() {
+            if self.state.day_closed_at.take().is_some() {
+                // Weitergearbeitet: der Tag läuft wieder und steht erst nach dem
+                // nächsten Beenden erneut mit aktuellen Summen in der Historie.
+                let day = self.state.day.clone();
+                self.state.history.retain(|entry| entry.day != day);
+            }
             self.state.active_secs += dt;
             self.state.first_active.get_or_insert(now);
             *self
@@ -595,6 +655,12 @@ impl Engine {
                 .idle_started
                 .map(|t| now - t >= self.mins(self.settings.break_min))
                 .unwrap_or(false)
+    }
+
+    fn pause_start(&self, now: i64) -> Option<i64> {
+        self.state
+            .manual_break
+            .or_else(|| self.state.idle_started.filter(|_| self.in_break(now)))
     }
 
     fn block_secs(&self, now: i64) -> i64 {
@@ -891,7 +957,7 @@ impl Engine {
                         self.state.active_secs / 3600
                     ),
                     vec![
-                        action("ok", "Ich mache Schluss"),
+                        action("day_end", "Tag beenden"),
                         action("snooze_30", "Noch 30 min"),
                     ],
                 ),
@@ -922,6 +988,9 @@ impl Engine {
             active_min: self.state.active_secs / 60,
             workday_min: s.workday_minutes,
             block_min: self.block_secs(now) / 60,
+            block_started_at: self.state.block_start,
+            pause_started_at: self.pause_start(now),
+            day_ended_at: self.state.day_closed_at,
             since_long_break_min: (now - self.state.last_long_break_end) / 60,
             water_ml: self.state.water_ml,
             water_target_ml: s.water_target_ml,
@@ -934,6 +1003,7 @@ impl Engine {
                 .map(|posture| posture.label.clone())
                 .unwrap_or_else(|| "Bürostuhl".into()),
             posture_min: (now - self.state.posture_since) / 60,
+            posture_started_at: self.state.posture_since,
             posture_limit_min: self.posture_limit(),
             posture_share: self
                 .state
@@ -1319,6 +1389,166 @@ mod tests {
         let finished = e.snapshot(T0 + 11 * 60);
         assert_eq!(finished.break_timeline[0].end, Some(T0 + 11 * 60));
         assert_eq!(finished.break_timeline[0].duration_secs, 10 * 60);
+    }
+
+    #[test]
+    fn snapshot_exposes_when_focus_posture_and_pause_started() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+
+        let focus = e.snapshot(T0 + 600);
+        assert_eq!(focus.block_started_at, T0);
+        assert_eq!(focus.posture_started_at, T0);
+        assert_eq!(focus.pause_started_at, None);
+
+        e.start_break(T0 + 900);
+        assert_eq!(e.snapshot(T0 + 960).pause_started_at, Some(T0 + 900));
+    }
+
+    #[test]
+    fn snapshot_reports_the_start_of_an_idle_pause() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.tick(T0 + 30, DAY, obs(300));
+        let idle_start = T0 + 30 - 300;
+
+        let late = T0 + 30 + e.settings.break_min as i64 * 60 + 60;
+        let snap = e.snapshot(late);
+        assert!(snap.in_break);
+        assert_eq!(snap.pause_started_at, Some(idle_start));
+    }
+
+    fn working_on(project: &str) -> Observation {
+        let mut o = obs(1);
+        let mut focused = tab("t1", project, false);
+        focused.focused = true;
+        o.focused_key = Some(focused.key.clone());
+        o.tabs = vec![focused];
+        o
+    }
+
+    #[test]
+    fn ending_the_day_logs_it_in_the_history_and_stays_resumable() {
+        let mut e = engine();
+        e.tick(T0, DAY, working_on("~/dev/lotse"));
+        e.tick(T0 + 30, DAY, working_on("~/dev/lotse"));
+        e.drink(T0 + 60, None);
+
+        e.end_day(T0 + 120);
+
+        assert_eq!(e.state.history.len(), 1);
+        let log = &e.state.history[0];
+        assert_eq!(log.day, DAY);
+        assert_eq!(log.first_active, Some(T0));
+        assert_eq!(log.ended_at, Some(T0 + 120));
+        assert_eq!(log.water_ml, 250);
+        assert_eq!(log.tasks.len(), 1);
+        assert_eq!(log.tasks[0].label, "lotse");
+        assert_eq!(log.tasks[0].active_secs, 30);
+        assert_eq!(
+            e.state.day, DAY,
+            "Tageszustand bleibt für einen Neustart erhalten"
+        );
+        assert_eq!(e.state.water_ml, 250);
+        assert_eq!(e.snapshot(T0 + 120).day_ended_at, Some(T0 + 120));
+
+        e.drink(T0 + 130, None);
+        e.end_day(T0 + 200);
+        assert_eq!(
+            e.state.history.len(),
+            1,
+            "zweites Beenden ersetzt den Eintrag"
+        );
+        assert_eq!(e.state.history[0].water_ml, 500);
+        assert_eq!(e.state.history[0].ended_at, Some(T0 + 200));
+    }
+
+    #[test]
+    fn ending_the_day_closes_a_running_manual_pause_in_the_log() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.start_break(T0 + 60);
+
+        e.end_day(T0 + 360);
+
+        assert_eq!(e.state.manual_break, None);
+        let pauses = &e.state.history[0].pauses;
+        assert_eq!(pauses.len(), 1);
+        assert_eq!((pauses[0].start, pauses[0].end), (T0 + 60, T0 + 360));
+    }
+
+    #[test]
+    fn rolling_over_after_ending_the_day_does_not_duplicate_the_history() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.drink(T0 + 60, None);
+        e.end_day(T0 + 120);
+
+        e.tick(T0 + 86_400, "2026-10-24", obs(1));
+
+        assert_eq!(e.state.history.len(), 1);
+        assert_eq!(e.state.history[0].day, DAY);
+        assert_eq!(e.state.history[0].water_ml, 250);
+        assert_eq!(e.state.day, "2026-10-24");
+        assert_eq!(e.state.day_closed_at, None);
+    }
+
+    #[test]
+    fn activity_after_ending_the_day_reopens_it() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.end_day(T0 + 60);
+        assert_eq!(e.state.history.len(), 1);
+
+        e.tick(T0 + 90, DAY, obs(1));
+
+        assert_eq!(e.state.day_closed_at, None);
+        assert_eq!(e.snapshot(T0 + 90).day_ended_at, None);
+        assert!(
+            e.state.history.is_empty(),
+            "der heutige Tag steht erst nach dem nächsten Beenden wieder in der Historie"
+        );
+    }
+
+    #[test]
+    fn idle_ticks_do_not_reopen_an_ended_day() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.end_day(T0 + 60);
+
+        e.tick(T0 + 90, DAY, obs(900));
+
+        assert_eq!(e.state.day_closed_at, Some(T0 + 60));
+        assert_eq!(e.state.history.len(), 1);
+    }
+
+    #[test]
+    fn history_from_older_versions_without_day_log_fields_still_loads() {
+        let old = r#"{"day":"2026-10-28","active_min":120,"water_ml":500,"breaks":6,
+            "long_breaks":2,"posture_min":{"office_chair":104},"red_min":9,
+            "max_projects":1,"max_busy_agents":7}"#;
+
+        let summary: DaySummary = serde_json::from_str(old).unwrap();
+
+        assert_eq!(summary.day, "2026-10-28");
+        assert_eq!(summary.first_active, None);
+        assert_eq!(summary.ended_at, None);
+        assert!(summary.tasks.is_empty());
+        assert!(summary.pauses.is_empty());
+    }
+
+    #[test]
+    fn full_workday_hint_offers_to_end_the_day() {
+        let mut e = engine();
+        e.state.active_secs = e.settings.workday_minutes as u64 * 60;
+
+        let hints = run(&mut e, T0, 100, &obs(1));
+
+        let day_end = hints
+            .iter()
+            .find(|h| h.kind == HintKind::DayEnd)
+            .expect("Arbeitstag-voll-Hinweis");
+        assert!(day_end.actions.iter().any(|a| a.id == "day_end"));
     }
 
     #[test]

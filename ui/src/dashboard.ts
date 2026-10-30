@@ -7,8 +7,8 @@ import "@fontsource/space-grotesk/600.css";
 import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
-import { api, listen, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
-import { focusVisual, loadDashboardData, type FocusTone } from "./dashboard-model";
+import { api, listen, type DaySummary, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
+import { daySummaryText, focusVisual, formatElapsed, liveSeconds, loadDashboardData, runningClock, type FocusTone } from "./dashboard-model";
 import { icons } from "./icons";
 import { updatePresentation } from "./updater-model";
 import { LotseUpdater } from "./updater";
@@ -17,6 +17,8 @@ const app = document.getElementById("app")!;
 let snap: Snapshot | null = null;
 let storageHealth: StorageHealth = { ok: true, message: null };
 let settingsOpen = false;
+let confirmDayEnd = false;
+const openDays = new Set<string>();
 const updater = new LotseUpdater(() => {
   const panel = document.getElementById("update-panel");
   if (panel) panel.innerHTML = updatePanelContent();
@@ -35,6 +37,12 @@ function esc(s: string): string {
 const liters = (ml: number) => (ml / 1000).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.floor(min % 60)).padStart(2, "0")}`;
 const pct = (a: number, b: number) => Math.max(0, Math.min(100, b > 0 ? (a / b) * 100 : 0));
+const nowSeconds = () => Date.now() / 1000;
+/** Laufende Uhr: zählt ab `from` (Epochensekunden) plus `offset` Sekunden und tickt im Sekundentakt. */
+function clock(from: number, offset = 0): string {
+  const text = formatElapsed(liveSeconds({ reported: offset, reportedAt: from }, nowSeconds()));
+  return `<span class="clock" data-clock-from="${from}" data-clock-offset="${offset}">${text}</span>`;
+}
 
 function updatePanelContent(): string {
   const presentation = updatePresentation(updater.state);
@@ -74,6 +82,7 @@ function chips(s: Snapshot): string {
   const out: string[] = [];
   if (s.in_meeting) out.push(`<span class="chip cyan">${icons.meeting} Meeting – Hinweise ruhen</span>`);
   if (s.in_break) out.push(`<span class="chip cyan">${icons.pause} Pause läuft</span>`);
+  if (s.day_ended_at) out.push(`<span class="chip">Tag beendet um ${atTime(s.day_ended_at)} – läuft bei Aktivität weiter</span>`);
   if (s.snoozed_until) {
     const t = new Date(s.snoozed_until * 1000).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     out.push(`<span class="chip">Hinweise pausiert bis ${t} <button class="link" data-act="resume">fortsetzen</button></span>`);
@@ -86,6 +95,7 @@ function focusCard(s: Snapshot): string {
   const visual = focusVisual(s.in_break, s.block_min, blockLevel);
   const hard = 75;
   const longLeft = Math.max(0, 120 - s.since_long_break_min);
+  const running = runningClock(s);
   return `
     <section class="card focus-card tone-${visual.tone}">
       <div class="card-head"><span class="eyebrow">Fokus &amp; Pause</span><span class="mode-badge">${visual.mode === "pause" ? "PAUSE" : "FOKUS"}</span></div>
@@ -97,6 +107,7 @@ function focusCard(s: Snapshot): string {
           <li><span>Pausen heute</span><strong>${s.breaks_today} · davon lang ${s.long_breaks_today}</strong></li>
         </ul>
       </div>
+      <p class="running"><span>${running.mode === "pause" ? "Pause läuft seit" : "Fokus läuft seit"} ${atTime(running.since)}</span>${clock(running.since)}</p>
       <div class="row">
         ${s.in_break
           ? `<button class="btn pause" data-act="break_end">${icons.pause} Pause beenden</button>`
@@ -146,6 +157,7 @@ function postureCard(s: Snapshot): string {
       <div class="card-head"><span class="eyebrow">Haltung</span>${icons.posture}</div>
       <div class="big"><strong>${esc(s.posture_label)}</strong><span>${s.posture_min} / ${s.posture_limit_min} min</span></div>
       <div class="bar-track"><div class="bar-fill ${over ? "warn" : ""}" style="width:${pct(s.posture_min, s.posture_limit_min)}%"></div></div>
+      ${s.posture_started_at > 0 ? `<p class="running"><span>${esc(s.posture_label)} seit ${atTime(s.posture_started_at)}</span>${clock(s.posture_started_at)}</p>` : ""}
       <div class="seg" role="group" aria-label="Position">
         ${s.postures.map((p) => `<button class="${p.id === s.posture ? "on" : ""}" data-act="posture_${p.id}">${esc(p.label)}</button>`).join("")}
       </div>
@@ -253,7 +265,7 @@ function timeline(s: Snapshot): string {
             <article class="timeline-item ${task.active ? "active" : ""}">
               <i class="timeline-dot"></i>
               <div><strong>${esc(task.label)}</strong><span>${kind[task.kind]} · begonnen ${atTime(task.started_at)}</span></div>
-              <div class="timeline-duration"><strong>${duration(task.active_secs)}</strong><span>${task.active ? "läuft" : `zuletzt ${atTime(task.last_active_at)}`}</span></div>
+              <div class="timeline-duration"><strong>${task.active ? clock(s.at, task.active_secs) : duration(task.active_secs)}</strong><span>${task.active ? "läuft" : `zuletzt ${atTime(task.last_active_at)}`}</span></div>
             </article>`).join("") : `<p class="empty">Heute wurde noch keine Aufgabe erkannt.</p>`}</div>
         </div>
         <div>
@@ -262,11 +274,43 @@ function timeline(s: Snapshot): string {
             <article class="timeline-item pause-item ${pause.end === null ? "active" : ""}">
               <i class="timeline-dot"></i>
               <div><strong>${pause.end === null ? "Pause läuft" : "Pause"}</strong><span>${atTime(pause.start)}${pause.end === null ? " – jetzt" : ` – ${atTime(pause.end)}`}</span></div>
-              <div class="timeline-duration"><strong>${duration(pause.duration_secs)}</strong><span>${pause.end === null ? "aktuell" : "Dauer"}</span></div>
+              <div class="timeline-duration"><strong>${pause.end === null ? clock(pause.start) : duration(pause.duration_secs)}</strong><span>${pause.end === null ? "aktuell" : "Dauer"}</span></div>
             </article>`).join("") : `<p class="empty">Heute wurde noch keine Pause erfasst.</p>`}</div>
         </div>
       </div>
     </section>`;
+}
+
+const dayLabel = (day: string) => new Date(day + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+const taskKind = { project: "Projekt", app: "App", agent: "Agent" } as const;
+
+/** Aufklappbares Tagesprotokoll: Aufgaben und Pausen mit Zeiten – bleibt über Neustarts erhalten. */
+function dayLog(d: DaySummary): string {
+  const tasks = [...d.tasks].sort((a, b) => a.started_at - b.started_at);
+  return `
+    <details class="day-log" data-day="${esc(d.day)}" ${openDays.has(d.day) ? "open" : ""}>
+      <summary><strong>${dayLabel(d.day)}</strong><span>${esc(daySummaryText(d, atTime))}</span></summary>
+      <div class="timeline-columns">
+        <div>
+          <h3>Aufgaben</h3>
+          <div class="timeline-list">${tasks.length ? tasks.map((task) => `
+            <article class="timeline-item">
+              <i class="timeline-dot"></i>
+              <div><strong>${esc(task.label)}</strong><span>${taskKind[task.kind]} · begonnen ${atTime(task.started_at)}</span></div>
+              <div class="timeline-duration"><strong>${duration(task.active_secs)}</strong><span>bis ${atTime(task.last_active_at)}</span></div>
+            </article>`).join("") : `<p class="empty">Keine Aufgaben erfasst.</p>`}</div>
+        </div>
+        <div>
+          <h3>Pausen</h3>
+          <div class="timeline-list">${d.pauses.length ? d.pauses.map((pause) => `
+            <article class="timeline-item pause-item">
+              <i class="timeline-dot"></i>
+              <div><strong>Pause</strong><span>${atTime(pause.start)} – ${atTime(pause.end)}</span></div>
+              <div class="timeline-duration"><strong>${duration(pause.end - pause.start)}</strong><span>Dauer</span></div>
+            </article>`).join("") : `<p class="empty">Keine Pausen erfasst.</p>`}</div>
+        </div>
+      </div>
+    </details>`;
 }
 
 function history(s: Snapshot): string {
@@ -276,19 +320,36 @@ function history(s: Snapshot): string {
     <section class="card wide">
       <div class="card-head"><span class="eyebrow">Letzte Tage</span></div>
       <table class="hist">
-        <thead><tr><th>Tag</th><th>Aktiv</th><th>Wasser</th><th>Pausen</th><th>Stehen</th><th>Rot</th><th>Max. Projekte</th></tr></thead>
+        <thead><tr><th>Tag</th><th>Zeit</th><th>Aktiv</th><th>Wasser</th><th>Pausen</th><th>Stehen</th><th>Rot</th><th>Max. Projekte</th></tr></thead>
         <tbody>
           ${days
             .map((d) => {
               const tot = Object.values(d.posture_min).reduce((sum, minutes) => sum + minutes, 0) || 1;
               const change = Math.round(100 - pct(d.posture_min.office_chair ?? 0, tot));
-              const date = new Date(d.day + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-              return `<tr><td>${date}</td><td>${hm(d.active_min)} h</td><td>${liters(d.water_ml)} l</td><td>${d.breaks} (${d.long_breaks} lang)</td><td>${change} %</td><td>${d.red_min} min</td><td>${d.max_projects}</td></tr>`;
+              const span = d.first_active && d.ended_at ? `${atTime(d.first_active)}–${atTime(d.ended_at)}` : "–";
+              return `<tr><td>${dayLabel(d.day)}</td><td>${span}</td><td>${hm(d.active_min)} h</td><td>${liters(d.water_ml)} l</td><td>${d.breaks} (${d.long_breaks} lang)</td><td>${change} %</td><td>${d.red_min} min</td><td>${d.max_projects}</td></tr>`;
             })
             .join("")}
         </tbody>
       </table>
+      <div class="day-logs">${days.filter((d) => d.tasks.length || d.pauses.length).map(dayLog).join("")}</div>
     </section>`;
+}
+
+function dayEndPanel(s: Snapshot): string {
+  if (!confirmDayEnd) return "";
+  const pauses = s.break_timeline.length;
+  return `
+    <aside class="day-end" role="alertdialog" aria-labelledby="day-end-title" aria-describedby="day-end-text">
+      <div>
+        <strong id="day-end-title">Tag beenden?</strong>
+        <p id="day-end-text">Heute ${hm(s.active_min)} h aktiv · ${pauses} ${pauses === 1 ? "Pause" : "Pausen"} · ${s.tasks_today.length} ${s.tasks_today.length === 1 ? "Aufgabe" : "Aufgaben"}. Lotse speichert das Tagesprotokoll im Verlauf und schließt sich. Beim nächsten Start geht es am selben Tag weiter.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-act="day_end">Tag beenden &amp; Lotse schließen</button>
+        <button class="btn ghost" data-act="day_end_cancel">Abbrechen</button>
+      </div>
+    </aside>`;
 }
 
 function render() {
@@ -301,12 +362,14 @@ function render() {
       <div class="chips">${chips(s)}</div>
       <div class="top-actions">
         ${updateNotice()}
+        <button class="btn ghost day-end-btn" data-act="day_end_ask" title="Tag protokollieren und Lotse beenden">Tag beenden</button>
         <button class="btn ghost" data-act="refresh" title="Jetzt aktualisieren">${icons.refresh}</button>
         <button class="btn ghost" data-act="settings" title="Einstellungen">${icons.settings}</button>
       </div>
     </header>
 
     <main>
+      ${dayEndPanel(s)}
       ${storageHealth.message ? `<aside class="storage-warning" role="alert">${esc(storageHealth.message)}</aside>` : ""}
       <section class="hero lvl-${s.level}">
         ${trafficLight(s.level)}
@@ -496,6 +559,13 @@ app.addEventListener("click", (e) => {
   if (act === "settings") {
     settingsOpen = !settingsOpen;
     render();
+  } else if (act === "day_end_ask") {
+    confirmDayEnd = true;
+    render();
+    document.querySelector<HTMLElement>('[data-act="day_end"]')?.focus();
+  } else if (act === "day_end_cancel") {
+    confirmDayEnd = false;
+    render();
   } else if (act === "refresh") {
     void api.refresh();
   } else if (act === "open-update") {
@@ -546,6 +616,32 @@ void listen<StorageHealth>("storage_health", (health) => {
   storageHealth = health;
   if (!settingsOpen) render();
 }).catch(() => void api.reportUiIssue("dashboard-listener").catch(() => {}));
+window.setInterval(() => {
+  const now = nowSeconds();
+  document.querySelectorAll<HTMLElement>("[data-clock-from]").forEach((el) => {
+    el.textContent = formatElapsed(
+      liveSeconds({ reported: Number(el.dataset.clockOffset ?? 0), reportedAt: Number(el.dataset.clockFrom) }, now),
+    );
+  });
+}, 1000);
+// <details> verliert beim Neuzeichnen seinen Zustand – aufgeklappte Tage merken
+app.addEventListener(
+  "toggle",
+  (e) => {
+    const el = e.target as HTMLElement;
+    const day = el instanceof HTMLDetailsElement ? el.dataset.day : undefined;
+    if (!day) return;
+    if ((el as HTMLDetailsElement).open) openDays.add(day);
+    else openDays.delete(day);
+  },
+  true,
+);
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && confirmDayEnd) {
+    confirmDayEnd = false;
+    render();
+  }
+});
 window.addEventListener("error", () => void api.reportUiIssue("dashboard-runtime").catch(() => {}));
 window.addEventListener("unhandledrejection", () => void api.reportUiIssue("dashboard-runtime").catch(() => {}));
 void load();

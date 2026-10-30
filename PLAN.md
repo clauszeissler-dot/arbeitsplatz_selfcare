@@ -244,10 +244,10 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 | Schritt | Anforderungs-IDs | Konkretes Ergebnis | Abhängigkeit | Status | Prüfung |
 | --- | --- | --- | --- | --- | --- |
-| 1 | A-001–A-003 | Repository und vorhandene Reminder-Architektur erfassen; Projektführung anlegen. | Clone vorhanden | erledigt | Quell- und Dokumentprüfung am 2026-10-28 |
+| 1 | A-001, A-002, A-003 | Repository und vorhandene Reminder-Architektur erfassen; Projektführung anlegen. | Clone vorhanden | erledigt | Quell- und Dokumentprüfung am 2026-10-28 |
 | 2 | A-003 | Persistenten Schalter und sichere macOS-Systemton-Ausgabe an die vorhandene Hinweis-Ausgabe anbinden. | Schritt 1 | erledigt | Frontend- und Produktions-Build erfolgreich, 2026-10-28 |
-| 3 | A-001–A-003 | Regressionen und lokalen Produktions-Build ausführen, App-Bundle prüfen. | Schritt 2; Node-Abhängigkeiten | erledigt | `cargo test -p lotse-core` (25/25), `npm run tauri build` erfolgreich, App + DMG geprüft |
-| 4 | A-001–A-003 | Dokumentation, Abgleich, lokaler Commit und globales Arbeitslogbuch aktualisieren. | Schritt 3 | erledigt | Lokaler Commit `fbc544a`; globaler Worklog-Eintrag folgt separat |
+| 3 | A-001, A-002, A-003 | Regressionen und lokalen Produktions-Build ausführen, App-Bundle prüfen. | Schritt 2; Node-Abhängigkeiten | erledigt | `cargo test -p lotse-core` (25/25), `npm run tauri build` erfolgreich, App + DMG geprüft |
+| 4 | A-001, A-002, A-003 | Dokumentation, Abgleich, lokaler Commit und globales Arbeitslogbuch aktualisieren. | Schritt 3 | erledigt | Lokaler Commit `fbc544a`; globaler Worklog-Eintrag folgt separat |
 | 5 | A-004 | Aktivitätsbasiertes Verhalten mit einem fokussierten Regressionstest festhalten und dokumentieren. | Nutzerentscheidung | erledigt | `inactive_time_does_not_start_the_reminder_rhythm`; Core-Tests 26/26 |
 | 6 | A-005 | Reproduzierenden Test für die blockierte Prozessliste erstellen. | Befund: 220883 Byte `ps`-Ausgabe | erledigt | Test war rot mit `Zeitüberschreitung` und nach Fix grün |
 | 7 | A-005 | Ausgabe von Kindprozessen während der Laufzeit sicher drainen und Codex-Komponenten getrennt zuordnen. | Schritt 6 | erledigt | Großausgabe- und eingebetteter-Codex-Test grün |
@@ -262,6 +262,10 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 16 | A-008 | Vorhandenes Original-Logo als passende lokale Quelle prüfen und in die Kopfzeile einbinden. | Nutzerwunsch | erledigt | KI-AffAIrs-Banner enthält das Original-Logo |
 | 17 | A-008 | Kopfzeilen-Layout mit kompakter Logo-Marke und „Lotse“ gestalten. | Schritt 16 | erledigt | Original-Bildmarke als dezenter lokaler Ausschnitt eingebunden |
 | 18 | A-008 | Lokales Tauri-Bundle erstellen und Kopfzeile sichtbar prüfen. | Schritt 17 | erledigt | Produktions-Bundle und DMG erstellt; laufendes Cockpit zeigt die Original-Bildmarke neben „Lotse“ |
+| 19 | A-026 | Ursache „gestrige Anpassungen nicht sichtbar“ klären und beheben: laufenden Prozess, Autostart-Pfad und Build-Alter prüfen, installierte App starten. | Nutzermeldung 2026-10-30 | in Arbeit | Autostart zeigte auf alten `target/`-Build; `/Applications`-Build läuft, `state.json` `0600`; Autostart-Neusetzung durch Nutzer offen |
+| 20 | A-027 | Laufende Uhren für Fokus, Pause, Haltung und aktive Aufgaben (Snapshot-Startzeiten, Modell, Dashboard). | Schritt 19 | erledigt | Core- und UI-Tests rot→grün; Screenshot der installierten App |
+| 21 | A-028 | „Tag beenden“ (Engine `end_day`, Tauri-Aktion, Kopfzeile mit Rückfrage, Menüleiste, Hinweis „Arbeitstag ist voll“). | Schritt 19 | erledigt | 7 Core-Tests rot→grün; Klicktest am laufenden Tag bewusst nicht ausgeführt |
+| 22 | A-029 | Tagesprotokolle (Aufgaben, Pausen, Zeitraum) in der Historie aufklappbar anzeigen. | Schritt 21 | erledigt | Core-Test Tagesprotokoll; UI-Build grün |
 
 ## Blockaden und Entscheidungen
 
@@ -294,3 +298,9 @@ Bei erneut vorliegender 8-Tab-Arbeitslage A-005 sichtbar bestätigen; A-006 bis 
 - [x] Passende Tests und Prüfungen frisch ausgeführt.
 - [x] Arbeitslogbuch und Versionszuordnung aktualisiert.
 - [x] Neue Nutzerkorrekturen/Learnings erfasst oder ausdrücklich nicht angefallen.
+
+## Laufzeit-Anzeigen und Tag beenden · A-026 bis A-029
+
+- Sichtbares Ergebnis: Cockpit der aktuellen App zeigt bei Fokus, Pause und Haltung Startzeit und laufende Uhr; „Tag beenden“ protokolliert den Tag und beendet Lotse. Zielort: `/Applications/Lotse.app`. Abschlussnachweis: Tests grün, Prozesspfad, Screenshot.
+- Gestartet 2026-10-30 11:30, Zwischenabgleich 11:50: Ursache A-026 gefunden und behoben, Engine/UI/Tauri umgesetzt, lokal gebaut, Developer-ID-signiert (nicht notarisiert) und installiert.
+- Offen: Autostart über Einstellungsschalter neu setzen (A-026); Klicktest „Tag beenden“ durch Claus (A-028); Granularität der Chat-Logs klären (A-029). Backup der notarisierten 0.1.0 liegt im Scratchpad der Sitzung.

@@ -313,3 +313,13 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Korrigierter Run `40899540892`: `Kernlogik und Security` erfolgreich in 3:44 Minuten; `Mac-App bauen (unsigniert)` erfolgreich in 12:36 Minuten einschließlich Workspace-Tests, Clippy, npm-Audit, Frontend und echtem Universal-Build.
 - PR #13 sauber und mergefähig, danach per Squash gemergt. `main` steht auf `00d5dd029b56c0ffcdb90248b19b4e08b1155c27`; Remote-Feature-Branch gelöscht. Der veraltete bereits fehlgeschlagene Erstlauf wurde beendet, bevor sein wartender Mac-Job Ressourcen verbrauchte.
 - Remote-Kontrolle: ausschließlich die zwei Updater-Secret-Namen im geschützten Environment sichtbar; nur Release `lotse-0.1.0` vorhanden. Kein `v0.2.0`-Tag, kein Draft und keine Veröffentlichung. Die sechs fremden AUTO-Handoffs blieben ungestagt und unverändert.
+
+## 2026-10-30T11:50:00+02:00 – Laufzeit-Anzeigen und „Tag beenden“ (A-026 bis A-029)
+
+- Nutzer: gestrige Anpassungen heute nicht sichtbar; Wunsch nach Chat-Logs, Laufzeitanzeigen und Tagesende.
+- Ursache A-026: Autostart-LaunchAgent zeigt auf den veralteten Build in `target/`; Prozess seit 07:56, Binary ohne `break_timeline`, `state.json` noch `0644`. Alte Instanz beendet, `/Applications/Lotse.app` gestartet (`state.json` `0600`, 3 Aufgaben erfasst). Direktes Ändern der Autostart-Datei lehnte die Berechtigungsprüfung ab und wurde nicht umgangen.
+- TDD: 9 neue Core-Tests und 6 UI-Tests zuerst rot (fehlende API), dann grün. Gates: `cargo test --workspace` (43 Core, 10 Tauri), 14 UI-Tests, 19 Python-Tests, `cargo fmt --check`, Clippy `-D warnings`, `npm run build` grün.
+- Build `0.2.0` arm64 (`tauri build --no-sign`), mit Developer ID signiert, nicht notarisiert, in `/Applications` installiert; zuvor notarisierte 0.1.0 gesichert. Screenshot belegt die Laufuhren.
+- Nicht ausgeführt: Klick auf „Tag beenden“ (hätte den laufenden Tag beendet); Universal-Build, Notarisierung, Release.
+- Konsistenznachtrag: A-002 (Erinnerungsrhythmus, Hinweis-Karte) war bereits am 2026-10-28 geprüft (`cargo test -p lotse-core` 25/25) und blieb unverändert; die Laufzeit-Änderungen berühren seine Auslöselogik nicht.
+- Status je ID: A-026 umgesetzt (Autostart-Neusetzung offen), A-027 geprüft (Screenshot), A-028 umgesetzt (Klicktest offen), A-029 umgesetzt (Granularität mit Claus klären).
