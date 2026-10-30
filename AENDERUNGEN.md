@@ -86,3 +86,13 @@ A-017/A-018 geprüft erfüllt. Nutzerentscheidung erlaubt Änderungen unter eige
 ## Abschluss Sicherheitsaudit 2026-10-29
 
 A-019 mit transparenter Teilabdeckung geprüft: vollständige statische Quellprüfung, GitHub-Konfiguration, lokale Dateirechte, npm-Advisories und vorhandene Signatur-/Notarisierungsartefakte geprüft. Drei Findings dokumentiert. Aktueller GitHub-Befund ist `public`; frühere Einträge mit „privat“ bleiben als damalige Annahme historisch erhalten. Keine Sichtbarkeit oder GitHub-Sicherheitseinstellung wurde in diesem Prüfauftrag verändert. Offener externer Prüfpunkt: aktueller RustSec-Abgleich.
+
+## Abschlussabgleich 2026-10-30
+
+- A-027 geprüft erfüllt: 8 UI-Tests zu Laufuhr und Formatierung, Screenshot der installierten App („Fokus läuft seit 11:29“, „Swopper seit 11:29“).
+- A-026 umgesetzt, nicht geprüft: Ursache belegt (Autostart zeigte auf den veralteten Build in `target/`). Offen ist, dass Claus in den Lotse-Einstellungen „Beim Anmelden starten“ aus- und wieder einschaltet; das Umschreiben der Autostart-Datei durch den Agenten ist technisch gesperrt und wird nicht umgangen.
+- A-028 umgesetzt, nicht geprüft: Core-Tests und Tauri-Pfad grün, der Klick auf „Tag beenden“ wurde bewusst nicht ausgeführt, weil er den laufenden Tag beendet hätte.
+- A-029 umgesetzt, nicht geprüft: Tagesprotokoll je Projekt/App/Agent. Rückfrage an Claus offen, ob diese Granularität reicht oder jeder Chat/Tab einzeln erscheinen soll.
+- A-030 umgesetzt, nicht geprüft: 32 Python-, 13 Rust- und 16 UI-Tests, Clippy, `cargo fmt` und `npm run build` grün. `validate-release.sh` und `build-local.sh` liefen nur als Syntax- und Vertragstest, nicht live.
+- A-005 bleibt unverändert offen (Sichtprüfung des 8-Tab-Cockpits).
+- Neue Wünsche seit dem letzten Abgleich vollständig erfasst: ja (A-026 bis A-030).

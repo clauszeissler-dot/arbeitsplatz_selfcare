@@ -289,7 +289,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 ## Nächster konkreter Schritt
 
-Bei erneut vorliegender 8-Tab-Arbeitslage A-005 sichtbar bestätigen; A-006 bis A-008 nicht erneut öffnen, sofern sich die Implementierung nicht ändert.
+Auf Auftrag von Claus: Branch `claude/20261030-laufzeit-tagesende` pushen und per PR in den geschützten `main` bringen. Danach Apple-Secrets einrichten, `scripts/set-version.sh 0.3.0`, Changelog-Datum, Tag `v0.3.0`, Release-Workflow und Live-Update-Test von 0.2.0 auf 0.3.0 (siehe Handoff 20261030_01). Unabhängig davon: Autostart-Schalter neu setzen (A-026), „Tag beenden“ einmal real auslösen (A-028), Granularität der Tagesprotokolle klären (A-029), A-005 sichtbar bestätigen.
 
 ## Abschlussprüfung
 
