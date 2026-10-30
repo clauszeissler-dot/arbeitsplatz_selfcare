@@ -266,6 +266,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 20 | A-027 | Laufende Uhren für Fokus, Pause, Haltung und aktive Aufgaben (Snapshot-Startzeiten, Modell, Dashboard). | Schritt 19 | erledigt | Core- und UI-Tests rot→grün; Screenshot der installierten App |
 | 21 | A-028 | „Tag beenden“ (Engine `end_day`, Tauri-Aktion, Kopfzeile mit Rückfrage, Menüleiste, Hinweis „Arbeitstag ist voll“). | Schritt 19 | erledigt | 7 Core-Tests rot→grün; Klicktest am laufenden Tag bewusst nicht ausgeführt |
 | 22 | A-029 | Tagesprotokolle (Aufgaben, Pausen, Zeitraum) in der Historie aufklappbar anzeigen. | Schritt 21 | erledigt | Core-Test Tagesprotokoll; UI-Build grün |
+| 23 | A-030 | Versionsschema festlegen (SemVer, Versionsquelle, Tags, CHANGELOG, Dev-Kennzeichnung, Anzeige im Cockpit, Konsistenztest). | Freigabe des Schemas durch Claus | offen | Noch nicht begonnen |
 
 ## Blockaden und Entscheidungen
 
