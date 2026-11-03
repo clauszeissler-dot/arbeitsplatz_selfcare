@@ -347,3 +347,4 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Sichtprüfung: Ego-Lite-Screenshots der Designvorschau (Fokus, Pause, nur Bürostuhl, Entwicklung). Die laufende App blieb unberührt, keine zweite Instanz.
 - App-Bundle gebaut: `LOTSE_BUILD=local-fc1db62 npm run tauri -- build --no-sign --bundles app`, Exit 0, `target/release/bundle/macos/Lotse.app` (0.2.0, unsigniert). Nicht ausgeführt: Signieren und `/Applications/Lotse.app` ersetzen (Freigabe offen).
 - Versionsbezug: Commit „Cockpit-Übersicht (A-031 bis A-034)“
+- 13:2x Nachtrag: Auf Rückfrage von Claus („ich sehe es in der Oberfläche nicht“) den Build fc1db62 mit Developer ID signiert, alte App nach `target/local-backup/Lotse.app` gesichert, `/Applications/Lotse.app` ersetzt und gestartet (PID 96912). Der Tagesstand blieb erhalten (231 min aktiv). Die neuen Felder `eyes_offered` und `eyes_done` sind im Zustand vorhanden. Nicht notarisiert.
