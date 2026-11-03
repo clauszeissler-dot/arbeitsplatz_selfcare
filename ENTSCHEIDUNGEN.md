@@ -244,6 +244,7 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Live seit: ce807fb, lokaler Build 0.2.0
 - Beleg: 7 Core-Tests rot→grün
 - Offen: Echter Klick samt Prozessende noch nicht ausgeführt.
+- Nachtrag 2026-11-03: Live ausgelöst um 13:51 (Build fc1db62). Historie geschrieben, Prozess beendet, kein Absturzbericht. Offen: –
 
 ## E-029 – Tagesprotokolle sichtbar
 - Problem: Sichtbar halten, wie lange Aufgaben und Agenten liefen.

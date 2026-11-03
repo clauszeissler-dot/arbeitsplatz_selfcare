@@ -348,3 +348,9 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - App-Bundle gebaut: `LOTSE_BUILD=local-fc1db62 npm run tauri -- build --no-sign --bundles app`, Exit 0, `target/release/bundle/macos/Lotse.app` (0.2.0, unsigniert). Nicht ausgeführt: Signieren und `/Applications/Lotse.app` ersetzen (Freigabe offen).
 - Versionsbezug: Commit „Cockpit-Übersicht (A-031 bis A-034)“
 - 13:2x Nachtrag: Auf Rückfrage von Claus („ich sehe es in der Oberfläche nicht“) den Build fc1db62 mit Developer ID signiert, alte App nach `target/local-backup/Lotse.app` gesichert, `/Applications/Lotse.app` ersetzt und gestartet (PID 96912). Der Tagesstand blieb erhalten (231 min aktiv). Die neuen Felder `eyes_offered` und `eyes_done` sind im Zustand vorhanden. Nicht notarisiert.
+
+## 2026-11-03 – Tagesende, A-028 live bestätigt
+
+- Anforderungs-IDs: A-028 (geprüft), A-031 bis A-034 (installiert, Sicht offen)
+- 13:51:25 „Tag beenden“ ausgelöst. `state.json` hat `day_closed_at`, Historie 2026-11-03 mit 239 min aktiv, 4 Pausen, 13 Aufgaben, Augenpausen 0/0 (Zählung erst seit 13:40). Lotse-Prozess beendet, kein Absturzbericht; der Wächter meldete „läuft nicht mehr“ um 13:51:29.
+- Wächter auf Wunsch von Claus zum Sitzungsende beendet.

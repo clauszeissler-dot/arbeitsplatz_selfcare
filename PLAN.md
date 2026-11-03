@@ -299,8 +299,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 ## Nächster konkreter Schritt
 
-Auf Auftrag von Claus: Branch `claude/20261030-laufzeit-tagesende` pushen und per PR in den geschützten `main` bringen. Danach Apple-Secrets einrichten, `scripts/set-version.sh 0.3.0`, Changelog-Datum, Tag `v0.3.0`, Release-Workflow und Live-Update-Test von 0.2.0 auf 0.3.0 (siehe Handoff 20261030_01). Unabhängig davon: Autostart-Schalter „Beim Anmelden starten“ wieder einschalten, Stand 2026-11-03 ist er aus (A-026); Klangabnahme durch Claus (A-010), „Tag beenden“ einmal real auslösen (A-028), Granularität der Tagesprotokolle klären (A-029), A-005 sichtbar bestätigen.
-
+Claus sieht das neue Cockpit (Build fc1db62, installiert 2026-11-03) und bestätigt A-031 bis A-034 sowie die Schwellen (33 % Wechsel, Rot unter 10 %, Augenpausen ≥ 50 %, konsequent ≥ 80 %); danach Status „geprüft“. Danach weiter: Autostart „Beim Anmelden starten“ wieder einschalten (A-026), Klangabnahme (A-010), Granularität der Tagesprotokolle (A-029), A-005 sichtbar bestätigen. Nur auf Auftrag: Push/PR der Branch, Apple-Secrets, Release 0.3.0 und Live-Update-Test (A-030).
 ## Abschlussprüfung
 
 - [x] Sichtbares Ergebnis am vereinbarten Zielort nachgewiesen.
