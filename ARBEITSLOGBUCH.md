@@ -338,3 +338,12 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Projektführung: `ENTSCHEIDUNGEN.md` (E-001 bis E-030) angelegt, Leerzeilen in der Anforderungstabelle entfernt, Planschritte 24 bis 30 ergänzt, A-010 auf „umgesetzt“ korrigiert. `arbeitsstandard.py check` ohne Befund.
 - Kein Code geändert, keine Tests neu ausgeführt.
 - Versionsbezug: Commit mit diesen IDs folgt
+
+## 2026-11-03 – Hintergrund-Wächter und Cockpit-Übersicht (A-031 bis A-034)
+
+- Hintergrund-Wächter für die laufende App (Prozess, Neustart, CPU, Speicher, Takt, Absturzberichte, Fehlerlog), seit 11:45 ohne Befund. Nicht Teil des Repositorys.
+- Auf Wunsch von Claus: Pausenuhr im Ring, „Fokus/Pause seit“ statt Lauf-Zeile, Haltungsampel als Pillen, „Entwicklung“ in „Letzte Tage“ mit Augenpausen, Lotsenregel und Feierabend; Core zählt Augenpausen.
+- TDD: 4 Core-Tests (zuerst Kompilierfehler), 11 neue UI-Tests (zuerst fehlender Export bzw. 1 Fehlschlag Lotsenregel), danach grün. Frisch: `cargo test --workspace` (60), Clippy `-D warnings`, `cargo fmt --check`, `npm run test:ui` (27), `npm run build`, Python-Tests OK.
+- Sichtprüfung: Ego-Lite-Screenshots der Designvorschau (Fokus, Pause, nur Bürostuhl, Entwicklung). Die laufende App blieb unberührt, keine zweite Instanz.
+- Nicht ausgeführt: App-Bundle bauen und `/Applications/Lotse.app` ersetzen (Freigabe offen).
+- Versionsbezug: Commit „Cockpit-Übersicht (A-031 bis A-034)“

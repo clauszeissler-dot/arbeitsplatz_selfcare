@@ -260,12 +260,15 @@ fn start_hint_timer(app: AppHandle, sound: bool) -> Result<(), String> {
 }
 
 fn timer_tick(app: &AppHandle) {
-    let shared = app.state::<Shared>();
-    let mut guard = shared.exercise.lock().unwrap();
-    if let Some(exercise) = guard
-        .as_mut()
-        .filter(|e| e.deadline.is_some() && !e.finished)
-    {
+    let completed_eyes = {
+        let shared = app.state::<Shared>();
+        let mut guard = shared.exercise.lock().unwrap();
+        let Some(exercise) = guard
+            .as_mut()
+            .filter(|e| e.deadline.is_some() && !e.finished)
+        else {
+            return;
+        };
         let now = std::time::SystemTime::now();
         let finished = exercise.finish_if_due(now);
         let _ = app.emit_to(
@@ -279,6 +282,11 @@ fn timer_tick(app: &AppHandle) {
         if finished && exercise.sound {
             let _ = play_sound(app.clone(), "complete".into());
         }
+        (finished && exercise.hint.kind == HintKind::Eyes).then_some(exercise.hint.at)
+    };
+    // Engine erst nach Freigabe des Übungs-Locks anfassen (feste Lock-Reihenfolge)
+    if let Some(hint_at) = completed_eyes {
+        let _ = with_engine(app, |e, _| e.complete_eyes(hint_at));
     }
 }
 

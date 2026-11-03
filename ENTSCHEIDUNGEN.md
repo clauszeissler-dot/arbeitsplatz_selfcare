@@ -234,6 +234,7 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Live seit: ce807fb, installiert als lokaler Build 0.2.0 (2026-10-30)
 - Beleg: Screenshot „Fokus läuft seit 11:29 · 15:41“, UI- und Core-Tests rot→grün
 - Offen: –
+- Nachtrag 2026-11-03: Die Lauf-Zeile unter der Fokus-Karte entfällt zugunsten der Uhr im Ring und der Startzeit in der Liste (A-031, A-032). Der Stand vom 2026-10-30 oben bleibt erhalten.
 
 ## E-028 – Tag beenden
 - Problem: Den Arbeitstag beenden, protokollieren und Lotse schließen.
@@ -261,3 +262,39 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Live seit: ed2f72f, noch nicht veröffentlicht
 - Beleg: 32 Python-, 13 Rust-, 16 UI-Tests
 - Offen: `validate-release.sh` und `build-local.sh` real ausführen; Versionsschema durch Claus bestätigen.
+
+## E-031 – Pausenuhr im Ring
+- Problem: Im Pausenmodus zeigte der Ring nur „Pause / läuft“, beim Fokus dagegen die Minuten.
+- Lösung: `focusVisual` liefert im Pausenmodus `clockFrom`; der Ring zeigt die sekündlich laufende Pausenuhr mit Untertitel „Pause“.
+- Verworfen: zusätzliche Uhr in der Kopfzeilen-Pille (mehr Elemente statt weniger).
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-03
+- Live seit: Commit „Cockpit-Übersicht (A-031 bis A-034)“, noch nicht installiert
+- Beleg: UI-Test `focusVisual`, Screenshot `?pause=1`
+- Offen: Sicht in der installierten App.
+
+## E-032 – „Fokus seit“ statt Lauf-Zeile
+- Problem: Die laufende Zeit stand doppelt (Ring und Lauf-Zeile), die Zeile „Pausen heute · davon lang“ war für den Moment wenig hilfreich.
+- Lösung: Lauf-Zeile entfernt; die Liste zeigt „Fokus seit HH:MM“ bzw. „Pause seit HH:MM“. Die Zahl der Pausen bleibt in „Heute · Aufgaben & Pausen“ und in „Letzte Tage“ sichtbar.
+- Verworfen: nur „davon lang“ streichen (Pausenzahl bliebe doppelt).
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-03
+- Live seit: wie E-031
+- Beleg: UI-Test `sinceFact`, Screenshots
+- Offen: Sicht in der installierten App.
+
+## E-033 – Haltungsampel
+- Problem: Die Haltungskarte zeigte die Verteilung nur als graue Leiste und Text, ohne Bewertung.
+- Lösung: `postureTraffic` bewertet den Tag. Bürostuhl: Rot, wenn weniger als 10 % Wechsel und das Sitzintervall überschritten ist; Grün ab 33 % Wechsel (Sitz-Steh-Rhythmus 30/15); sonst Orange. Andere Haltungen: Orange, solange ungenutzt oder unter ihrer eingestellten Dauer; Grün, sobald die eingestellte Dauer heute erreicht ist. Pillen ersetzen Split-Bar und Notizzeile; darunter „Wechsel heute x % · Ziel 33 %“.
+- Verworfen: Split-Bar zusätzlich behalten (Übersicht); Rot sofort zu Tagesbeginn.
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-03; Schwellen als Annahme, Bestätigung durch Claus offen
+- Live seit: wie E-031
+- Beleg: 4 UI-Tests, Screenshots
+- Offen: Schwellen bestätigen; Sicht in der installierten App.
+
+## E-034 – Entwicklung in „Letzte Tage“
+- Problem: Es fehlte, ob Gewohnheiten über die Tage besser werden oder inkonsequent bleiben; die Augenpause (20-20-20) wurde nirgends erfasst.
+- Lösung: Der Core zählt Augenpausen je Tag (angeboten, sobald der Hinweis gewählt wird; erledigt, sobald der 20-Sekunden-Timer abläuft, je Hinweis einmal; Wegklicken zählt nicht). Alte Tage haben `None` und gelten nicht als verfehlt. Der Bereich „Entwicklung“ zeigt für die letzten 7 abgeschlossenen Tage (heute ausgenommen, Tage unter 60 min aktiv ausgenommen) drei Gewohnheiten: Augenpausen (mind. die Hälfte gemacht), Lotsenregel (zwischen je 2 h Arbeit eine lange Pause), Feierabend (aktiv nicht länger als der Arbeitstag). Er zeigt jeweils „x von n Tagen“, die Bewertung (konsequent ab 80 %, ausbaufähig ab 50 %, sonst inkonsequent) und den Trend (jüngere gegen ältere Hälfte).
+- Verworfen: neue Kennzahlen im oberen Bereich (neuer Umbruch); Trinken und Haltung als Kategorien (stehen schon in der Tabelle).
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-03
+- Live seit: wie E-031
+- Beleg: 4 Core-Tests, 5 UI-Tests, Screenshot
+- Offen: Augenpausen-Daten entstehen erst ab Installation; Sicht in der installierten App.

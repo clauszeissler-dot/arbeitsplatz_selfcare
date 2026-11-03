@@ -1,4 +1,4 @@
-import type { Level, Snapshot, StorageHealth } from "./api";
+import type { Level, PostureDefinition, Snapshot, StorageHealth } from "./api";
 
 export type FocusTone = Level | "pause";
 
@@ -7,15 +7,18 @@ export interface FocusVisual {
   tone: FocusTone;
   label: string;
   value: number;
+  /** In der Pause: Startzeit der sekündlich laufenden Pausenuhr im Ring. */
+  clockFrom: number | null;
 }
 
 export function focusVisual(
   inBreak: boolean,
   blockMinutes: number,
   focusLevel: Level,
+  pauseStartedAt: number | null = null,
 ): FocusVisual {
-  if (inBreak) return { mode: "pause", tone: "pause", label: "Pause", value: 0 };
-  return { mode: "focus", tone: focusLevel, label: `${blockMinutes}′`, value: blockMinutes };
+  if (inBreak) return { mode: "pause", tone: "pause", label: "Pause", value: 0, clockFrom: pauseStartedAt };
+  return { mode: "focus", tone: focusLevel, label: `${blockMinutes}′`, value: blockMinutes, clockFrom: null };
 }
 
 type DashboardSource = {
@@ -88,4 +91,110 @@ export function versionLabel(info: BuildInfo): string {
   if (local) return `${info.version} · lokaler Build (${local[1]}${local[2] ? ", mit Änderungen" : ""})`;
   if (info.build === "ci") return `${info.version} · Test-Build (CI)`;
   return `${info.version} · Entwicklungsbuild`;
+}
+
+/** Zeile in der Fokus-Karte: seit wann Fokus bzw. Pause läuft. */
+export function sinceFact(running: RunningClock): { label: string; since: number } {
+  return { label: running.mode === "pause" ? "Pause seit" : "Fokus seit", since: running.since };
+}
+
+// ---------- Haltungsampel (A-033) ----------
+
+/** Anteil Haltungswechsel, ab dem der Tag als ausreichend gilt (Sitz-Steh-Rhythmus 30/15 ≈ ein Drittel). */
+export const POSTURE_CHANGE_TARGET = 33;
+/** Darunter gilt der Tag als „nur Bürostuhl“ – rot, sobald das Sitzintervall überschritten ist. */
+export const POSTURE_ONLY_CHAIR_BELOW = 10;
+
+export interface PostureLight {
+  id: string;
+  label: string;
+  minutes: number;
+  percent: number;
+  used: boolean;
+  level: Level;
+}
+
+/** Ampel zur Haltungsverteilung des Tages: Sitzanteil gegen Wechsel, je Haltung genutzt/ausreichend. */
+export function postureTraffic(
+  share: Record<string, number>,
+  postures: PostureDefinition[],
+  chairId = "office_chair",
+): { level: Level; changePercent: number; items: PostureLight[] } {
+  const total = postures.reduce((sum, posture) => sum + (share[posture.id] ?? 0), 0);
+  const chair = postures.find((posture) => posture.id === chairId) ?? postures[0];
+  const chairMin = chair ? share[chair.id] ?? 0 : 0;
+  const percent = (minutes: number) => (total > 0 ? Math.round((minutes / total) * 100) : 0);
+  const changePercent = percent(total - chairMin);
+  const level: Level =
+    total > 0 && changePercent >= POSTURE_CHANGE_TARGET
+      ? "green"
+      : chair && chairMin > chair.duration_min && changePercent < POSTURE_ONLY_CHAIR_BELOW
+        ? "red"
+        : "yellow";
+  const items = postures.map((posture) => {
+    const minutes = share[posture.id] ?? 0;
+    const used = minutes > 0;
+    const own: Level = !used ? "yellow" : minutes >= posture.duration_min ? "green" : "yellow";
+    return { id: posture.id, label: posture.label, minutes, percent: percent(minutes), used, level: posture === chair ? level : own };
+  });
+  return { level, changePercent, items };
+}
+
+// ---------- Entwicklung über die letzten Tage (A-034) ----------
+
+export interface DevelopmentDay {
+  day: string;
+  active_min: number;
+  long_breaks: number;
+  eyes_offered?: number | null;
+  eyes_done?: number | null;
+}
+
+export type Trend = "up" | "down" | "flat";
+
+export interface DevelopmentRow {
+  key: "eyes" | "long_breaks" | "workday";
+  label: string;
+  rule: string;
+  met: number;
+  days: number;
+  level: Level | null;
+  trend: Trend | null;
+}
+
+/** Tage unter dieser Aktivität zählen weder für noch gegen eine Gewohnheit. */
+export const DEVELOPMENT_MIN_ACTIVE = 60;
+
+function rate(results: boolean[]): number {
+  return results.length ? results.filter(Boolean).length / results.length : 0;
+}
+
+/** Konsequenz je Gewohnheit über abgeschlossene Tage (ohne heute), mit Trend ältere gegen jüngere Hälfte. */
+export function developmentRows(history: DevelopmentDay[], today: string, workdayMin: number, window = 7): DevelopmentRow[] {
+  const days = history
+    .filter((d) => d.day !== today && d.active_min >= DEVELOPMENT_MIN_ACTIVE)
+    .sort((a, b) => a.day.localeCompare(b.day))
+    .slice(-window);
+  const build = (key: DevelopmentRow["key"], label: string, rule: string, check: (d: DevelopmentDay) => boolean | null): DevelopmentRow => {
+    const results = days.map(check).filter((r): r is boolean => r !== null);
+    const half = Math.floor(results.length / 2);
+    const older = rate(results.slice(0, half));
+    const newer = rate(results.slice(results.length - half));
+    const r = rate(results);
+    return {
+      key,
+      label,
+      rule,
+      met: results.filter(Boolean).length,
+      days: results.length,
+      level: results.length ? (r >= 0.8 ? "green" : r >= 0.5 ? "yellow" : "red") : null,
+      trend: half ? (newer > older ? "up" : newer < older ? "down" : "flat") : null,
+    };
+  };
+  return [
+    build("eyes", "Augenpausen", "mind. die Hälfte der 20-Sekunden-Pausen gemacht", (d) =>
+      d.eyes_offered ? (d.eyes_done ?? 0) * 2 >= d.eyes_offered : null),
+    build("long_breaks", "Lotsenregel", "zwischen je 2 h Arbeit eine lange Pause", (d) => d.long_breaks >= Math.floor(Math.max(0, d.active_min - 1) / 120)),
+    build("workday", "Feierabend", "aktive Zeit im Rahmen des Arbeitstags", (d) => d.active_min <= workdayMin),
+  ];
 }

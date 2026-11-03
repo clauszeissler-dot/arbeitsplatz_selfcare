@@ -274,6 +274,9 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 28 | A-019, A-020 | Sicherheitsprüfung und beschlossene Härtung umsetzen (Zuordnung nachgetragen). | Schritt 27 | erledigt | Codex-Security-Bericht; 9f95ac8 (PR #1), 851e327 |
 | 29 | A-021, A-022, A-023, A-024 | Schwarzes Cockpit beheben, Farblogik Fokus/Pause, Tageszeitleiste, Produktionsbuild-Korrektur (Zuordnung nachgetragen). | Schritt 28 | erledigt | c78209e (PR #11); Belege in AENDERUNGEN.md A-021 bis A-024 |
 | 30 | A-025 | Sichere Updates aus GitHub Releases (Zuordnung nachgetragen). | Schritt 29 | erledigt | 00d5dd0 (PR #13), a352413 |
+| 31 | A-031, A-032 | Fokus-Karte: Pausenuhr im Ring, Lauf-Zeile entfernen, „Fokus/Pause seit HH:MM“ in der Liste. | Schritt 30 | erledigt (umgesetzt) | UI-Tests rot→grün, Screenshot |
+| 32 | A-033 | Haltungsampel als reine Funktion (`postureTraffic`) mit Tests, Pillen in der Haltungskarte. | Schritt 31 | erledigt (umgesetzt) | UI-Tests rot→grün, Screenshot |
+| 33 | A-034 | Augenpausen im Core zählen (Tauri: Timer-Ende/„Erledigt“), Entwicklungsbereich in „Letzte Tage“. | Schritt 32 | erledigt (umgesetzt) | Core- und UI-Tests rot→grün, Screenshot |
 
 ## Blockaden und Entscheidungen
 

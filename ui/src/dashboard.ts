@@ -8,7 +8,7 @@ import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
 import { api, listen, type DaySummary, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
-import { daySummaryText, focusVisual, formatElapsed, liveSeconds, loadDashboardData, runningClock, versionLabel, type FocusTone } from "./dashboard-model";
+import { daySummaryText, developmentRows, focusVisual, formatElapsed, liveSeconds, loadDashboardData, POSTURE_CHANGE_TARGET, postureTraffic, runningClock, sinceFact, versionLabel, type FocusTone, type Trend } from "./dashboard-model";
 import { icons } from "./icons";
 import { updatePresentation } from "./updater-model";
 import { LotseUpdater } from "./updater";
@@ -58,7 +58,7 @@ function updateNotice(): string {
   return `<button class="btn update-notice" data-act="open-update">Update ${esc(updater.state.version)}</button>`;
 }
 
-function ring(value: number, max: number, tone: FocusTone, label: string, sub: string): string {
+function ring(value: number, max: number, tone: FocusTone, label: string, sub: string, clockFrom: number | null = null): string {
   const r = 52;
   const c = 2 * Math.PI * r;
   const p = pct(value, max) / 100;
@@ -68,7 +68,7 @@ function ring(value: number, max: number, tone: FocusTone, label: string, sub: s
         <circle cx="60" cy="60" r="${r}" class="track"/>
         <circle cx="60" cy="60" r="${r}" class="bar" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p)}"/>
       </svg>
-      <div class="ring-text"><strong>${label}</strong><span>${sub}</span></div>
+      <div class="ring-text"><strong>${clockFrom === null ? label : clock(clockFrom)}</strong><span>${sub}</span></div>
     </div>`;
 }
 
@@ -93,22 +93,22 @@ function chips(s: Snapshot): string {
 
 function focusCard(s: Snapshot): string {
   const blockLevel = s.metrics.find((metric) => metric.key === "block")?.level ?? "green";
-  const visual = focusVisual(s.in_break, s.block_min, blockLevel);
+  const running = runningClock(s);
+  const visual = focusVisual(s.in_break, s.block_min, blockLevel, running.mode === "pause" ? running.since : null);
   const hard = 75;
   const longLeft = Math.max(0, 120 - s.since_long_break_min);
-  const running = runningClock(s);
+  const since = sinceFact(running);
   return `
     <section class="card focus-card tone-${visual.tone}">
       <div class="card-head"><span class="eyebrow">Fokus &amp; Pause</span><span class="mode-badge">${visual.mode === "pause" ? "PAUSE" : "FOKUS"}</span></div>
       <div class="split">
-        ${ring(visual.value, hard, visual.tone, visual.label, visual.mode === "pause" ? "läuft" : "am Stück")}
+        ${ring(visual.value, hard, visual.tone, visual.label, visual.mode === "pause" ? "Pause" : "am Stück", visual.clockFrom)}
         <ul class="facts">
           <li><span>Nächste Pause</span><strong>${s.in_break ? "läuft" : s.next_break_min > 0 ? `in ${s.next_break_min} min` : "jetzt"}</strong></li>
           <li><span>Lange Pause</span><strong>${longLeft > 0 ? `in ${longLeft} min` : "fällig"}</strong></li>
-          <li><span>Pausen heute</span><strong>${s.breaks_today} · davon lang ${s.long_breaks_today}</strong></li>
+          <li><span>${since.label}</span><strong>${atTime(since.since)}</strong></li>
         </ul>
       </div>
-      <p class="running"><span>${running.mode === "pause" ? "Pause läuft seit" : "Fokus läuft seit"} ${atTime(running.since)}</span>${clock(running.since)}</p>
       <div class="row">
         ${s.in_break
           ? `<button class="btn pause" data-act="break_end">${icons.pause} Pause beenden</button>`
@@ -144,14 +144,8 @@ function waterCard(s: Snapshot): string {
 }
 
 function postureCard(s: Snapshot): string {
-  const share = s.posture_share;
-  const total = Object.values(share).reduce((sum, minutes) => sum + minutes, 0) || 1;
-  const chair = pct(share.office_chair ?? 0, total);
-  const changing = 100 - chair;
-  const today = s.postures
-    .filter((posture) => (share[posture.id] ?? 0) > 0)
-    .map((posture) => `${esc(posture.label)} ${Math.round(pct(share[posture.id] ?? 0, total))} %`)
-    .join(" · ");
+  const traffic = postureTraffic(s.posture_share, s.postures);
+  const postureWord = { green: "ausreichend", yellow: "ausbaufähig", red: "nur Bürostuhl" } as const;
   const over = s.posture_min >= s.posture_limit_min;
   return `
     <section class="card">
@@ -162,10 +156,10 @@ function postureCard(s: Snapshot): string {
       <div class="seg" role="group" aria-label="Position">
         ${s.postures.map((p) => `<button class="${p.id === s.posture ? "on" : ""}" data-act="posture_${p.id}">${esc(p.label)}</button>`).join("")}
       </div>
-      <div class="split-bar" title="Heute: Sitzen / Stehen">
-        <span class="sit" style="width:${chair}%"></span><span class="stand" style="width:${changing}%"></span>
+      <div class="posture-lights" aria-label="Haltungsverteilung heute: ${postureWord[traffic.level]}, ${traffic.changePercent} % Wechsel">
+        ${traffic.items.map((item) => `<span class="pill lvl-${item.level}" title="${item.used ? `${item.minutes} min heute` : "heute noch ungenutzt"}"><i class="dot"></i>${esc(item.label)} <b>${item.used ? `${item.percent} %` : "ungenutzt"}</b></span>`).join("")}
       </div>
-      <p class="note">${today || "Heute noch keine Haltung erfasst."}</p>
+      <p class="note">Wechsel heute ${traffic.changePercent} % · Ziel ${POSTURE_CHANGE_TARGET} %</p>
     </section>`;
 }
 
@@ -333,8 +327,35 @@ function history(s: Snapshot): string {
             .join("")}
         </tbody>
       </table>
+      ${development(s)}
       <div class="day-logs">${days.filter((d) => d.tasks.length || d.pauses.length).map(dayLog).join("")}</div>
     </section>`;
+}
+
+/** Lokales Datum (JJJJ-MM-TT) wie im Tageszustand der Engine. */
+function localDay(epochSeconds: number): string {
+  const d = new Date(epochSeconds * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const TREND: Record<Trend, string> = { up: "↗ besser", down: "↘ nachgelassen", flat: "→ gleich" };
+const VERDICT = { green: "konsequent", yellow: "ausbaufähig", red: "inkonsequent" } as const;
+
+/** Entwicklung: wo du dich gesteigert hast und wo du noch inkonsequent bist (abgeschlossene Tage). */
+function development(s: Snapshot): string {
+  const rows = developmentRows(s.history, localDay(s.at), s.workday_min);
+  return `
+      <div class="development">
+        <h3>Entwicklung <small>letzte 7 abgeschlossene Tage</small></h3>
+        <div class="dev-grid">${rows.map((row) => `
+          <div class="dev ${row.level ? `lvl-${row.level}` : "dev-empty"}" title="${esc(row.rule)}">
+            <div class="metric-top"><span class="dot"></span><span class="mono">${esc(row.label)}</span></div>
+            <strong>${row.days ? `${row.met} von ${row.days} Tagen` : "noch keine Daten"}</strong>
+            <p>${row.level ? `${VERDICT[row.level]}${row.trend ? ` · ${TREND[row.trend]}` : ""}` : row.key === "eyes" ? `wird ab heute erfasst · heute ${s.eyes_done_today} von ${s.eyes_offered_today}` : "zu wenig aktive Tage"}</p>
+            <p class="rule">${esc(row.rule)}${row.key === "eyes" && row.days ? ` · heute ${s.eyes_done_today} von ${s.eyes_offered_today}` : ""}</p>
+          </div>`).join("")}
+        </div>
+      </div>`;
 }
 
 function dayEndPanel(s: Snapshot): string {

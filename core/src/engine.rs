@@ -122,6 +122,10 @@ pub struct DaySummary {
     pub ended_at: Option<i64>,
     pub tasks: Vec<TaskActivity>,
     pub pauses: Vec<BreakRecord>,
+    /// Augen-Mikropausen (20-20-20): angeboten und mit abgelaufenem Timer erledigt.
+    /// `None` bei Tagen vor der Erfassung, damit sie nicht als Verfehlung zählen.
+    pub eyes_offered: Option<u32>,
+    pub eyes_done: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -158,6 +162,10 @@ pub struct State {
     pub history: Vec<DaySummary>,
     /// Gesetzt, solange der Tag über „Tag beenden“ abgeschlossen ist.
     pub day_closed_at: Option<i64>,
+    pub eyes_offered: u32,
+    pub eyes_done: u32,
+    /// Zeitpunkt des zuletzt als erledigt gezählten Augen-Hinweises (gegen Doppelzählung).
+    pub eyes_counted_at: Option<i64>,
 }
 
 impl Default for State {
@@ -193,6 +201,9 @@ impl Default for State {
             max_busy_agents: 0,
             history: Vec::new(),
             day_closed_at: None,
+            eyes_offered: 0,
+            eyes_done: 0,
+            eyes_counted_at: None,
         }
     }
 }
@@ -238,6 +249,8 @@ pub struct Snapshot {
     pub long_breaks_today: u32,
     pub tasks_today: Vec<TaskActivity>,
     pub break_timeline: Vec<BreakTimelineEntry>,
+    pub eyes_offered_today: u32,
+    pub eyes_done_today: u32,
     pub next_water_min: Option<i64>,
     pub next_break_min: i64,
     pub observation: Observation,
@@ -347,6 +360,8 @@ impl Engine {
             ended_at,
             tasks: s.tasks.clone(),
             pauses: s.pause_events.clone(),
+            eyes_offered: Some(s.eyes_offered),
+            eyes_done: Some(s.eyes_done),
         }
     }
 
@@ -970,7 +985,20 @@ impl Engine {
             .find(|(k, _, _)| self.allowed(now, *k))?;
         self.state.next_allowed.insert(kind, now + cooldown * 60);
         self.state.last_hint_at = now;
+        if kind == HintKind::Eyes {
+            self.state.eyes_offered += 1;
+        }
         Some(hint)
+    }
+
+    /// Augen-Mikropause mit abgelaufenem Timer: zählt je Hinweis genau einmal.
+    pub fn complete_eyes(&mut self, hint_at: i64) -> bool {
+        if self.state.eyes_counted_at == Some(hint_at) {
+            return false;
+        }
+        self.state.eyes_counted_at = Some(hint_at);
+        self.state.eyes_done = (self.state.eyes_done + 1).min(self.state.eyes_offered.max(1));
+        true
     }
 
     pub fn snapshot(&self, now: i64) -> Snapshot {
@@ -1020,6 +1048,8 @@ impl Engine {
                 .filter(|b| b.minutes() >= s.long_break_min as i64)
                 .count() as u32,
             tasks_today: self.state.tasks.clone(),
+            eyes_offered_today: self.state.eyes_offered,
+            eyes_done_today: self.state.eyes_done,
             break_timeline: self
                 .state
                 .pause_events
@@ -1649,5 +1679,84 @@ mod timed_hint_tests {
         assert_eq!(long.kind, HintKind::LongBreak);
         assert_eq!(long.duration_seconds, Some(22 * 60));
         assert!(long.body.contains("22 Minuten"));
+    }
+}
+
+#[cfg(test)]
+mod eye_break_tests {
+    use super::*;
+
+    fn eyes_engine(t: i64) -> Engine {
+        let settings = Settings {
+            eyes_enabled: true,
+            ..Settings::default()
+        };
+        let state = State {
+            day: "2026-11-03".into(),
+            first_active: Some(t - 20 * 60),
+            block_start: t - 20 * 60,
+            last_long_break_end: t,
+            posture_since: t,
+            last_drink: Some(t),
+            ..State::default()
+        };
+        Engine::new(settings, state)
+    }
+
+    #[test]
+    fn offered_eye_breaks_are_counted_when_the_hint_is_chosen() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        let hint = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert_eq!(hint.kind, HintKind::Eyes);
+        assert_eq!(e.state.eyes_offered, 1);
+        assert_eq!(e.state.eyes_done, 0);
+        let snap = e.snapshot(t);
+        assert_eq!((snap.eyes_offered_today, snap.eyes_done_today), (1, 0));
+    }
+
+    #[test]
+    fn a_finished_eye_break_counts_once_per_hint() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        let hint = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert!(e.complete_eyes(hint.at));
+        assert!(
+            !e.complete_eyes(hint.at),
+            "derselbe Hinweis zählt nur einmal"
+        );
+        assert_eq!(e.state.eyes_done, 1);
+    }
+
+    #[test]
+    fn day_summary_marks_eye_breaks_as_recorded_and_old_days_as_unknown() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        let hint = e.pick_hint(t, Level::Green, &[]).unwrap();
+        e.complete_eyes(hint.at);
+        let summary = e.day_summary(None);
+        assert_eq!(
+            (summary.eyes_offered, summary.eyes_done),
+            (Some(1), Some(1))
+        );
+        let old: DaySummary =
+            serde_json::from_str(r#"{"day":"2026-10-28","active_min":120}"#).unwrap();
+        assert_eq!((old.eyes_offered, old.eyes_done), (None, None));
+    }
+
+    #[test]
+    fn eye_counters_reset_on_a_new_day() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        e.pick_hint(t, Level::Green, &[]);
+        e.start_day("2026-11-04", t + 86_400);
+        assert_eq!((e.state.eyes_offered, e.state.eyes_done), (0, 0));
+        let stored = e
+            .state
+            .history
+            .iter()
+            .find(|d| d.day == "2026-11-03")
+            .unwrap();
+        assert_eq!(stored.eyes_offered, Some(1));
     }
 }
