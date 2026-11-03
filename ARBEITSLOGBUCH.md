@@ -345,5 +345,5 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Auf Wunsch von Claus: Pausenuhr im Ring, „Fokus/Pause seit“ statt Lauf-Zeile, Haltungsampel als Pillen, „Entwicklung“ in „Letzte Tage“ mit Augenpausen, Lotsenregel und Feierabend; Core zählt Augenpausen.
 - TDD: 4 Core-Tests (zuerst Kompilierfehler), 11 neue UI-Tests (zuerst fehlender Export bzw. 1 Fehlschlag Lotsenregel), danach grün. Frisch: `cargo test --workspace` (60), Clippy `-D warnings`, `cargo fmt --check`, `npm run test:ui` (27), `npm run build`, Python-Tests OK.
 - Sichtprüfung: Ego-Lite-Screenshots der Designvorschau (Fokus, Pause, nur Bürostuhl, Entwicklung). Die laufende App blieb unberührt, keine zweite Instanz.
-- Nicht ausgeführt: App-Bundle bauen und `/Applications/Lotse.app` ersetzen (Freigabe offen).
+- App-Bundle gebaut: `LOTSE_BUILD=local-fc1db62 npm run tauri -- build --no-sign --bundles app`, Exit 0, `target/release/bundle/macos/Lotse.app` (0.2.0, unsigniert). Nicht ausgeführt: Signieren und `/Applications/Lotse.app` ersetzen (Freigabe offen).
 - Versionsbezug: Commit „Cockpit-Übersicht (A-031 bis A-034)“

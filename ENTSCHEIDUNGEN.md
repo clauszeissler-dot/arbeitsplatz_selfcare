@@ -297,4 +297,4 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Entscheidung: Agent nach Nutzerwunsch, 2026-11-03
 - Live seit: wie E-031
 - Beleg: 4 Core-Tests, 5 UI-Tests, Screenshot
-- Offen: Augenpausen-Daten entstehen erst ab Installation; Sicht in der installierten App.
+- Offen: Augenpausen-Daten entstehen erst ab Installation; Tauri-Pfad `timer_tick` → `complete_eyes` ohne eigenen Test; Sicht in der installierten App. Gezählt wird nur, wenn der 20-Sekunden-Timer im Hinweis gestartet wird und abläuft.
