@@ -267,6 +267,13 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 21 | A-028 | „Tag beenden“ (Engine `end_day`, Tauri-Aktion, Kopfzeile mit Rückfrage, Menüleiste, Hinweis „Arbeitstag ist voll“). | Schritt 19 | erledigt | 7 Core-Tests rot→grün; Klicktest am laufenden Tag bewusst nicht ausgeführt |
 | 22 | A-029 | Tagesprotokolle (Aufgaben, Pausen, Zeitraum) in der Historie aufklappbar anzeigen. | Schritt 21 | erledigt | Core-Test Tagesprotokoll; UI-Build grün |
 | 23 | A-030 | Versionsschema festlegen (SemVer, Versionsquelle, Tags, CHANGELOG, Dev-Kennzeichnung, Anzeige im Cockpit, Konsistenztest). | Freigabe des Schemas durch Claus | erledigt | Tests grün: 32 Python-, 13 Rust-, 16 UI-Tests; Skripte nur per Syntaxprüfung und Tests, nicht live \|
+| 24 | A-009, A-010, A-011, A-012 | Übungstimer mit Countdown, eigene Klänge, fortlaufendes Arbeitslog, Cockpit über Dock/⌘Tab (Zuordnung am 2026-11-03 nachgetragen). | – | erledigt | e5a09a5; Belege in AENDERUNGEN.md A-009 bis A-012 |
+| 25 | A-013 | App mit Developer ID signieren und bei Apple notarisieren (Zuordnung nachgetragen). | Schritt 24 | erledigt | ade59bb; Apple Accepted, Gatekeeper grün |
+| 26 | A-014, A-015, A-016 | Signierten Download im Release anbieten, im README verlinken, README abgleichen (Zuordnung nachgetragen). | Schritt 25 | erledigt | f1244a5, 0619456, 2cdf97c, c6c27f5 |
+| 27 | A-017, A-018 | Lizenz, Weitergabe und eigene Entwickleridentität für Forks dokumentieren (Zuordnung nachgetragen). | Schritt 26 | erledigt | 1297a97, 0dd35bd |
+| 28 | A-019, A-020 | Sicherheitsprüfung und beschlossene Härtung umsetzen (Zuordnung nachgetragen). | Schritt 27 | erledigt | Codex-Security-Bericht; 9f95ac8 (PR #1), 851e327 |
+| 29 | A-021, A-022, A-023, A-024 | Schwarzes Cockpit beheben, Farblogik Fokus/Pause, Tageszeitleiste, Produktionsbuild-Korrektur (Zuordnung nachgetragen). | Schritt 28 | erledigt | c78209e (PR #11); Belege in AENDERUNGEN.md A-021 bis A-024 |
+| 30 | A-025 | Sichere Updates aus GitHub Releases (Zuordnung nachgetragen). | Schritt 29 | erledigt | 00d5dd0 (PR #13), a352413 |
 
 ## Blockaden und Entscheidungen
 
@@ -289,7 +296,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 
 ## Nächster konkreter Schritt
 
-Auf Auftrag von Claus: Branch `claude/20261030-laufzeit-tagesende` pushen und per PR in den geschützten `main` bringen. Danach Apple-Secrets einrichten, `scripts/set-version.sh 0.3.0`, Changelog-Datum, Tag `v0.3.0`, Release-Workflow und Live-Update-Test von 0.2.0 auf 0.3.0 (siehe Handoff 20261030_01). Unabhängig davon: Autostart-Schalter neu setzen (A-026), „Tag beenden“ einmal real auslösen (A-028), Granularität der Tagesprotokolle klären (A-029), A-005 sichtbar bestätigen.
+Auf Auftrag von Claus: Branch `claude/20261030-laufzeit-tagesende` pushen und per PR in den geschützten `main` bringen. Danach Apple-Secrets einrichten, `scripts/set-version.sh 0.3.0`, Changelog-Datum, Tag `v0.3.0`, Release-Workflow und Live-Update-Test von 0.2.0 auf 0.3.0 (siehe Handoff 20261030_01). Unabhängig davon: Autostart-Schalter „Beim Anmelden starten“ wieder einschalten, Stand 2026-11-03 ist er aus (A-026); Klangabnahme durch Claus (A-010), „Tag beenden“ einmal real auslösen (A-028), Granularität der Tagesprotokolle klären (A-029), A-005 sichtbar bestätigen.
 
 ## Abschlussprüfung
 

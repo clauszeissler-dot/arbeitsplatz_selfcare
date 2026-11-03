@@ -329,3 +329,12 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Nach freigegebenem Plan: gemeinsames Werkzeug `scripts/versioning.py` (check/set/changelog/newer), Wrapper `set-version.sh`, `build-local.sh` (liest den Autostart-Pfad nur, ändert ihn nie), erweiterte `validate-release.sh`, Release-Text aus dem Changelog, Build-Marker `LOTSE_BUILD` (nur `release.yml` setzt `release`).
 - TDD: 13 neue Python-Tests (zuerst 8 Fehlschläge/2 Fehler), 3 Rust- und 2 UI-Tests zuerst rot. Ein Regex-Fehler (`(?s)`, katastrophales Backtracking) ließ den ersten Testlauf hängen; Flag entfernt, dann grün. Gates: 32 Python-, 13 Rust-, 16 UI-Tests, Clippy `-D warnings`, `cargo fmt`, `npm run build`.
 - Bewusst nicht ausgeführt: `build-local.sh` (hätte die installierte 0.2.0 ersetzt, die für den Live-Update-Test erhalten bleiben soll), `validate-release.sh` (braucht Tag und `origin/main`). Version in den Dateien bleibt 0.2.0 bis zum Release. Kein Push.
+
+## 2026-11-03 – Versionen bereinigt, Projektführung nachgezogen
+
+- Anforderungs-IDs: A-026 (Beobachtung), A-010 (Status), A-001 bis A-030 (Entscheidungen)
+- Auf Wunsch von Claus: installierte Lotse-Versionen gezählt (1× `/Applications/Lotse.app` 0.2.0, 4 Build-Bundles in `target/`). Gelöscht: `target/universal-apple-darwin/release/bundle/macos/Lotse.app`, `target/lotse-arm64/aarch64-apple-darwin/release/bundle/macos/Lotse.app`, `target/lotse-x86_64/x86_64-apple-darwin/release/bundle/macos/Lotse.app` (alle vom 2026-10-29, `target/` ist von Git ausgeschlossen). Behalten: `/Applications/Lotse.app` und `target/release/bundle/macos/Lotse.app`. Lotse aus `/Applications` gestartet, Prozess läuft.
+- Beobachtung: `~/Library/LaunchAgents/Lotse.plist` fehlt, Autostart ist aus.
+- Projektführung: `ENTSCHEIDUNGEN.md` (E-001 bis E-030) angelegt, Leerzeilen in der Anforderungstabelle entfernt, Planschritte 24 bis 30 ergänzt, A-010 auf „umgesetzt“ korrigiert. `arbeitsstandard.py check` ohne Befund.
+- Kein Code geändert, keine Tests neu ausgeführt.
+- Versionsbezug: Commit mit diesen IDs folgt
