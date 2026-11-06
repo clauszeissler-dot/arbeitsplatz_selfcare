@@ -299,3 +299,30 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Live seit: wie E-031
 - Beleg: 4 Core-Tests, 5 UI-Tests, Screenshot
 - Offen: Augenpausen-Daten entstehen erst ab Installation; Tauri-Pfad `timer_tick` → `complete_eyes` ohne eigenen Test; Sicht in der installierten App. Gezählt wird nur, wenn der 20-Sekunden-Timer im Hinweis gestartet wird und abläuft.
+
+## E-035 – Lange Pause mit Toleranz und Live-Fortschritt
+- Problem: Am 2026-11-06 endete eine Pause nach 26:32 min. Sie lag unter `long_break_min` = 30 und zählte nicht als lang. `last_long_break_end` stand daher noch auf dem Tagesbeginn, und der Hinweis „5 h ohne echte Pause“ kam direkt bei der Rückkehr.
+- Lösung: Eine Pause zählt ab 5/6 der eingestellten Dauer als lang (`long_break_credit_min`, aufgerundet; 30 → 25 min). Die Regel gilt einheitlich für die Anrechnung, den Tageszähler und die Historie. Während der Pause zeigt die Fokus-Karte „Lange Pause: noch X min“ und danach „erreicht“. Außerhalb der Pause stammt die Fälligkeit aus der Einstellung statt aus festen 120 min. Das Einstellungsfeld heißt „Lange Pause dauert (zählt ab ⅚)“.
+- Verworfen: nur die Live-Anzeige ohne Toleranz. Die zusammengeführte Pause von 29 min am selben Tag wäre dann weiter ungezählt geblieben. Verworfen wurde auch eine unsichtbare Toleranz, weil das Label der Einstellung dann nicht mehr stimmen würde.
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-06. Die Schwelle 5/6 ist eine Annahme, die Claus bestätigen muss.
+- Live seit: Installation des Builds dieses Commits (siehe ARBEITSLOGBUCH 2026-11-06)
+- Beleg: Core-Test `a_26_minute_pause_counts_as_long_break_and_no_long_hint_follows`, UI-Test `longBreakFact`, Screenshot der Vorschau
+- Offen: Ein Hinweis kann während einer kurzen Mausbewegung mitten in der Pause aufpoppen. Vorschlag: Sperre wie nach Meetings (`meeting_ended < 60 s`), noch nicht gebaut.
+
+## E-036 – Kurze Unterbrechungen zusammenführen und sammeln
+- Problem: Jede Leerlaufphase ab 2 min (`idle_active_secs`) wurde als eigene Pause gelistet, am 06.11. bis mittags 11 Einträge. Eine Pause von 29 min war durch Mausbewegungen von 7, 32 und 17 s in vier Stücke zerfallen. Weil kein Stück 15 min erreichte, wurde sie gar nicht angerechnet.
+- Lösung: Unterbrechungen, zwischen denen höchstens 60 s Aktivität lagen (`PAUSE_MERGE_GAP`), werden zu einer Pause zusammengeführt. Eine bereits angerechnete Teilpause wird über die Überlappung ersetzt. Beim Laden werden gespeicherte Fragmente einmalig und idempotent zusammengeführt und angerechnet. Die Anzeige listet nur Pausen ab „Zählt als Pause ab“ einzeln, kürzere fasst sie in der Zeile „+ n kurze Unterbrechungen“ zusammen. Die Regel gilt in Heute, im Tagesprotokoll und im Dialog „Tag beenden“.
+- Verworfen: `idle_active_secs` erhöhen, weil das die aktive Zeit verfälscht hätte. Verworfen wurde auch, kurze Unterbrechungen ganz zu verschweigen.
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-06
+- Live seit: wie E-035
+- Beleg: Core-Tests `a_pause_interrupted_by_brief_mouse_moves_counts_as_one_pause` und `loading_merges_fragmented_pauses_once_and_credits_them`, 3 UI-Tests `pauseList`
+- Offen: keine
+
+## E-037 – Haltungspillen als Schalter
+- Problem: Die Haltungskarte zeigte die Haltungen doppelt, einmal als Einzel-Buttons und einmal als Ampelpillen.
+- Lösung: Die Einzel-Buttons (`.seg`) sind entfernt. Die Ampelpillen sind jetzt Buttons (`data-act="posture_<id>"`, `aria-pressed`). Die aktuelle Haltung ist orange umrandet, und ein Fokusring unterstützt die Tastaturbedienung.
+- Verworfen: beide Bedienelemente behalten
+- Entscheidung: Agent nach Nutzerwunsch, 2026-11-06
+- Live seit: wie E-035
+- Beleg: UI-Test `postureButtons`, Ego-Lite-Prüfung (0 `.seg`, 4 Pillen-Buttons, Tab-Reihenfolge), Screenshot
+- Offen: Sichtbestätigung durch Claus

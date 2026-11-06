@@ -354,3 +354,12 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Anforderungs-IDs: A-028 (geprüft), A-031 bis A-034 (installiert, Sicht offen)
 - 13:51:25 „Tag beenden“ ausgelöst. `state.json` hat `day_closed_at`, Historie 2026-11-03 mit 239 min aktiv, 4 Pausen, 13 Aufgaben, Augenpausen 0/0 (Zählung erst seit 13:40). Lotse-Prozess beendet, kein Absturzbericht; der Wächter meldete „läuft nicht mehr“ um 13:51:29.
 - Wächter auf Wunsch von Claus zum Sitzungsende beendet.
+
+## 2026-11-06 – Pausenerkennung und Haltungspillen (A-035 bis A-037)
+
+- Anforderungs-IDs: A-035, A-036, A-037
+- Live-Zustand gelesen (`state.json`, Sicherung im Scratchpad der Sitzung). Befund: Die letzte Pause dauerte 26:32 min und lag damit unter 30 min, also keine lange Pause, der LongBreak-Hinweis kam bei der Rückkehr. 11 Pause-Events, Leerlauf ab 2 min. Eine Pause von 29 min war in 4 Stücke zerfallen und nicht angerechnet.
+- TDD: Core-Tests zuerst Kompilierfehler, danach mit gezielt abgeschalteter Logik als Verhaltensrot belegt (Toleranz aus: 0 statt 1 lange Pause; Lücke 0 s: 2 Tests rot). 5 UI-Tests zuerst rot (fehlende Exporte).
+- Frisch grün: `cargo test --workspace` (63), Clippy `-D warnings`, `cargo fmt --check`, `npm run test:ui` (32), `npm run build`, Python-Tests OK.
+- Ego Lite (Vorschau `?pause=1`): keine `.seg`-Buttons, 4 Pillen-Buttons mit `aria-pressed`, Tab-Fokus wandert, „Lange Pause: noch 21 min“, Sammelzeile für kurze Unterbrechungen. Screenshot `cockpit-haltung-pause.png` im Scratchpad.
+- Versionsbezug: Commit „Pausenerkennung und Haltungspillen (A-035 bis A-037)“

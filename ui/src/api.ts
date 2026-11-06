@@ -77,6 +77,9 @@ export interface Snapshot {
   pause_started_at: number | null;
   day_ended_at: number | null;
   since_long_break_min: number;
+  long_break_credit_min: number;
+  long_break_after_min: number;
+  break_min: number;
   water_ml: number;
   water_target_ml: number;
   water_expected_ml: number;
@@ -232,7 +235,7 @@ function mockSnapshot(): Snapshot {
     ],
     reasons: ["Parallele Projekte: 10", "KI arbeitet gerade: 4 / 7", "Offene Tabs: 12"],
     in_meeting: false, in_break: previewPause, snoozed_until: null,
-    active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104,
+    active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104, long_break_credit_min: 25, long_break_after_min: 120, break_min: 15,
     block_started_at: Date.now() / 1000 - 68 * 60 - 12, pause_started_at: previewPause ? Date.now() / 1000 - 4 * 60 - 12 : null, day_ended_at: null,
     water_ml: 750, water_target_ml: 2000, water_expected_ml: 1150, glass_ml: 250,
     posture: "office_chair", posture_label: "Bürostuhl", posture_min: 24, posture_started_at: Date.now() / 1000 - 24 * 60 - 31, posture_limit_min: 30,

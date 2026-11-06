@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { daySummaryText, developmentRows, focusVisual, formatElapsed, liveSeconds, loadDashboardData, postureTraffic, runningClock, sinceFact, versionLabel } from "./dashboard-model.ts";
+import { daySummaryText, developmentRows, focusVisual, formatElapsed, liveSeconds, loadDashboardData, longBreakFact, pauseList, postureButtons, postureTraffic, runningClock, sinceFact, versionLabel } from "./dashboard-model.ts";
 
 test("pause uses one calm cyan semantic instead of a focus warning color", () => {
   assert.deepEqual(focusVisual(true, 95, "red", 1000), {
@@ -184,4 +184,49 @@ test("the pilot rule asks for one long break between every two hours of work", (
   assert.equal(rows(240, 1), 1, "4 h Arbeit brauchen eine lange Pause dazwischen");
   assert.equal(rows(241, 1), 0);
   assert.equal(rows(110, 0), 1);
+});
+
+// ---------- Pausenliste und lange Pause (A-035, A-036) ----------
+
+test("short interruptions are summarised instead of listed as separate pauses", () => {
+  const p = (start: number, minutes: number) => ({ start, end: start + minutes * 60, duration_secs: minutes * 60 });
+  const list = pauseList([p(0, 3), p(1000, 18), p(3000, 5), p(6000, 26)], 15);
+  assert.deepEqual(list.pauses.map((x) => x.duration_secs / 60), [26, 18]);
+  assert.equal(list.shortCount, 2);
+  assert.equal(list.shortSecs, 8 * 60);
+});
+
+test("fragments separated by a brief mouse move are merged before counting", () => {
+  const list = pauseList([
+    { start: 0, end: 594, duration_secs: 594 },
+    { start: 601, end: 775, duration_secs: 174 },
+    { start: 807, end: 1585, duration_secs: 778 },
+  ], 15);
+  assert.equal(list.pauses.length, 1);
+  assert.equal(list.pauses[0].start, 0);
+  assert.equal(list.pauses[0].end, 1585);
+  assert.equal(list.shortCount, 0);
+});
+
+test("a running pause is always listed", () => {
+  const list = pauseList([{ start: 100, end: null, duration_secs: 30 }], 15);
+  assert.equal(list.pauses.length, 1);
+});
+
+test("during a pause the long-break line counts down to the credit threshold", () => {
+  const base = { since_long_break_min: 300, long_break_credit_min: 25, long_break_after_min: 120 };
+  assert.equal(longBreakFact({ ...base, in_break: true }, 21 * 60), "noch 4 min");
+  assert.equal(longBreakFact({ ...base, in_break: true }, 25 * 60), "erreicht");
+  assert.equal(longBreakFact({ ...base, in_break: false }, 0), "fällig");
+  assert.equal(longBreakFact({ ...base, in_break: false, since_long_break_min: 30 }, 0), "in 90 min");
+});
+
+test("posture pills are the buttons for switching posture", () => {
+  const buttons = postureButtons({ office_chair: 100, board: 25 }, POSTURES, "standing");
+  assert.deepEqual(buttons.map((b) => [b.act, b.current]), [
+    ["posture_office_chair", false],
+    ["posture_swopper", false],
+    ["posture_standing", true],
+  ]);
+  assert.equal(buttons[0].level, postureTraffic({ office_chair: 100, board: 25 }, POSTURES).items[0].level);
 });

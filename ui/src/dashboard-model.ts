@@ -1,4 +1,4 @@
-import type { Level, PostureDefinition, Snapshot, StorageHealth } from "./api";
+import type { BreakTimelineEntry, Level, PostureDefinition, Snapshot, StorageHealth } from "./api";
 
 export type FocusTone = Level | "pause";
 
@@ -138,6 +138,71 @@ export function postureTraffic(
     return { id: posture.id, label: posture.label, minutes, percent: percent(minutes), used, level: posture === chair ? level : own };
   });
   return { level, changePercent, items };
+}
+
+export interface PostureButton extends PostureLight {
+  act: string;
+  current: boolean;
+}
+
+/** Die Haltungspillen sind zugleich die Schalter für den Haltungswechsel (A-037). */
+export function postureButtons(
+  share: Record<string, number>,
+  postures: PostureDefinition[],
+  current: string,
+): PostureButton[] {
+  return postureTraffic(share, postures).items.map((item) => ({ ...item, act: `posture_${item.id}`, current: item.id === current }));
+}
+
+// ---------- Pausenliste und lange Pause (A-035, A-036) ----------
+
+/** Kurze Bewegungen bis zu dieser Länge trennen eine Pause nicht (wie im Core). */
+export const PAUSE_MERGE_GAP_SECS = 60;
+
+export interface PauseList {
+  pauses: BreakTimelineEntry[];
+  shortCount: number;
+  shortSecs: number;
+}
+
+/**
+ * Pausen für die Anzeige: Stücke mit kurzer Bewegung dazwischen zusammenführen,
+ * nur echte Pausen (ab `breakMin`) einzeln zeigen, kürzere Unterbrechungen zählen.
+ */
+export function pauseList(entries: Array<{ start: number; end: number | null; duration_secs: number }>, breakMin: number): PauseList {
+  const merged: BreakTimelineEntry[] = [];
+  for (const entry of [...entries].sort((a, b) => a.start - b.start)) {
+    const last = merged[merged.length - 1];
+    if (last && last.end !== null && entry.start - last.end <= PAUSE_MERGE_GAP_SECS) {
+      last.end = entry.end === null ? null : Math.max(last.end, entry.end);
+      last.duration_secs = (last.end ?? entry.start + entry.duration_secs) - last.start;
+    } else {
+      merged.push({ ...entry });
+    }
+  }
+  const out: PauseList = { pauses: [], shortCount: 0, shortSecs: 0 };
+  for (const pause of merged) {
+    if (pause.end === null || pause.duration_secs >= breakMin * 60) out.pauses.push(pause);
+    else {
+      out.shortCount += 1;
+      out.shortSecs += pause.duration_secs;
+    }
+  }
+  out.pauses.sort((a, b) => b.start - a.start);
+  return out;
+}
+
+/** Zeile „Lange Pause“: in der Pause der Weg bis zur Anrechnung, sonst bis zur Fälligkeit. */
+export function longBreakFact(
+  s: Pick<Snapshot, "in_break" | "since_long_break_min" | "long_break_credit_min" | "long_break_after_min">,
+  pauseElapsedSecs: number,
+): string {
+  if (s.in_break) {
+    const left = s.long_break_credit_min - Math.floor(pauseElapsedSecs / 60);
+    return left > 0 ? `noch ${left} min` : "erreicht";
+  }
+  const left = s.long_break_after_min - s.since_long_break_min;
+  return left > 0 ? `in ${left} min` : "fällig";
 }
 
 // ---------- Entwicklung über die letzten Tage (A-034) ----------

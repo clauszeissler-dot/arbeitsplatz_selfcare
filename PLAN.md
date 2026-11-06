@@ -277,6 +277,7 @@ Zweck: [ZIEL.md](ZIEL.md) · Vollständige Anforderungen: [AENDERUNGEN.md](AENDE
 | 31 | A-031, A-032 | Fokus-Karte: Pausenuhr im Ring, Lauf-Zeile entfernen, „Fokus/Pause seit HH:MM“ in der Liste. | Schritt 30 | erledigt (umgesetzt) | UI-Tests rot→grün, Screenshot |
 | 32 | A-033 | Haltungsampel als reine Funktion (`postureTraffic`) mit Tests, Pillen in der Haltungskarte. | Schritt 31 | erledigt (umgesetzt) | UI-Tests rot→grün, Screenshot |
 | 33 | A-034 | Augenpausen im Core zählen (Tauri: Timer-Ende/„Erledigt“), Entwicklungsbereich in „Letzte Tage“. | Schritt 32 | erledigt (umgesetzt) | Core- und UI-Tests rot→grün, Screenshot |
+| 34 | A-035, A-036, A-037 | Lange Pause mit Toleranz und Live-Fortschritt, Pausen zusammenführen und kurze sammeln, Haltungspillen als Schalter; bauen, signieren, installieren. | Schritt 33 | erledigt (umgesetzt) | Core- und UI-Tests rot→grün, Screenshot, Installation am Zielort |
 
 ## Blockaden und Entscheidungen
 

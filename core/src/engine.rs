@@ -234,6 +234,11 @@ pub struct Snapshot {
     pub pause_started_at: Option<i64>,
     pub day_ended_at: Option<i64>,
     pub since_long_break_min: i64,
+    /// Ab so vielen Minuten zählt eine Pause als lange Pause (5/6 der Einstellung).
+    pub long_break_credit_min: u32,
+    pub long_break_after_min: u32,
+    /// Ab so vielen Minuten zählt eine Unterbrechung als Pause.
+    pub break_min: u32,
     pub water_ml: u32,
     pub water_target_ml: u32,
     pub water_expected_ml: u32,
@@ -266,6 +271,32 @@ pub struct Engine {
 const MAX_TICK_GAP: i64 = 90;
 const SLEEP_GAP: i64 = 600;
 const LOAD_RED_HOLD: i64 = 300;
+/// Kurze Bewegungen (Maus angestoßen, Taste gedrückt) bis zu dieser Länge
+/// trennen eine Pause nicht in mehrere Stücke.
+const PAUSE_MERGE_GAP: i64 = 60;
+
+/// Ab dieser Länge zählt eine Pause als lange Pause: 5/6 der eingestellten
+/// Dauer (30 min → 25 min), damit eine knapp kürzere Pause nicht als „keine
+/// echte Pause“ gilt.
+pub fn long_break_credit_min(long_break_min: u32) -> u32 {
+    (long_break_min * 5).div_ceil(6).max(1)
+}
+
+/// Fügt Pausen zusammen, die nur durch eine kurze Bewegung getrennt sind.
+fn merge_pauses(events: &[BreakRecord]) -> Vec<BreakRecord> {
+    let mut sorted = events.to_vec();
+    sorted.sort_by_key(|pause| pause.start);
+    let mut out: Vec<BreakRecord> = Vec::new();
+    for pause in sorted {
+        match out.last_mut() {
+            Some(last) if pause.start - last.end <= PAUSE_MERGE_GAP => {
+                last.end = last.end.max(pause.end);
+            }
+            _ => out.push(pause),
+        }
+    }
+    out
+}
 
 fn normalized_posture_id(id: &str, settings: &Settings) -> String {
     let id = match id {
@@ -309,11 +340,61 @@ impl Engine {
         }
         state.tasks.truncate(50);
         state.pause_events.truncate(50);
-        Self {
+        let mut engine = Self {
             settings,
             state,
             last_obs: Observation::default(),
+        };
+        engine.merge_stored_pauses();
+        engine
+    }
+
+    /// Zerstückelte Pausen aus älteren Versionen zusammenführen und anrechnen.
+    /// Mehrfaches Laden ändert nichts mehr.
+    fn merge_stored_pauses(&mut self) {
+        let merged = merge_pauses(&self.state.pause_events);
+        let break_secs = self.mins(self.settings.break_min);
+        for pause in &merged {
+            let covered = self
+                .state
+                .breaks
+                .iter()
+                .any(|b| b.start <= pause.start && b.end >= pause.end);
+            if pause.end - pause.start < break_secs || covered {
+                continue;
+            }
+            self.replace_overlapping_breaks(pause.start, pause.end);
+            if self.is_long(pause) {
+                self.state.last_long_break_end = self.state.last_long_break_end.max(pause.end);
+            }
+            self.state.block_start = self.state.block_start.max(pause.end);
         }
+        self.state.pause_events = merged;
+    }
+
+    fn is_long(&self, pause: &BreakRecord) -> bool {
+        pause.end - pause.start >= long_break_credit_min(self.settings.long_break_min) as i64 * 60
+    }
+
+    /// Ersetzt angerechnete Pausen, die sich mit `start..end` überschneiden, durch
+    /// eine einzige Pause über die ganze Spanne.
+    fn replace_overlapping_breaks(&mut self, start: i64, end: i64) -> (i64, i64) {
+        let mut from = start;
+        let mut to = end;
+        self.state.breaks.retain(|b| {
+            let overlaps = b.start <= end && b.end >= start;
+            if overlaps {
+                from = from.min(b.start);
+                to = to.max(b.end);
+            }
+            !overlaps
+        });
+        self.state.breaks.push(BreakRecord {
+            start: from,
+            end: to,
+        });
+        self.state.breaks.sort_by_key(|b| b.start);
+        (from, to)
     }
 
     fn mins(&self, m: u32) -> i64 {
@@ -343,11 +424,7 @@ impl Engine {
             active_min: s.active_secs / 60,
             water_ml: s.water_ml,
             breaks: s.breaks.len() as u32,
-            long_breaks: s
-                .breaks
-                .iter()
-                .filter(|b| b.minutes() >= self.settings.long_break_min as i64)
-                .count() as u32,
+            long_breaks: s.breaks.iter().filter(|b| self.is_long(b)).count() as u32,
             posture_min: s
                 .posture_secs
                 .iter()
@@ -401,29 +478,36 @@ impl Engine {
     }
 
     fn end_break(&mut self, start: i64, end: i64) {
-        let len = end - start;
-        self.record_pause_event(start, end);
-        if len < self.mins(self.settings.break_min) {
+        let start = self.record_pause_event(start, end);
+        if end - start < self.mins(self.settings.break_min) {
             return;
         }
         self.credit_break(start, end);
     }
 
-    fn record_pause_event(&mut self, start: i64, end: i64) {
+    /// Hält eine Unterbrechung fest und hängt sie an die vorige an, wenn dazwischen
+    /// nur eine kurze Bewegung lag. Liefert den Beginn der (zusammengeführten) Pause.
+    fn record_pause_event(&mut self, start: i64, end: i64) -> i64 {
         if end <= start {
-            return;
+            return start;
+        }
+        if let Some(last) = self.state.pause_events.last_mut() {
+            if start >= last.start && start - last.end <= PAUSE_MERGE_GAP {
+                last.end = last.end.max(end);
+                return last.start;
+            }
         }
         self.state.pause_events.push(BreakRecord { start, end });
         if self.state.pause_events.len() > 50 {
             self.state.pause_events.remove(0);
         }
+        start
     }
 
     fn credit_break(&mut self, start: i64, end: i64) {
-        let len = end - start;
-        self.state.breaks.push(BreakRecord { start, end });
+        let (start, end) = self.replace_overlapping_breaks(start, end);
         self.state.block_start = end;
-        if len >= self.mins(self.settings.long_break_min) {
+        if self.is_long(&BreakRecord { start, end }) {
             self.state.last_long_break_end = end;
         }
         // Wer Pause gemacht hat, hat sich bewegt – Haltungsuhr neu starten
@@ -470,7 +554,7 @@ impl Engine {
 
     pub fn finish_break(&mut self, now: i64) {
         if let Some(start) = self.state.manual_break.take() {
-            self.record_pause_event(start, now);
+            let start = self.record_pause_event(start, now);
             // Eine bewusst gestartete Pause zählt weiterhin mindestens als kurze
             // Pause; die Zeitleiste oben behält trotzdem ihre echte Startzeit.
             let credited_start = start.min(now - self.mins(self.settings.break_min));
@@ -1020,6 +1104,9 @@ impl Engine {
             pause_started_at: self.pause_start(now),
             day_ended_at: self.state.day_closed_at,
             since_long_break_min: (now - self.state.last_long_break_end) / 60,
+            long_break_credit_min: long_break_credit_min(s.long_break_min),
+            long_break_after_min: s.long_break_after_min,
+            break_min: s.break_min,
             water_ml: self.state.water_ml,
             water_target_ml: s.water_target_ml,
             water_expected_ml: self.water_expected(now),
@@ -1041,12 +1128,7 @@ impl Engine {
                 .collect(),
             postures: self.settings.postures.clone(),
             breaks_today: self.state.breaks.len() as u32,
-            long_breaks_today: self
-                .state
-                .breaks
-                .iter()
-                .filter(|b| b.minutes() >= s.long_break_min as i64)
-                .count() as u32,
+            long_breaks_today: self.state.breaks.iter().filter(|b| self.is_long(b)).count() as u32,
             tasks_today: self.state.tasks.clone(),
             eyes_offered_today: self.state.eyes_offered,
             eyes_done_today: self.state.eyes_done,
@@ -1640,6 +1722,92 @@ mod tests {
             !partial.sound_enabled,
             "bestehende Einstellungen bleiben standardmäßig ohne Ton"
         );
+    }
+    /// Lässt den Nutzer `secs` Sekunden weg sein (Leerlauf im 30-s-Takt) und meldet ihn
+    /// danach mit einer Eingabe zurück. Liefert den Zeitpunkt der Rückkehr.
+    fn away(e: &mut Engine, start: i64, secs: i64) -> i64 {
+        let mut t = start + 30;
+        while t <= start + secs {
+            e.tick(t, DAY, obs((t - start) as u64));
+            t += 30;
+        }
+        e.tick(start + secs + 1, DAY, obs(1));
+        start + secs + 1
+    }
+
+    #[test]
+    fn a_26_minute_pause_counts_as_long_break_and_no_long_hint_follows() {
+        let mut e = engine();
+        e.settings.water_target_ml = 0;
+        e.settings.eyes_enabled = false;
+        e.settings.long_break_min = 30;
+        run(&mut e, T0, 300, &obs(1));
+        let back = away(&mut e, T0 + 300 * 60, 26 * 60 + 32);
+        let snap = e.snapshot(back);
+        assert_eq!(snap.long_breaks_today, 1);
+        assert_eq!(snap.since_long_break_min, 0);
+        assert_eq!(snap.long_break_credit_min, 25);
+        let hints = run(&mut e, back, 10, &obs(1));
+        assert!(
+            hints.iter().all(|h| h.kind != HintKind::LongBreak),
+            "{:?}",
+            hints.iter().map(|h| h.kind).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn a_pause_interrupted_by_brief_mouse_moves_counts_as_one_pause() {
+        let mut e = engine();
+        run(&mut e, T0, 60, &obs(1));
+        // Wie am 2026-11-06: 9,9 + 2,9 + 13,0 + 2,5 min, dazwischen 7, 32 und 17 s Bewegung
+        let mut t = T0 + 60 * 60;
+        let start = t;
+        t = away(&mut e, t, 594) + 6;
+        t = away(&mut e, t, 174) + 31;
+        t = away(&mut e, t, 778) + 16;
+        let back = away(&mut e, t, 153);
+        assert_eq!(e.state.pause_events.len(), 1, "{:?}", e.state.pause_events);
+        assert_eq!(e.state.pause_events[0].start, start);
+        assert_eq!(e.state.breaks.len(), 1, "{:?}", e.state.breaks);
+        assert_eq!(e.state.last_long_break_end, back - 1);
+    }
+
+    #[test]
+    fn loading_merges_fragmented_pauses_once_and_credits_them() {
+        let fragments = [
+            (1_793_958_661, 1_793_959_255),
+            (1_793_959_262, 1_793_959_436),
+            (1_793_959_468, 1_793_960_246),
+            (1_793_960_263, 1_793_960_416),
+        ];
+        let state = State {
+            day: DAY.into(),
+            last_long_break_end: 1_793_949_622,
+            block_start: 1_793_955_683,
+            breaks: vec![BreakRecord {
+                start: 1_793_954_565,
+                end: 1_793_955_683,
+            }],
+            pause_events: fragments
+                .iter()
+                .map(|&(start, end)| BreakRecord { start, end })
+                .collect(),
+            ..Default::default()
+        };
+        let first = Engine::new(Settings::default(), state);
+        assert_eq!(
+            first.state.pause_events,
+            vec![BreakRecord {
+                start: 1_793_958_661,
+                end: 1_793_960_416
+            }]
+        );
+        assert_eq!(first.state.breaks.len(), 2);
+        assert_eq!(first.state.last_long_break_end, 1_793_960_416);
+        assert_eq!(first.state.block_start, 1_793_960_416);
+        let again = Engine::new(Settings::default(), first.state.clone());
+        assert_eq!(again.state.pause_events, first.state.pause_events);
+        assert_eq!(again.state.breaks, first.state.breaks);
     }
 }
 

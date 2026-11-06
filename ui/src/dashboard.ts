@@ -8,7 +8,7 @@ import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
 import { api, listen, type DaySummary, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
-import { daySummaryText, developmentRows, focusVisual, formatElapsed, liveSeconds, loadDashboardData, POSTURE_CHANGE_TARGET, postureTraffic, runningClock, sinceFact, versionLabel, type FocusTone, type Trend } from "./dashboard-model";
+import { daySummaryText, developmentRows, focusVisual, formatElapsed, liveSeconds, loadDashboardData, longBreakFact, pauseList, POSTURE_CHANGE_TARGET, postureButtons, postureTraffic, runningClock, sinceFact, versionLabel, type FocusTone, type Trend } from "./dashboard-model";
 import { icons } from "./icons";
 import { updatePresentation } from "./updater-model";
 import { LotseUpdater } from "./updater";
@@ -18,6 +18,8 @@ let snap: Snapshot | null = null;
 let storageHealth: StorageHealth = { ok: true, message: null };
 let settingsOpen = false;
 let confirmDayEnd = false;
+/** Ab dieser Dauer zählt eine Unterbrechung als Pause (aus dem letzten Snapshot). */
+let currentBreakMin = 15;
 let buildLabel = "";
 const openDays = new Set<string>();
 const updater = new LotseUpdater(() => {
@@ -96,7 +98,6 @@ function focusCard(s: Snapshot): string {
   const running = runningClock(s);
   const visual = focusVisual(s.in_break, s.block_min, blockLevel, running.mode === "pause" ? running.since : null);
   const hard = 75;
-  const longLeft = Math.max(0, 120 - s.since_long_break_min);
   const since = sinceFact(running);
   return `
     <section class="card focus-card tone-${visual.tone}">
@@ -105,7 +106,7 @@ function focusCard(s: Snapshot): string {
         ${ring(visual.value, hard, visual.tone, visual.label, visual.mode === "pause" ? "Pause" : "am Stück", visual.clockFrom)}
         <ul class="facts">
           <li><span>Nächste Pause</span><strong>${s.in_break ? "läuft" : s.next_break_min > 0 ? `in ${s.next_break_min} min` : "jetzt"}</strong></li>
-          <li><span>Lange Pause</span><strong>${longLeft > 0 ? `in ${longLeft} min` : "fällig"}</strong></li>
+          <li><span>Lange Pause</span><strong>${longBreakFact(s, s.at - running.since)}</strong></li>
           <li><span>${since.label}</span><strong>${atTime(since.since)}</strong></li>
         </ul>
       </div>
@@ -153,11 +154,8 @@ function postureCard(s: Snapshot): string {
       <div class="big"><strong>${esc(s.posture_label)}</strong><span>${s.posture_min} / ${s.posture_limit_min} min</span></div>
       <div class="bar-track"><div class="bar-fill ${over ? "warn" : ""}" style="width:${pct(s.posture_min, s.posture_limit_min)}%"></div></div>
       ${s.posture_started_at > 0 ? `<p class="running"><span>${esc(s.posture_label)} seit ${atTime(s.posture_started_at)}</span>${clock(s.posture_started_at)}</p>` : ""}
-      <div class="seg" role="group" aria-label="Position">
-        ${s.postures.map((p) => `<button class="${p.id === s.posture ? "on" : ""}" data-act="posture_${p.id}">${esc(p.label)}</button>`).join("")}
-      </div>
-      <div class="posture-lights" aria-label="Haltungsverteilung heute: ${postureWord[traffic.level]}, ${traffic.changePercent} % Wechsel">
-        ${traffic.items.map((item) => `<span class="pill lvl-${item.level}" title="${item.used ? `${item.minutes} min heute` : "heute noch ungenutzt"}"><i class="dot"></i>${esc(item.label)} <b>${item.used ? `${item.percent} %` : "ungenutzt"}</b></span>`).join("")}
+      <div class="posture-lights" role="group" aria-label="Haltung wechseln · Verteilung heute: ${postureWord[traffic.level]}, ${traffic.changePercent} % Wechsel">
+        ${postureButtons(s.posture_share, s.postures, s.posture).map((item) => `<button type="button" class="pill lvl-${item.level} ${item.current ? "on" : ""}" data-act="${item.act}" aria-pressed="${item.current}" title="${item.current ? "aktuelle Haltung" : `zu ${esc(item.label)} wechseln`} · ${item.used ? `${item.minutes} min heute` : "heute noch ungenutzt"}"><i class="dot"></i>${esc(item.label)} <b>${item.used ? `${item.percent} %` : "ungenutzt"}</b></button>`).join("")}
       </div>
       <p class="note">Wechsel heute ${traffic.changePercent} % · Ziel ${POSTURE_CHANGE_TARGET} %</p>
     </section>`;
@@ -245,7 +243,8 @@ function duration(seconds: number): string {
 
 function timeline(s: Snapshot): string {
   const tasks = [...s.tasks_today].sort((a, b) => Number(b.active) - Number(a.active) || b.started_at - a.started_at);
-  const pauses = [...s.break_timeline].sort((a, b) => b.start - a.start);
+  const list = pauseList(s.break_timeline, s.break_min);
+  const pauses = list.pauses;
   const kind = { project: "Projekt", app: "App", agent: "Agent" } as const;
   return `
     <section class="card wide timeline-card">
@@ -270,7 +269,7 @@ function timeline(s: Snapshot): string {
               <i class="timeline-dot"></i>
               <div><strong>${pause.end === null ? "Pause läuft" : "Pause"}</strong><span>${atTime(pause.start)}${pause.end === null ? " – jetzt" : ` – ${atTime(pause.end)}`}</span></div>
               <div class="timeline-duration"><strong>${pause.end === null ? clock(pause.start) : duration(pause.duration_secs)}</strong><span>${pause.end === null ? "aktuell" : "Dauer"}</span></div>
-            </article>`).join("") : `<p class="empty">Heute wurde noch keine Pause erfasst.</p>`}</div>
+            </article>`).join("") : `<p class="empty">Heute wurde noch keine Pause erfasst.</p>`}${shortNote(list)}</div>
         </div>
       </div>
     </section>`;
@@ -280,11 +279,22 @@ const dayLabel = (day: string) => new Date(day + "T12:00:00").toLocaleDateString
 const taskKind = { project: "Projekt", app: "App", agent: "Agent" } as const;
 
 /** Aufklappbares Tagesprotokoll: Aufgaben und Pausen mit Zeiten – bleibt über Neustarts erhalten. */
+function shortNote(list: { shortCount: number; shortSecs: number }): string {
+  if (!list.shortCount) return "";
+  return `<p class="empty short-note">+ ${list.shortCount} kurze ${list.shortCount === 1 ? "Unterbrechung" : "Unterbrechungen"} unter ${currentBreakMin} min (zusammen ${duration(list.shortSecs)}), nicht als Pause gezählt</p>`;
+}
+
+/** Pausen eines Tages nach derselben Regel wie heute: zusammengeführt, ab der Pausendauer. */
+function dayPauses(d: DaySummary) {
+  return pauseList(d.pauses.map((p) => ({ start: p.start, end: p.end, duration_secs: p.end - p.start })), currentBreakMin);
+}
+
 function dayLog(d: DaySummary): string {
   const tasks = [...d.tasks].sort((a, b) => a.started_at - b.started_at);
+  const list = dayPauses(d);
   return `
     <details class="day-log" data-day="${esc(d.day)}" ${openDays.has(d.day) ? "open" : ""}>
-      <summary><strong>${dayLabel(d.day)}</strong><span>${esc(daySummaryText(d, atTime))}</span></summary>
+      <summary><strong>${dayLabel(d.day)}</strong><span>${esc(daySummaryText({ ...d, pauses: list.pauses }, atTime))}</span></summary>
       <div class="timeline-columns">
         <div>
           <h3>Aufgaben</h3>
@@ -297,12 +307,12 @@ function dayLog(d: DaySummary): string {
         </div>
         <div>
           <h3>Pausen</h3>
-          <div class="timeline-list">${d.pauses.length ? d.pauses.map((pause) => `
+          <div class="timeline-list">${list.pauses.length ? [...list.pauses].reverse().map((pause) => `
             <article class="timeline-item pause-item">
               <i class="timeline-dot"></i>
-              <div><strong>Pause</strong><span>${atTime(pause.start)} – ${atTime(pause.end)}</span></div>
-              <div class="timeline-duration"><strong>${duration(pause.end - pause.start)}</strong><span>Dauer</span></div>
-            </article>`).join("") : `<p class="empty">Keine Pausen erfasst.</p>`}</div>
+              <div><strong>Pause</strong><span>${atTime(pause.start)} – ${atTime(pause.end ?? pause.start)}</span></div>
+              <div class="timeline-duration"><strong>${duration(pause.duration_secs)}</strong><span>Dauer</span></div>
+            </article>`).join("") : `<p class="empty">Keine Pausen erfasst.</p>`}${shortNote(list)}</div>
         </div>
       </div>
     </details>`;
@@ -360,7 +370,7 @@ function development(s: Snapshot): string {
 
 function dayEndPanel(s: Snapshot): string {
   if (!confirmDayEnd) return "";
-  const pauses = s.break_timeline.length;
+  const pauses = pauseList(s.break_timeline, s.break_min).pauses.length;
   return `
     <aside class="day-end" role="alertdialog" aria-labelledby="day-end-title" aria-describedby="day-end-text">
       <div>
@@ -377,6 +387,7 @@ function dayEndPanel(s: Snapshot): string {
 function render() {
   if (!snap) return;
   const s = snap;
+  currentBreakMin = s.break_min;
   const workPct = pct(s.active_min, s.workday_min);
   app.innerHTML = `
     <header class="top" data-tauri-drag-region>
@@ -444,7 +455,7 @@ const FIELDS: { title: string; fields: Field[] }[] = [
       { key: "block_hard_min", label: "Pause fällig nach", unit: "min", min: 30, max: 240 },
       { key: "long_break_after_min", label: "Lange Pause spätestens nach", unit: "min", min: 60, max: 300 },
       { key: "break_min", label: "Zählt als Pause ab", unit: "min", min: 3, max: 30 },
-      { key: "long_break_min", label: "Zählt als lange Pause ab", unit: "min", min: 10, max: 60 },
+      { key: "long_break_min", label: "Lange Pause dauert (zählt ab ⅚)", unit: "min", min: 10, max: 60 },
       { key: "workday_minutes", label: "Arbeitstag", unit: "min", min: 120, max: 720, step: 15 },
     ],
   },
