@@ -332,3 +332,10 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Auf seinen Wunsch übernommen: Nach dem Ende einer Leerlaufpause (`idle_pause_ended`) gibt es 60 s lang keine Hinweise, analog zur Meeting-Regel. Ein kurzes Anstoßen der Maus mitten in der Pause lässt deshalb keinen Hinweis mehr aufpoppen. Wer wirklich zurück ist, bekommt fällige Hinweise nach einer Minute.
 - Beleg: Core-Test `a_brief_mouse_move_during_a_pause_does_not_pop_up_a_hint` (rot: LongBreak beim Anstoßen; grün danach)
 - Offen: keine
+
+### Nachtrag E-035, 2026-11-06 (15:15)
+- Problem: Bewusste Pause von 15 min (14:59:50–15:14:50). Acht Sekunden nach der Rückkehr kam „2 h ohne echte Pause“, weil die letzte lange Pause um 13:12 endete. Die Pause wurde richtig erkannt, der Hinweis kam aber zur falschen Zeit.
+- Lösung: Der Hinweis zur langen Pause kommt erst, wenn auch der laufende Arbeitsblock reif für eine Pause ist (`block_soft_min`). Nach jeder angerechneten Pause heißt die nächste fällige Pause dann „lange Pause“. Direkt nach der Rückkehr kommt kein Hinweis mehr.
+- Verworfen: eine längere Sperre nach dem Pausenende. Sie hätte den Hinweis nur um einige Minuten verschoben.
+- Beleg: Core-Test `no_long_break_nag_right_after_a_short_break` war rot (`[LongBreak, LongBreak]` direkt nach der Pause) und ist jetzt grün. Im Maus-Test ist die Pause jetzt kürzer als die Mindestpause (8 statt 10 min), damit er nur noch die Sperre prüft.
+- Offen: Bestätigung durch Claus im Alltag

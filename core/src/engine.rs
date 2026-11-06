@@ -941,7 +941,9 @@ impl Engine {
             },
         };
 
-        if since_long >= s.long_break_after_min as i64 {
+        // Lange Pause erst, wenn auch der laufende Block reif für eine Pause ist –
+        // direkt nach einer kurzen Pause wäre der Hinweis nur Nörgelei.
+        if since_long >= s.long_break_after_min as i64 && block_min >= s.block_soft_min as i64 {
             candidates.push((
                 HintKind::LongBreak,
                 15,
@@ -1777,8 +1779,9 @@ mod tests {
         e.settings.eyes_enabled = false;
         e.settings.water_target_ml = 0;
         run(&mut e, T0, 300, &obs(1));
-        // 10 min weg, dann Maus kurz angestoßen: Hinweise wären fällig (lange Pause)
-        let nudge = away(&mut e, T0 + 300 * 60, 600);
+        // 8 min weg (unter der Mindestpause), dann Maus kurz angestoßen:
+        // Hinweise wären fällig (lange Pause)
+        let nudge = away(&mut e, T0 + 300 * 60, 480);
         let during: Vec<_> = [nudge, nudge + 30, nudge + 59]
             .iter()
             .filter_map(|&t| e.tick(t, DAY, obs(1)))
@@ -1790,7 +1793,30 @@ mod tests {
         );
         // Wer wirklich zurück ist, bekommt den fälligen Hinweis nach einer Minute
         let after = e.tick(nudge + 61, DAY, obs(1)).map(|h| h.kind);
-        assert_eq!(after, Some(HintKind::LongBreak));
+        assert!(after.is_some(), "nach der Sperre fehlt der fällige Hinweis");
+    }
+
+    #[test]
+    fn no_long_break_nag_right_after_a_short_break() {
+        // Wie am 2026-11-06 15:14: 15 min bewusste Pause, lange Pause seit 2 h fällig
+        let mut e = engine();
+        e.settings.eyes_enabled = false;
+        e.settings.water_target_ml = 0;
+        e.settings.sit_minutes = 999;
+        run(&mut e, T0, 110, &obs(1));
+        let start = T0 + 110 * 60;
+        e.start_break(start);
+        let back = start + 15 * 60;
+        e.finish_break(back);
+        let soon = run(&mut e, back, 30, &obs(1));
+        assert!(
+            soon.iter().all(|h| h.kind != HintKind::LongBreak),
+            "{:?}",
+            soon.iter().map(|h| h.kind).collect::<Vec<_>>()
+        );
+        // Ist der nächste Block reif für eine Pause, kommt die lange Pause
+        let later = run(&mut e, back + 30 * 60, 25, &obs(1));
+        assert!(later.iter().any(|h| h.kind == HintKind::LongBreak));
     }
 
     #[test]
