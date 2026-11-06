@@ -5,6 +5,7 @@
 - Lebensdauer: dauerhaftes lokales macOS-Produkt
 - Outcome: Menschen mit langer KI-gestützter Bildschirmarbeit erhalten auf ihrem Mac konfigurierbare, lokale Erinnerungen mit eindeutigem visuellen Signal und optionalem Ton.
 - Ausgangswert: Das bestehende MVP zeigt bereits lokale Hinweis-Karten und speichert Einstellungen lokal; ein vom Nutzer schaltbarer Erinnerungston fehlt.
+- Zielwert und Zeitraum: Cockpit der installierten App zeigt Fokus-, Pause- und Haltungsdauer als laufende Uhr, und „Tag beenden“ protokolliert den Tag; geprüft am 2026-10-30 (A-026 bis A-029). Frühere Zielwerte: siehe Zeile darunter.
 - Historischer Zielwert A-001 bis A-003: In diesem Arbeitslauf: jede regulär ausgelöste Erinnerung zeigt die bestehende Karte; bei aktiviertem Ton wird zusätzlich ein macOS-Systemton ausgelöst, bei deaktiviertem Ton nicht. Nachweis durch Core-Tests und einen erfolgreichen lokalen Produktions-Build.
 
 ## Nutzerablauf und Abnahme

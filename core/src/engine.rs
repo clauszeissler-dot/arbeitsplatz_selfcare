@@ -105,6 +105,7 @@ impl BreakRecord {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct DaySummary {
     pub day: String,
     pub active_min: u64,
@@ -115,6 +116,16 @@ pub struct DaySummary {
     pub red_min: u64,
     pub max_projects: u32,
     pub max_busy_agents: u32,
+    /// Tagesprotokoll: erster Aktivitätszeitpunkt, Ende, Aufgaben und Pausen.
+    /// Ältere Historien ohne diese Felder bleiben ladbar.
+    pub first_active: Option<i64>,
+    pub ended_at: Option<i64>,
+    pub tasks: Vec<TaskActivity>,
+    pub pauses: Vec<BreakRecord>,
+    /// Augen-Mikropausen (20-20-20): angeboten und mit abgelaufenem Timer erledigt.
+    /// `None` bei Tagen vor der Erfassung, damit sie nicht als Verfehlung zählen.
+    pub eyes_offered: Option<u32>,
+    pub eyes_done: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -142,6 +153,8 @@ pub struct State {
     pub snooze_until: Option<i64>,
     pub mic_since: Option<i64>,
     pub meeting_ended: Option<i64>,
+    /// Ende der letzten Leerlaufpause: kurz danach keine Hinweise (Maus nur angestoßen?).
+    pub idle_pause_ended: Option<i64>,
     pub in_meeting: bool,
     pub switches: VecDeque<i64>,
     pub last_focus: Option<String>,
@@ -149,6 +162,12 @@ pub struct State {
     pub max_projects: u32,
     pub max_busy_agents: u32,
     pub history: Vec<DaySummary>,
+    /// Gesetzt, solange der Tag über „Tag beenden“ abgeschlossen ist.
+    pub day_closed_at: Option<i64>,
+    pub eyes_offered: u32,
+    pub eyes_done: u32,
+    /// Zeitpunkt des zuletzt als erledigt gezählten Augen-Hinweises (gegen Doppelzählung).
+    pub eyes_counted_at: Option<i64>,
 }
 
 impl Default for State {
@@ -176,6 +195,7 @@ impl Default for State {
             snooze_until: None,
             mic_since: None,
             meeting_ended: None,
+            idle_pause_ended: None,
             in_meeting: false,
             switches: VecDeque::new(),
             last_focus: None,
@@ -183,6 +203,10 @@ impl Default for State {
             max_projects: 0,
             max_busy_agents: 0,
             history: Vec::new(),
+            day_closed_at: None,
+            eyes_offered: 0,
+            eyes_done: 0,
+            eyes_counted_at: None,
         }
     }
 }
@@ -209,7 +233,15 @@ pub struct Snapshot {
     pub active_min: u64,
     pub workday_min: u32,
     pub block_min: i64,
+    pub block_started_at: i64,
+    pub pause_started_at: Option<i64>,
+    pub day_ended_at: Option<i64>,
     pub since_long_break_min: i64,
+    /// Ab so vielen Minuten zählt eine Pause als lange Pause (5/6 der Einstellung).
+    pub long_break_credit_min: u32,
+    pub long_break_after_min: u32,
+    /// Ab so vielen Minuten zählt eine Unterbrechung als Pause.
+    pub break_min: u32,
     pub water_ml: u32,
     pub water_target_ml: u32,
     pub water_expected_ml: u32,
@@ -217,6 +249,7 @@ pub struct Snapshot {
     pub posture: String,
     pub posture_label: String,
     pub posture_min: i64,
+    pub posture_started_at: i64,
     pub posture_limit_min: u32,
     pub posture_share: BTreeMap<String, u64>,
     pub postures: Vec<PostureDefinition>,
@@ -224,6 +257,8 @@ pub struct Snapshot {
     pub long_breaks_today: u32,
     pub tasks_today: Vec<TaskActivity>,
     pub break_timeline: Vec<BreakTimelineEntry>,
+    pub eyes_offered_today: u32,
+    pub eyes_done_today: u32,
     pub next_water_min: Option<i64>,
     pub next_break_min: i64,
     pub observation: Observation,
@@ -239,6 +274,32 @@ pub struct Engine {
 const MAX_TICK_GAP: i64 = 90;
 const SLEEP_GAP: i64 = 600;
 const LOAD_RED_HOLD: i64 = 300;
+/// Kurze Bewegungen (Maus angestoßen, Taste gedrückt) bis zu dieser Länge
+/// trennen eine Pause nicht in mehrere Stücke.
+const PAUSE_MERGE_GAP: i64 = 60;
+
+/// Ab dieser Länge zählt eine Pause als lange Pause: 5/6 der eingestellten
+/// Dauer (30 min → 25 min), damit eine knapp kürzere Pause nicht als „keine
+/// echte Pause“ gilt.
+pub fn long_break_credit_min(long_break_min: u32) -> u32 {
+    (long_break_min * 5).div_ceil(6).max(1)
+}
+
+/// Fügt Pausen zusammen, die nur durch eine kurze Bewegung getrennt sind.
+fn merge_pauses(events: &[BreakRecord]) -> Vec<BreakRecord> {
+    let mut sorted = events.to_vec();
+    sorted.sort_by_key(|pause| pause.start);
+    let mut out: Vec<BreakRecord> = Vec::new();
+    for pause in sorted {
+        match out.last_mut() {
+            Some(last) if pause.start - last.end <= PAUSE_MERGE_GAP => {
+                last.end = last.end.max(pause.end);
+            }
+            _ => out.push(pause),
+        }
+    }
+    out
+}
 
 fn normalized_posture_id(id: &str, settings: &Settings) -> String {
     let id = match id {
@@ -282,11 +343,63 @@ impl Engine {
         }
         state.tasks.truncate(50);
         state.pause_events.truncate(50);
-        Self {
+        let mut engine = Self {
             settings,
             state,
             last_obs: Observation::default(),
+        };
+        engine.merge_stored_pauses();
+        engine
+    }
+
+    /// Zerstückelte Pausen aus älteren Versionen zusammenführen und anrechnen.
+    /// Mehrfaches Laden ändert nichts mehr.
+    fn merge_stored_pauses(&mut self) {
+        let merged = merge_pauses(&self.state.pause_events);
+        let break_secs = self.mins(self.settings.break_min);
+        for pause in &merged {
+            let covered = self
+                .state
+                .breaks
+                .iter()
+                .any(|b| b.start <= pause.start && b.end >= pause.end);
+            if pause.end - pause.start < break_secs {
+                continue;
+            }
+            if !covered {
+                self.replace_overlapping_breaks(pause.start, pause.end);
+            }
+            if self.is_long(pause) {
+                self.state.last_long_break_end = self.state.last_long_break_end.max(pause.end);
+            }
+            self.state.block_start = self.state.block_start.max(pause.end);
         }
+        self.state.pause_events = merged;
+    }
+
+    fn is_long(&self, pause: &BreakRecord) -> bool {
+        pause.end - pause.start >= long_break_credit_min(self.settings.long_break_min) as i64 * 60
+    }
+
+    /// Ersetzt angerechnete Pausen, die sich mit `start..end` überschneiden, durch
+    /// eine einzige Pause über die ganze Spanne.
+    fn replace_overlapping_breaks(&mut self, start: i64, end: i64) -> (i64, i64) {
+        let mut from = start;
+        let mut to = end;
+        self.state.breaks.retain(|b| {
+            let overlaps = b.start <= end && b.end >= start;
+            if overlaps {
+                from = from.min(b.start);
+                to = to.max(b.end);
+            }
+            !overlaps
+        });
+        self.state.breaks.push(BreakRecord {
+            start: from,
+            end: to,
+        });
+        self.state.breaks.sort_by_key(|b| b.start);
+        (from, to)
     }
 
     fn mins(&self, m: u32) -> i64 {
@@ -295,31 +408,9 @@ impl Engine {
 
     fn start_day(&mut self, day: &str, now: i64) {
         if !self.state.day.is_empty() {
-            let s = &self.state;
-            let summary = DaySummary {
-                day: s.day.clone(),
-                active_min: s.active_secs / 60,
-                water_ml: s.water_ml,
-                breaks: s.breaks.len() as u32,
-                long_breaks: s
-                    .breaks
-                    .iter()
-                    .filter(|b| b.minutes() >= self.settings.long_break_min as i64)
-                    .count() as u32,
-                posture_min: s
-                    .posture_secs
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v / 60))
-                    .collect(),
-                red_min: s.red_secs / 60,
-                max_projects: s.max_projects,
-                max_busy_agents: s.max_busy_agents,
-            };
-            let mut history = std::mem::take(&mut self.state.history);
-            history.push(summary);
-            if history.len() > 60 {
-                history.remove(0);
-            }
+            let ended_at = self.state.day_closed_at.or(self.state.last_tick);
+            self.store_day_summary(ended_at);
+            let history = std::mem::take(&mut self.state.history);
             self.state = State {
                 history,
                 ..State::default()
@@ -331,30 +422,97 @@ impl Engine {
         self.state.posture_since = now;
     }
 
+    fn day_summary(&self, ended_at: Option<i64>) -> DaySummary {
+        let s = &self.state;
+        DaySummary {
+            day: s.day.clone(),
+            active_min: s.active_secs / 60,
+            water_ml: s.water_ml,
+            breaks: s.breaks.len() as u32,
+            long_breaks: s.breaks.iter().filter(|b| self.is_long(b)).count() as u32,
+            posture_min: s
+                .posture_secs
+                .iter()
+                .map(|(k, v)| (k.clone(), v / 60))
+                .collect(),
+            red_min: s.red_secs / 60,
+            max_projects: s.max_projects,
+            max_busy_agents: s.max_busy_agents,
+            first_active: s.first_active,
+            ended_at,
+            tasks: s.tasks.clone(),
+            pauses: s.pause_events.clone(),
+            eyes_offered: Some(s.eyes_offered),
+            eyes_done: Some(s.eyes_done),
+        }
+    }
+
+    /// Schreibt das Tagesprotokoll in die Historie; ein vorhandener Eintrag
+    /// desselben Tages wird ersetzt, damit nichts doppelt gezählt wird.
+    fn store_day_summary(&mut self, ended_at: Option<i64>) {
+        let summary = self.day_summary(ended_at);
+        match self
+            .state
+            .history
+            .iter_mut()
+            .find(|day| day.day == summary.day)
+        {
+            Some(existing) => *existing = summary,
+            None => self.state.history.push(summary),
+        }
+        if self.state.history.len() > 60 {
+            let excess = self.state.history.len() - 60;
+            self.state.history.drain(..excess);
+        }
+    }
+
+    /// „Tag beenden“: protokolliert den Tag, ohne den Tageszustand zu löschen.
+    /// Wer am selben Tag weiterarbeitet, setzt ihn dort fort.
+    pub fn end_day(&mut self, now: i64) {
+        if self.state.day.is_empty() {
+            return;
+        }
+        if let Some(start) = self.state.manual_break.take() {
+            self.record_pause_event(start, now);
+        }
+        for task in &mut self.state.tasks {
+            task.active = false;
+        }
+        self.state.day_closed_at = Some(now);
+        self.store_day_summary(Some(now));
+    }
+
     fn end_break(&mut self, start: i64, end: i64) {
-        let len = end - start;
-        self.record_pause_event(start, end);
-        if len < self.mins(self.settings.break_min) {
+        let start = self.record_pause_event(start, end);
+        if end - start < self.mins(self.settings.break_min) {
             return;
         }
         self.credit_break(start, end);
     }
 
-    fn record_pause_event(&mut self, start: i64, end: i64) {
+    /// Hält eine Unterbrechung fest und hängt sie an die vorige an, wenn dazwischen
+    /// nur eine kurze Bewegung lag. Liefert den Beginn der (zusammengeführten) Pause.
+    fn record_pause_event(&mut self, start: i64, end: i64) -> i64 {
         if end <= start {
-            return;
+            return start;
+        }
+        if let Some(last) = self.state.pause_events.last_mut() {
+            if start >= last.start && start - last.end <= PAUSE_MERGE_GAP {
+                last.end = last.end.max(end);
+                return last.start;
+            }
         }
         self.state.pause_events.push(BreakRecord { start, end });
         if self.state.pause_events.len() > 50 {
             self.state.pause_events.remove(0);
         }
+        start
     }
 
     fn credit_break(&mut self, start: i64, end: i64) {
-        let len = end - start;
-        self.state.breaks.push(BreakRecord { start, end });
+        let (start, end) = self.replace_overlapping_breaks(start, end);
         self.state.block_start = end;
-        if len >= self.mins(self.settings.long_break_min) {
+        if self.is_long(&BreakRecord { start, end }) {
             self.state.last_long_break_end = end;
         }
         // Wer Pause gemacht hat, hat sich bewegt – Haltungsuhr neu starten
@@ -401,7 +559,7 @@ impl Engine {
 
     pub fn finish_break(&mut self, now: i64) {
         if let Some(start) = self.state.manual_break.take() {
-            self.record_pause_event(start, now);
+            let start = self.record_pause_event(start, now);
             // Eine bewusst gestartete Pause zählt weiterhin mindestens als kurze
             // Pause; die Zeitleiste oben behält trotzdem ihre echte Startzeit.
             let credited_start = start.min(now - self.mins(self.settings.break_min));
@@ -467,6 +625,7 @@ impl Engine {
             self.state.idle_started.get_or_insert(now - idle);
         } else if let Some(start) = self.state.idle_started.take() {
             self.end_break(start, now - idle);
+            self.state.idle_pause_ended = Some(now);
         }
         if self.state.manual_break.is_some() && idle < 5 && gap > 0 {
             // Wer nach manueller Pause wieder tippt, ist zurück, sobald die Mindestdauer um ist
@@ -479,6 +638,12 @@ impl Engine {
         self.update_task_activity(now, dt, &obs, active);
 
         if active && self.state.manual_break.is_none() {
+            if self.state.day_closed_at.take().is_some() {
+                // Weitergearbeitet: der Tag läuft wieder und steht erst nach dem
+                // nächsten Beenden erneut mit aktuellen Summen in der Historie.
+                let day = self.state.day.clone();
+                self.state.history.retain(|entry| entry.day != day);
+            }
             self.state.active_secs += dt;
             self.state.first_active.get_or_insert(now);
             *self
@@ -595,6 +760,12 @@ impl Engine {
                 .idle_started
                 .map(|t| now - t >= self.mins(self.settings.break_min))
                 .unwrap_or(false)
+    }
+
+    fn pause_start(&self, now: i64) -> Option<i64> {
+        self.state
+            .manual_break
+            .or_else(|| self.state.idle_started.filter(|_| self.in_break(now)))
     }
 
     fn block_secs(&self, now: i64) -> i64 {
@@ -735,6 +906,16 @@ impl Engine {
         {
             return None;
         }
+        // Wie nach Meetings: nach einer Leerlaufpause eine Minute Ruhe, damit eine
+        // angestoßene Maus mitten in der Pause keinen Hinweis aufpoppen lässt.
+        if self
+            .state
+            .idle_pause_ended
+            .map(|t| now - t < 60)
+            .unwrap_or(false)
+        {
+            return None;
+        }
         if self.state.snooze_until.map(|t| now < t).unwrap_or(false) {
             return None;
         }
@@ -760,7 +941,9 @@ impl Engine {
             },
         };
 
-        if since_long >= s.long_break_after_min as i64 {
+        // Lange Pause erst, wenn auch der laufende Block reif für eine Pause ist –
+        // direkt nach einer kurzen Pause wäre der Hinweis nur Nörgelei.
+        if since_long >= s.long_break_after_min as i64 && block_min >= s.block_soft_min as i64 {
             candidates.push((
                 HintKind::LongBreak,
                 15,
@@ -891,7 +1074,7 @@ impl Engine {
                         self.state.active_secs / 3600
                     ),
                     vec![
-                        action("ok", "Ich mache Schluss"),
+                        action("day_end", "Tag beenden"),
                         action("snooze_30", "Noch 30 min"),
                     ],
                 ),
@@ -904,7 +1087,20 @@ impl Engine {
             .find(|(k, _, _)| self.allowed(now, *k))?;
         self.state.next_allowed.insert(kind, now + cooldown * 60);
         self.state.last_hint_at = now;
+        if kind == HintKind::Eyes {
+            self.state.eyes_offered += 1;
+        }
         Some(hint)
+    }
+
+    /// Augen-Mikropause mit abgelaufenem Timer: zählt je Hinweis genau einmal.
+    pub fn complete_eyes(&mut self, hint_at: i64) -> bool {
+        if self.state.eyes_counted_at == Some(hint_at) {
+            return false;
+        }
+        self.state.eyes_counted_at = Some(hint_at);
+        self.state.eyes_done = (self.state.eyes_done + 1).min(self.state.eyes_offered.max(1));
+        true
     }
 
     pub fn snapshot(&self, now: i64) -> Snapshot {
@@ -922,7 +1118,13 @@ impl Engine {
             active_min: self.state.active_secs / 60,
             workday_min: s.workday_minutes,
             block_min: self.block_secs(now) / 60,
+            block_started_at: self.state.block_start,
+            pause_started_at: self.pause_start(now),
+            day_ended_at: self.state.day_closed_at,
             since_long_break_min: (now - self.state.last_long_break_end) / 60,
+            long_break_credit_min: long_break_credit_min(s.long_break_min),
+            long_break_after_min: s.long_break_after_min,
+            break_min: s.break_min,
             water_ml: self.state.water_ml,
             water_target_ml: s.water_target_ml,
             water_expected_ml: self.water_expected(now),
@@ -934,6 +1136,7 @@ impl Engine {
                 .map(|posture| posture.label.clone())
                 .unwrap_or_else(|| "Bürostuhl".into()),
             posture_min: (now - self.state.posture_since) / 60,
+            posture_started_at: self.state.posture_since,
             posture_limit_min: self.posture_limit(),
             posture_share: self
                 .state
@@ -943,13 +1146,10 @@ impl Engine {
                 .collect(),
             postures: self.settings.postures.clone(),
             breaks_today: self.state.breaks.len() as u32,
-            long_breaks_today: self
-                .state
-                .breaks
-                .iter()
-                .filter(|b| b.minutes() >= s.long_break_min as i64)
-                .count() as u32,
+            long_breaks_today: self.state.breaks.iter().filter(|b| self.is_long(b)).count() as u32,
             tasks_today: self.state.tasks.clone(),
+            eyes_offered_today: self.state.eyes_offered,
+            eyes_done_today: self.state.eyes_done,
             break_timeline: self
                 .state
                 .pause_events
@@ -1322,6 +1522,166 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_exposes_when_focus_posture_and_pause_started() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+
+        let focus = e.snapshot(T0 + 600);
+        assert_eq!(focus.block_started_at, T0);
+        assert_eq!(focus.posture_started_at, T0);
+        assert_eq!(focus.pause_started_at, None);
+
+        e.start_break(T0 + 900);
+        assert_eq!(e.snapshot(T0 + 960).pause_started_at, Some(T0 + 900));
+    }
+
+    #[test]
+    fn snapshot_reports_the_start_of_an_idle_pause() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.tick(T0 + 30, DAY, obs(300));
+        let idle_start = T0 + 30 - 300;
+
+        let late = T0 + 30 + e.settings.break_min as i64 * 60 + 60;
+        let snap = e.snapshot(late);
+        assert!(snap.in_break);
+        assert_eq!(snap.pause_started_at, Some(idle_start));
+    }
+
+    fn working_on(project: &str) -> Observation {
+        let mut o = obs(1);
+        let mut focused = tab("t1", project, false);
+        focused.focused = true;
+        o.focused_key = Some(focused.key.clone());
+        o.tabs = vec![focused];
+        o
+    }
+
+    #[test]
+    fn ending_the_day_logs_it_in_the_history_and_stays_resumable() {
+        let mut e = engine();
+        e.tick(T0, DAY, working_on("~/dev/lotse"));
+        e.tick(T0 + 30, DAY, working_on("~/dev/lotse"));
+        e.drink(T0 + 60, None);
+
+        e.end_day(T0 + 120);
+
+        assert_eq!(e.state.history.len(), 1);
+        let log = &e.state.history[0];
+        assert_eq!(log.day, DAY);
+        assert_eq!(log.first_active, Some(T0));
+        assert_eq!(log.ended_at, Some(T0 + 120));
+        assert_eq!(log.water_ml, 250);
+        assert_eq!(log.tasks.len(), 1);
+        assert_eq!(log.tasks[0].label, "lotse");
+        assert_eq!(log.tasks[0].active_secs, 30);
+        assert_eq!(
+            e.state.day, DAY,
+            "Tageszustand bleibt für einen Neustart erhalten"
+        );
+        assert_eq!(e.state.water_ml, 250);
+        assert_eq!(e.snapshot(T0 + 120).day_ended_at, Some(T0 + 120));
+
+        e.drink(T0 + 130, None);
+        e.end_day(T0 + 200);
+        assert_eq!(
+            e.state.history.len(),
+            1,
+            "zweites Beenden ersetzt den Eintrag"
+        );
+        assert_eq!(e.state.history[0].water_ml, 500);
+        assert_eq!(e.state.history[0].ended_at, Some(T0 + 200));
+    }
+
+    #[test]
+    fn ending_the_day_closes_a_running_manual_pause_in_the_log() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.start_break(T0 + 60);
+
+        e.end_day(T0 + 360);
+
+        assert_eq!(e.state.manual_break, None);
+        let pauses = &e.state.history[0].pauses;
+        assert_eq!(pauses.len(), 1);
+        assert_eq!((pauses[0].start, pauses[0].end), (T0 + 60, T0 + 360));
+    }
+
+    #[test]
+    fn rolling_over_after_ending_the_day_does_not_duplicate_the_history() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.drink(T0 + 60, None);
+        e.end_day(T0 + 120);
+
+        e.tick(T0 + 86_400, "2026-10-24", obs(1));
+
+        assert_eq!(e.state.history.len(), 1);
+        assert_eq!(e.state.history[0].day, DAY);
+        assert_eq!(e.state.history[0].water_ml, 250);
+        assert_eq!(e.state.day, "2026-10-24");
+        assert_eq!(e.state.day_closed_at, None);
+    }
+
+    #[test]
+    fn activity_after_ending_the_day_reopens_it() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.end_day(T0 + 60);
+        assert_eq!(e.state.history.len(), 1);
+
+        e.tick(T0 + 90, DAY, obs(1));
+
+        assert_eq!(e.state.day_closed_at, None);
+        assert_eq!(e.snapshot(T0 + 90).day_ended_at, None);
+        assert!(
+            e.state.history.is_empty(),
+            "der heutige Tag steht erst nach dem nächsten Beenden wieder in der Historie"
+        );
+    }
+
+    #[test]
+    fn idle_ticks_do_not_reopen_an_ended_day() {
+        let mut e = engine();
+        e.tick(T0, DAY, obs(1));
+        e.end_day(T0 + 60);
+
+        e.tick(T0 + 90, DAY, obs(900));
+
+        assert_eq!(e.state.day_closed_at, Some(T0 + 60));
+        assert_eq!(e.state.history.len(), 1);
+    }
+
+    #[test]
+    fn history_from_older_versions_without_day_log_fields_still_loads() {
+        let old = r#"{"day":"2026-10-28","active_min":120,"water_ml":500,"breaks":6,
+            "long_breaks":2,"posture_min":{"office_chair":104},"red_min":9,
+            "max_projects":1,"max_busy_agents":7}"#;
+
+        let summary: DaySummary = serde_json::from_str(old).unwrap();
+
+        assert_eq!(summary.day, "2026-10-28");
+        assert_eq!(summary.first_active, None);
+        assert_eq!(summary.ended_at, None);
+        assert!(summary.tasks.is_empty());
+        assert!(summary.pauses.is_empty());
+    }
+
+    #[test]
+    fn full_workday_hint_offers_to_end_the_day() {
+        let mut e = engine();
+        e.state.active_secs = e.settings.workday_minutes as u64 * 60;
+
+        let hints = run(&mut e, T0, 100, &obs(1));
+
+        let day_end = hints
+            .iter()
+            .find(|h| h.kind == HintKind::DayEnd)
+            .expect("Arbeitstag-voll-Hinweis");
+        assert!(day_end.actions.iter().any(|a| a.id == "day_end"));
+    }
+
+    #[test]
     fn counts_tab_switches_in_window() {
         let mut e = engine();
         for i in 0..8 {
@@ -1381,6 +1741,161 @@ mod tests {
             "bestehende Einstellungen bleiben standardmäßig ohne Ton"
         );
     }
+    /// Lässt den Nutzer `secs` Sekunden weg sein (Leerlauf im 30-s-Takt) und meldet ihn
+    /// danach mit einer Eingabe zurück. Liefert den Zeitpunkt der Rückkehr.
+    fn away(e: &mut Engine, start: i64, secs: i64) -> i64 {
+        let mut t = start + 30;
+        while t <= start + secs {
+            e.tick(t, DAY, obs((t - start) as u64));
+            t += 30;
+        }
+        e.tick(start + secs + 1, DAY, obs(1));
+        start + secs + 1
+    }
+
+    #[test]
+    fn a_26_minute_pause_counts_as_long_break_and_no_long_hint_follows() {
+        let mut e = engine();
+        e.settings.water_target_ml = 0;
+        e.settings.eyes_enabled = false;
+        e.settings.long_break_min = 30;
+        run(&mut e, T0, 300, &obs(1));
+        let back = away(&mut e, T0 + 300 * 60, 26 * 60 + 32);
+        let snap = e.snapshot(back);
+        assert_eq!(snap.long_breaks_today, 1);
+        assert_eq!(snap.since_long_break_min, 0);
+        assert_eq!(snap.long_break_credit_min, 25);
+        let hints = run(&mut e, back, 10, &obs(1));
+        assert!(
+            hints.iter().all(|h| h.kind != HintKind::LongBreak),
+            "{:?}",
+            hints.iter().map(|h| h.kind).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn a_brief_mouse_move_during_a_pause_does_not_pop_up_a_hint() {
+        let mut e = engine();
+        e.settings.eyes_enabled = false;
+        e.settings.water_target_ml = 0;
+        run(&mut e, T0, 300, &obs(1));
+        // 8 min weg (unter der Mindestpause), dann Maus kurz angestoßen:
+        // Hinweise wären fällig (lange Pause)
+        let nudge = away(&mut e, T0 + 300 * 60, 480);
+        let during: Vec<_> = [nudge, nudge + 30, nudge + 59]
+            .iter()
+            .filter_map(|&t| e.tick(t, DAY, obs(1)))
+            .collect();
+        assert!(
+            during.is_empty(),
+            "{:?}",
+            during.iter().map(|h| h.kind).collect::<Vec<_>>()
+        );
+        // Wer wirklich zurück ist, bekommt den fälligen Hinweis nach einer Minute
+        let after = e.tick(nudge + 61, DAY, obs(1)).map(|h| h.kind);
+        assert!(after.is_some(), "nach der Sperre fehlt der fällige Hinweis");
+    }
+
+    #[test]
+    fn no_long_break_nag_right_after_a_short_break() {
+        // Wie am 2026-11-06 15:14: 15 min bewusste Pause, lange Pause seit 2 h fällig
+        let mut e = engine();
+        e.settings.eyes_enabled = false;
+        e.settings.water_target_ml = 0;
+        e.settings.sit_minutes = 999;
+        run(&mut e, T0, 110, &obs(1));
+        let start = T0 + 110 * 60;
+        e.start_break(start);
+        let back = start + 15 * 60;
+        e.finish_break(back);
+        let soon = run(&mut e, back, 30, &obs(1));
+        assert!(
+            soon.iter().all(|h| h.kind != HintKind::LongBreak),
+            "{:?}",
+            soon.iter().map(|h| h.kind).collect::<Vec<_>>()
+        );
+        // Ist der nächste Block reif für eine Pause, kommt die lange Pause
+        let later = run(&mut e, back + 30 * 60, 25, &obs(1));
+        assert!(later.iter().any(|h| h.kind == HintKind::LongBreak));
+    }
+
+    #[test]
+    fn a_pause_interrupted_by_brief_mouse_moves_counts_as_one_pause() {
+        let mut e = engine();
+        run(&mut e, T0, 60, &obs(1));
+        // Wie am 2026-11-06: 9,9 + 2,9 + 13,0 + 2,5 min, dazwischen 7, 32 und 17 s Bewegung
+        let mut t = T0 + 60 * 60;
+        let start = t;
+        t = away(&mut e, t, 594) + 6;
+        t = away(&mut e, t, 174) + 31;
+        t = away(&mut e, t, 778) + 16;
+        let back = away(&mut e, t, 153);
+        assert_eq!(e.state.pause_events.len(), 1, "{:?}", e.state.pause_events);
+        assert_eq!(e.state.pause_events[0].start, start);
+        assert_eq!(e.state.breaks.len(), 1, "{:?}", e.state.breaks);
+        assert_eq!(e.state.last_long_break_end, back - 1);
+    }
+
+    #[test]
+    fn loading_marks_an_already_counted_26_minute_pause_as_long() {
+        let pause = BreakRecord {
+            start: 1_793_965_544,
+            end: 1_793_967_136,
+        };
+        let state = State {
+            day: DAY.into(),
+            last_long_break_end: 1_793_949_622,
+            block_start: pause.end,
+            breaks: vec![pause.clone()],
+            pause_events: vec![pause.clone()],
+            ..Default::default()
+        };
+        let settings = Settings {
+            long_break_min: 30,
+            ..Default::default()
+        };
+        let e = Engine::new(settings, state);
+        assert_eq!(e.state.last_long_break_end, pause.end);
+        assert_eq!(e.state.breaks, vec![pause]);
+    }
+
+    #[test]
+    fn loading_merges_fragmented_pauses_once_and_credits_them() {
+        let fragments = [
+            (1_793_958_661, 1_793_959_255),
+            (1_793_959_262, 1_793_959_436),
+            (1_793_959_468, 1_793_960_246),
+            (1_793_960_263, 1_793_960_416),
+        ];
+        let state = State {
+            day: DAY.into(),
+            last_long_break_end: 1_793_949_622,
+            block_start: 1_793_955_683,
+            breaks: vec![BreakRecord {
+                start: 1_793_954_565,
+                end: 1_793_955_683,
+            }],
+            pause_events: fragments
+                .iter()
+                .map(|&(start, end)| BreakRecord { start, end })
+                .collect(),
+            ..Default::default()
+        };
+        let first = Engine::new(Settings::default(), state);
+        assert_eq!(
+            first.state.pause_events,
+            vec![BreakRecord {
+                start: 1_793_958_661,
+                end: 1_793_960_416
+            }]
+        );
+        assert_eq!(first.state.breaks.len(), 2);
+        assert_eq!(first.state.last_long_break_end, 1_793_960_416);
+        assert_eq!(first.state.block_start, 1_793_960_416);
+        let again = Engine::new(Settings::default(), first.state.clone());
+        assert_eq!(again.state.pause_events, first.state.pause_events);
+        assert_eq!(again.state.breaks, first.state.breaks);
+    }
 }
 
 #[cfg(test)]
@@ -1419,5 +1934,84 @@ mod timed_hint_tests {
         assert_eq!(long.kind, HintKind::LongBreak);
         assert_eq!(long.duration_seconds, Some(22 * 60));
         assert!(long.body.contains("22 Minuten"));
+    }
+}
+
+#[cfg(test)]
+mod eye_break_tests {
+    use super::*;
+
+    fn eyes_engine(t: i64) -> Engine {
+        let settings = Settings {
+            eyes_enabled: true,
+            ..Settings::default()
+        };
+        let state = State {
+            day: "2026-11-03".into(),
+            first_active: Some(t - 20 * 60),
+            block_start: t - 20 * 60,
+            last_long_break_end: t,
+            posture_since: t,
+            last_drink: Some(t),
+            ..State::default()
+        };
+        Engine::new(settings, state)
+    }
+
+    #[test]
+    fn offered_eye_breaks_are_counted_when_the_hint_is_chosen() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        let hint = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert_eq!(hint.kind, HintKind::Eyes);
+        assert_eq!(e.state.eyes_offered, 1);
+        assert_eq!(e.state.eyes_done, 0);
+        let snap = e.snapshot(t);
+        assert_eq!((snap.eyes_offered_today, snap.eyes_done_today), (1, 0));
+    }
+
+    #[test]
+    fn a_finished_eye_break_counts_once_per_hint() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        let hint = e.pick_hint(t, Level::Green, &[]).unwrap();
+        assert!(e.complete_eyes(hint.at));
+        assert!(
+            !e.complete_eyes(hint.at),
+            "derselbe Hinweis zählt nur einmal"
+        );
+        assert_eq!(e.state.eyes_done, 1);
+    }
+
+    #[test]
+    fn day_summary_marks_eye_breaks_as_recorded_and_old_days_as_unknown() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        let hint = e.pick_hint(t, Level::Green, &[]).unwrap();
+        e.complete_eyes(hint.at);
+        let summary = e.day_summary(None);
+        assert_eq!(
+            (summary.eyes_offered, summary.eyes_done),
+            (Some(1), Some(1))
+        );
+        let old: DaySummary =
+            serde_json::from_str(r#"{"day":"2026-10-28","active_min":120}"#).unwrap();
+        assert_eq!((old.eyes_offered, old.eyes_done), (None, None));
+    }
+
+    #[test]
+    fn eye_counters_reset_on_a_new_day() {
+        let t = 1_800_000_000;
+        let mut e = eyes_engine(t);
+        e.pick_hint(t, Level::Green, &[]);
+        e.start_day("2026-11-04", t + 86_400);
+        assert_eq!((e.state.eyes_offered, e.state.eyes_done), (0, 0));
+        let stored = e
+            .state
+            .history
+            .iter()
+            .find(|d| d.day == "2026-11-03")
+            .unwrap();
+        assert_eq!(stored.eyes_offered, Some(1));
     }
 }

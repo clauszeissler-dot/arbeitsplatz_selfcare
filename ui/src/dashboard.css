@@ -211,6 +211,7 @@ main {
 .ring-text { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .ring-text strong { font-family: var(--font-head); font-size: 28px; line-height: 1; }
 .ring-text span { font-size: 11px; color: var(--muted); }
+.ring-text strong .clock { font-size: 24px; color: var(--foreground); font-variant-numeric: tabular-nums; }
 .mode-badge {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -247,9 +248,26 @@ main {
 }
 .seg button.on { background: var(--primary); color: #fff; }
 .seg button:not(.on):hover { color: var(--foreground); }
-.split-bar { display: flex; height: 6px; border-radius: 99px; overflow: hidden; background: rgba(255, 255, 255, 0.07); }
-.split-bar .sit { background: #7a7a7a; }
-.split-bar .stand { background: var(--secondary); }
+/* Haltungsampel (A-033): eine Pille je Haltung in der Ampelfarbe */
+.posture-lights { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lvl) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lvl) 30%, transparent);
+}
+.pill b { font-weight: 600; }
+/* Haltungspillen sind die Schalter für den Haltungswechsel (A-037) */
+button.pill { font: inherit; font-size: 12.5px; color: var(--foreground); cursor: pointer; }
+button.pill:hover { background: color-mix(in srgb, var(--lvl) 22%, transparent); }
+button.pill:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+button.pill.on { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.short-note { font-size: 12.5px; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lvl); box-shadow: 0 0 6px var(--lvl); }
 
 /* ---------- Kennzahlen ---------- */
 .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -413,3 +431,39 @@ input[type="number"]:focus { outline: 2px solid var(--primary); outline-offset: 
   .timeline-columns { grid-template-columns: 1fr; }
   main { padding: 20px 16px; }
 }
+
+/* Laufende Uhren (Fokus, Haltung, Pause, Aufgaben) */
+.running { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; font-size: 12.5px; color: var(--muted); }
+.running .clock, .clock { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); font-size: 15px; }
+.timeline-duration .clock { font-size: 12px; }
+
+/* Tag beenden */
+.day-end-btn { padding: 8px 12px; font-size: 13px; }
+.top-actions .day-end-btn { padding: 8px 12px; }
+.day-end {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 20px; border: 1px solid rgba(0, 245, 255, 0.4); background: var(--secondary-soft); border-radius: 12px;
+}
+.day-end strong { font-family: var(--font-head); font-size: 15px; }
+.day-end p { margin: 4px 0 0; font-size: 13px; color: var(--muted); max-width: 62ch; }
+.day-end .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Tagesprotokolle im Verlauf */
+.day-logs { display: grid; gap: 8px; margin-top: 16px; }
+
+/* Entwicklung (A-034): Konsequenz je Gewohnheit über die letzten Tage */
+.development { margin-top: 18px; }
+.development h3 { margin: 0 0 10px; font-family: var(--font-head); font-size: 14px; }
+.development h3 small { font-family: var(--font-body, inherit); font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
+.dev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.dev { padding: 12px 14px; border-radius: 12px; background: var(--bg-deep); border: 1px solid var(--border); border-left: 3px solid var(--lvl, var(--border)); }
+.dev .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lvl, var(--muted)); }
+.dev strong { display: block; font-family: var(--font-head); font-size: 18px; margin: 4px 0 2px; }
+.dev p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.dev .rule { font-size: 11.5px; opacity: 0.8; margin-top: 4px; }
+@media (max-width: 640px) { .dev-grid { grid-template-columns: 1fr; } }
+.day-log { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+.day-log summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 13px; }
+.day-log summary strong { font-family: var(--font-head); }
+.day-log summary span { color: var(--muted); }
+.day-log[open] summary { margin-bottom: 12px; }

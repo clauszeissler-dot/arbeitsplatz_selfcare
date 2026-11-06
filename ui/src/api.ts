@@ -42,6 +42,12 @@ export interface DaySummary {
   red_min: number;
   max_projects: number;
   max_busy_agents: number;
+  first_active: number | null;
+  ended_at: number | null;
+  tasks: TaskActivity[];
+  pauses: { start: number; end: number }[];
+  eyes_offered?: number | null;
+  eyes_done?: number | null;
 }
 export interface TaskActivity {
   kind: "project" | "app" | "agent";
@@ -67,7 +73,13 @@ export interface Snapshot {
   active_min: number;
   workday_min: number;
   block_min: number;
+  block_started_at: number;
+  pause_started_at: number | null;
+  day_ended_at: number | null;
   since_long_break_min: number;
+  long_break_credit_min: number;
+  long_break_after_min: number;
+  break_min: number;
   water_ml: number;
   water_target_ml: number;
   water_expected_ml: number;
@@ -75,6 +87,7 @@ export interface Snapshot {
   posture: string;
   posture_label: string;
   posture_min: number;
+  posture_started_at: number;
   posture_limit_min: number;
   posture_share: Record<string, number>;
   postures: PostureDefinition[];
@@ -82,11 +95,14 @@ export interface Snapshot {
   long_breaks_today: number;
   tasks_today: TaskActivity[];
   break_timeline: BreakTimelineEntry[];
+  eyes_offered_today: number;
+  eyes_done_today: number;
   next_water_min: number | null;
   next_break_min: number;
   observation: Observation;
   history: DaySummary[];
 }
+export interface BuildInfo { version: string; build: string }
 export interface HintAction { id: string; label: string }
 export interface Hint {
   kind: HintKind;
@@ -150,6 +166,7 @@ export async function listen<T>(event: string, cb: (payload: T) => void): Promis
 
 export const api = {
   snapshot: () => invoke<Snapshot>("get_snapshot"),
+  buildInfo: () => invoke<BuildInfo>("get_build_info"),
   settings: () => invoke<Settings>("get_settings"),
   storageHealth: () => invoke<StorageHealth>("get_storage_health"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
@@ -186,6 +203,11 @@ const defaultSettings: Settings = {
   },
 };
 
+// Designvorschau: ?pause=1 zeigt eine laufende Pause, ?chair=1 einen Tag nur auf dem Bürostuhl.
+const previewParams = new URLSearchParams(location.search);
+const previewPause = previewParams.has("pause");
+const previewChairOnly = previewParams.has("chair");
+
 function mockSnapshot(): Snapshot {
   const tab = (n: number, title: string, project: string, agents: AgentInfo[], focused = false): TabView => ({
     key: `w1:${n}`, title, project, cwd: project, focused, agents,
@@ -212,13 +234,15 @@ function mockSnapshot(): Snapshot {
       { key: "day", label: "Aktiv heute", value: 4.6, display: "4:36 h", level: "green", hint: "Kognitive Leistung sinkt am Ende langer Tage messbar." },
     ],
     reasons: ["Parallele Projekte: 10", "KI arbeitet gerade: 4 / 7", "Offene Tabs: 12"],
-    in_meeting: false, in_break: false, snoozed_until: null,
-    active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104,
+    in_meeting: false, in_break: previewPause, snoozed_until: null,
+    active_min: 276, workday_min: 480, block_min: 68, since_long_break_min: 104, long_break_credit_min: 25, long_break_after_min: 120, break_min: 15,
+    block_started_at: Date.now() / 1000 - 68 * 60 - 12, pause_started_at: previewPause ? Date.now() / 1000 - 4 * 60 - 12 : null, day_ended_at: null,
     water_ml: 750, water_target_ml: 2000, water_expected_ml: 1150, glass_ml: 250,
-    posture: "office_chair", posture_label: "Bürostuhl", posture_min: 24, posture_limit_min: 30,
-    posture_share: { office_chair: 190, swopper: 20, standing: 64, board: 12 },
+    posture: "office_chair", posture_label: "Bürostuhl", posture_min: 24, posture_started_at: Date.now() / 1000 - 24 * 60 - 31, posture_limit_min: 30,
+    posture_share: previewChairOnly ? { office_chair: 163 } : { office_chair: 190, swopper: 20, standing: 64, board: 12 },
     postures: structuredClone(defaultSettings.postures),
     breaks_today: 2, long_breaks_today: 0, next_water_min: 6, next_break_min: 0,
+    eyes_offered_today: 9, eyes_done_today: 5,
     tasks_today: [
       { kind: "project", label: "abrechnung", started_at: Date.now() / 1000 - 5400, last_active_at: Date.now() / 1000, active_secs: 4860, active: true },
       { kind: "project", label: "crm-import", started_at: Date.now() / 1000 - 2700, last_active_at: Date.now() / 1000, active_secs: 2280, active: true },
@@ -237,9 +261,10 @@ function mockSnapshot(): Snapshot {
       other_agents: [], focused_key: "w1:1", idle_secs: 4, mic_active: false, camera_active: false,
     },
     history: [
-      { day: "2026-10-20", active_min: 562, water_ml: 1000, breaks: 2, long_breaks: 0, posture_min: { office_chair: 470, standing: 80, board: 12 }, red_min: 240, max_projects: 9, max_busy_agents: 5 },
-      { day: "2026-10-21", active_min: 505, water_ml: 1500, breaks: 4, long_breaks: 1, posture_min: { office_chair: 330, swopper: 40, standing: 110, board: 25 }, red_min: 110, max_projects: 7, max_busy_agents: 4 },
-      { day: "2026-10-22", active_min: 468, water_ml: 2000, breaks: 5, long_breaks: 2, posture_min: { office_chair: 290, standing: 150, board: 28 }, red_min: 45, max_projects: 5, max_busy_agents: 3 },
+      { day: "2026-10-20", active_min: 562, water_ml: 1000, breaks: 2, long_breaks: 0, posture_min: { office_chair: 470, standing: 80, board: 12 }, red_min: 240, max_projects: 9, max_busy_agents: 5, first_active: null, ended_at: null, tasks: [], pauses: [] },
+      { day: "2026-10-21", active_min: 505, water_ml: 1500, breaks: 4, long_breaks: 1, posture_min: { office_chair: 330, swopper: 40, standing: 110, board: 25 }, red_min: 110, max_projects: 7, max_busy_agents: 4, first_active: null, ended_at: null, tasks: [], pauses: [] },
+      { day: "2026-10-22", active_min: 468, water_ml: 2000, breaks: 5, long_breaks: 2, posture_min: { office_chair: 290, standing: 150, board: 28 }, red_min: 45, max_projects: 5, max_busy_agents: 3, first_active: null, ended_at: null, tasks: [], pauses: [], eyes_offered: 12, eyes_done: 4 },
+      { day: "2026-10-23", active_min: 430, water_ml: 1750, breaks: 4, long_breaks: 2, posture_min: { office_chair: 250, swopper: 90, standing: 90 }, red_min: 30, max_projects: 4, max_busy_agents: 3, first_active: null, ended_at: null, tasks: [], pauses: [], eyes_offered: 11, eyes_done: 7 },
     ],
   };
 }
@@ -254,6 +279,7 @@ const mockHint: Hint = {
 async function mock<T>(cmd: string, _args?: Record<string, unknown>): Promise<T> {
   switch (cmd) {
     case "get_snapshot": return mockSnapshot() as T;
+    case "get_build_info": return { version: "0.3.0", build: "dev" } as T;
     case "get_settings": return structuredClone(defaultSettings) as T;
     case "get_storage_health": return { ok: true, message: null } as T;
     case "get_current_hint": return mockHint as T;

@@ -1,3 +1,4 @@
+mod build_info;
 mod collect;
 mod exercise;
 #[cfg(target_os = "macos")]
@@ -10,6 +11,7 @@ use lotse_core::engine::State as EngineState;
 use lotse_core::{Engine, Hint, HintKind, Level, Settings, Snapshot};
 use persistence::{mutate_and_save, Persistence};
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::image::Image;
@@ -21,6 +23,10 @@ use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 const TICK: Duration = Duration::from_secs(20);
 const TOAST_W: f64 = 380.0;
 const TOAST_MARGIN: f64 = 14.0;
+
+/// Gesetzt, sobald „Tag beenden“ läuft: ein gleichzeitiger Takt darf den soeben
+/// protokollierten Tag nicht wieder öffnen, bevor die App beendet ist.
+static ENDING_DAY: AtomicBool = AtomicBool::new(false);
 
 struct Shared {
     engine: Mutex<Engine>,
@@ -254,12 +260,15 @@ fn start_hint_timer(app: AppHandle, sound: bool) -> Result<(), String> {
 }
 
 fn timer_tick(app: &AppHandle) {
-    let shared = app.state::<Shared>();
-    let mut guard = shared.exercise.lock().unwrap();
-    if let Some(exercise) = guard
-        .as_mut()
-        .filter(|e| e.deadline.is_some() && !e.finished)
-    {
+    let completed_eyes = {
+        let shared = app.state::<Shared>();
+        let mut guard = shared.exercise.lock().unwrap();
+        let Some(exercise) = guard
+            .as_mut()
+            .filter(|e| e.deadline.is_some() && !e.finished)
+        else {
+            return;
+        };
         let now = std::time::SystemTime::now();
         let finished = exercise.finish_if_due(now);
         let _ = app.emit_to(
@@ -273,6 +282,11 @@ fn timer_tick(app: &AppHandle) {
         if finished && exercise.sound {
             let _ = play_sound(app.clone(), "complete".into());
         }
+        (finished && exercise.hint.kind == HintKind::Eyes).then_some(exercise.hint.at)
+    };
+    // Engine erst nach Freigabe des Übungs-Locks anfassen (feste Lock-Reihenfolge)
+    if let Some(hint_at) = completed_eyes {
+        let _ = with_engine(app, |e, _| e.complete_eyes(hint_at));
     }
 }
 
@@ -284,6 +298,9 @@ fn publish(app: &AppHandle, snap: &Snapshot) {
 }
 
 fn tick(app: &AppHandle) {
+    if ENDING_DAY.load(Ordering::SeqCst) {
+        return;
+    }
     let shared = app.state::<Shared>();
     let settings = shared.engine.lock().unwrap().settings.clone();
     // Sammeln ohne Lock – osascript/ps können dauern
@@ -328,6 +345,22 @@ fn with_engine<R>(app: &AppHandle, f: impl FnOnce(&mut Engine, i64) -> R) -> Res
     saved.map(|()| result)
 }
 
+/// „Tag beenden“: Tagesprotokoll speichern, Hinweisfenster schließen, Lotse beenden.
+/// Scheitert das Speichern, bleibt Lotse offen und meldet den Fehler.
+fn end_day_and_quit(app: &AppHandle) -> Result<(), String> {
+    ENDING_DAY.store(true, Ordering::SeqCst);
+    if let Err(error) = with_engine(app, |e, t| e.end_day(t)) {
+        ENDING_DAY.store(false, Ordering::SeqCst);
+        return Err(error);
+    }
+    let _ = exercise::dismiss(&mut app.state::<Shared>().exercise.lock().unwrap());
+    if let Some(w) = app.get_webview_window("toast") {
+        let _ = w.hide();
+    }
+    app.exit(0);
+    Ok(())
+}
+
 /// Aktionen aus Toast, Dashboard und Menü.
 fn perform(app: &AppHandle, action: &str, kind: Option<HintKind>) -> Result<(), String> {
     match action {
@@ -343,6 +376,7 @@ fn perform(app: &AppHandle, action: &str, kind: Option<HintKind>) -> Result<(), 
             show_dashboard(app);
             Ok(())
         }
+        "day_end" => end_day_and_quit(app),
         "quit" => {
             app.exit(0);
             Ok(())
@@ -376,6 +410,11 @@ fn get_settings(app: AppHandle) -> Settings {
         .unwrap()
         .settings
         .clone()
+}
+
+#[tauri::command]
+fn get_build_info() -> build_info::BuildInfo {
+    build_info::current()
 }
 
 #[tauri::command]
@@ -527,6 +566,13 @@ fn build_tray(app: &AppHandle) -> tauri::Result<MenuItem<tauri::Wry>> {
             &MenuItem::with_id(app, "break_end", "Pause beenden", true, None::<&str>)?,
             &quiet,
             &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(
+                app,
+                "day_end",
+                "Tag beenden und Lotse schließen",
+                true,
+                None::<&str>,
+            )?,
             &MenuItem::with_id(app, "quit", "Lotse beenden", true, None::<&str>)?,
         ],
     )?;
@@ -552,6 +598,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
+            get_build_info,
             get_settings,
             get_storage_health,
             get_current_hint,

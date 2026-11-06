@@ -106,3 +106,12 @@ Aktuelle Arbeit: [PLAN.md](PLAN.md) · Verlauf: [ARBEITSLOGBUCH.md](ARBEITSLOGBU
 - Konsequenz / zuständige Umsetzung: A-021/A-024. Event-/Start-Recovery bleibt als zusätzliche Härtung. Verbindlich ist außerdem: jeder per plain Cargo erzeugte Tauri-Release aktiviert `custom-protocol`; der Universal-Build hat dafür einen statischen Regressionstest. Ein schwarzes Fenster ohne UI-Diagnose zuerst auf Dokumentladefehler prüfen.
 - Prüfpunkt: Dev-Server beenden, final gebündelte App neu starten, im Unified Log `-1004` ausschließen und feste UI-Überschriften im nativen WebView nachweisen. Buildtest muss beide Architekturen erfassen.
 - Wirkung: Roter/grüner Buildtest; korrigiertes Universal-Bundle enthält eingebettete Ressourcen, final notarisierten Prozess ohne Dev-Server mit Cockpit/Zeitleiste nachgewiesen. Veröffentlichter 0.1.0-Release separat ohne Fehler gestartet. Bei nächstem Universal-Release erneut prüfen.
+
+### L-00X – Autostart zeigt nach Dev-Builds auf veralteten Build
+
+- Datum / Status: 2026-10-30 · Kandidat.
+- Quelle: Nutzermeldung „gestern Angepasstes heute nicht sichtbar“; Prozesspfad und LaunchAgent-Datei.
+- Beobachtung: `~/Library/LaunchAgents/Lotse.plist` zeigte auf `target/release/bundle/macos/Lotse.app`; nach dem Anmelden lief ein 1 Tag alter Build.
+- Konsequenz / zuständige Umsetzung: Nach jedem Installieren prüfen, dass Prozess- und Autostart-Pfad auf `/Applications/Lotse.app` zeigen; Autostart nie aus `target/` aktivieren.
+- Prüfpunkt: `ps` und `plutil -p ~/Library/LaunchAgents/Lotse.plist` nach der nächsten Installation.
+- Wirkung: noch offen (Autostart muss vom Nutzer über den Einstellungsschalter neu gesetzt werden).

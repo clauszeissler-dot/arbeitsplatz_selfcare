@@ -65,8 +65,9 @@ APP_PATH="$APP" scripts/notarize.sh "$PROFILE"
 scripts/create-update-artifacts.sh "$TAG" "$APP" "$ROOT/target/release/notarized"
 cd target/release/notarized
 shasum -a 256 Lotse.dmg Lotse.zip Lotse.app.tar.gz Lotse.app.tar.gz.sig latest.json > SHA256SUMS
+NOTES="$(python3 "$ROOT/scripts/versioning.py" changelog "${TAG#v}")"
 gh release create "$TAG" Lotse.dmg Lotse.zip Lotse.app.tar.gz Lotse.app.tar.gz.sig latest.json SHA256SUMS \
   "$ROOT/LICENSE" "$ROOT/NOTICE" "$ROOT/BRANDING.md" \
   --draft \
   --title "Lotse $TAG" \
-  --notes "Signiert und von Apple notarisiert. DMG öffnen, Lotse in Programme ziehen."
+  --notes "$NOTES"

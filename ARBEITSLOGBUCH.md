@@ -313,3 +313,63 @@ Ziel: [ZIEL.md](ZIEL.md) · Anforderungen: [AENDERUNGEN.md](AENDERUNGEN.md) · A
 - Korrigierter Run `40899540892`: `Kernlogik und Security` erfolgreich in 3:44 Minuten; `Mac-App bauen (unsigniert)` erfolgreich in 12:36 Minuten einschließlich Workspace-Tests, Clippy, npm-Audit, Frontend und echtem Universal-Build.
 - PR #13 sauber und mergefähig, danach per Squash gemergt. `main` steht auf `00d5dd029b56c0ffcdb90248b19b4e08b1155c27`; Remote-Feature-Branch gelöscht. Der veraltete bereits fehlgeschlagene Erstlauf wurde beendet, bevor sein wartender Mac-Job Ressourcen verbrauchte.
 - Remote-Kontrolle: ausschließlich die zwei Updater-Secret-Namen im geschützten Environment sichtbar; nur Release `lotse-0.1.0` vorhanden. Kein `v0.2.0`-Tag, kein Draft und keine Veröffentlichung. Die sechs fremden AUTO-Handoffs blieben ungestagt und unverändert.
+
+## 2026-10-30T11:50:00+02:00 – Laufzeit-Anzeigen und „Tag beenden“ (A-026 bis A-029)
+
+- Nutzer: gestrige Anpassungen heute nicht sichtbar; Wunsch nach Chat-Logs, Laufzeitanzeigen und Tagesende.
+- Ursache A-026: Autostart-LaunchAgent zeigt auf den veralteten Build in `target/`; Prozess seit 07:56, Binary ohne `break_timeline`, `state.json` noch `0644`. Alte Instanz beendet, `/Applications/Lotse.app` gestartet (`state.json` `0600`, 3 Aufgaben erfasst). Direktes Ändern der Autostart-Datei lehnte die Berechtigungsprüfung ab und wurde nicht umgangen.
+- TDD: 9 neue Core-Tests und 6 UI-Tests zuerst rot (fehlende API), dann grün. Gates: `cargo test --workspace` (43 Core, 10 Tauri), 14 UI-Tests, 19 Python-Tests, `cargo fmt --check`, Clippy `-D warnings`, `npm run build` grün.
+- Build `0.2.0` arm64 (`tauri build --no-sign`), mit Developer ID signiert, nicht notarisiert, in `/Applications` installiert; zuvor notarisierte 0.1.0 gesichert. Screenshot belegt die Laufuhren.
+- Nicht ausgeführt: Klick auf „Tag beenden“ (hätte den laufenden Tag beendet); Universal-Build, Notarisierung, Release.
+- Konsistenznachtrag: A-002 (Erinnerungsrhythmus, Hinweis-Karte) war bereits am 2026-10-28 geprüft (`cargo test -p lotse-core` 25/25) und blieb unverändert; die Laufzeit-Änderungen berühren seine Auslöselogik nicht.
+- Status je ID: A-026 umgesetzt (Autostart-Neusetzung offen), A-027 geprüft (Screenshot), A-028 umgesetzt (Klicktest offen), A-029 umgesetzt (Granularität mit Claus klären).
+
+## 2026-10-30T13:00:00+02:00 – Versionierung umgesetzt (A-030)
+
+- Nach freigegebenem Plan: gemeinsames Werkzeug `scripts/versioning.py` (check/set/changelog/newer), Wrapper `set-version.sh`, `build-local.sh` (liest den Autostart-Pfad nur, ändert ihn nie), erweiterte `validate-release.sh`, Release-Text aus dem Changelog, Build-Marker `LOTSE_BUILD` (nur `release.yml` setzt `release`).
+- TDD: 13 neue Python-Tests (zuerst 8 Fehlschläge/2 Fehler), 3 Rust- und 2 UI-Tests zuerst rot. Ein Regex-Fehler (`(?s)`, katastrophales Backtracking) ließ den ersten Testlauf hängen; Flag entfernt, dann grün. Gates: 32 Python-, 13 Rust-, 16 UI-Tests, Clippy `-D warnings`, `cargo fmt`, `npm run build`.
+- Bewusst nicht ausgeführt: `build-local.sh` (hätte die installierte 0.2.0 ersetzt, die für den Live-Update-Test erhalten bleiben soll), `validate-release.sh` (braucht Tag und `origin/main`). Version in den Dateien bleibt 0.2.0 bis zum Release. Kein Push.
+
+## 2026-11-03 – Versionen bereinigt, Projektführung nachgezogen
+
+- Anforderungs-IDs: A-026 (Beobachtung), A-010 (Status), A-001 bis A-030 (Entscheidungen)
+- Auf Wunsch von Claus: installierte Lotse-Versionen gezählt (1× `/Applications/Lotse.app` 0.2.0, 4 Build-Bundles in `target/`). Gelöscht: `target/universal-apple-darwin/release/bundle/macos/Lotse.app`, `target/lotse-arm64/aarch64-apple-darwin/release/bundle/macos/Lotse.app`, `target/lotse-x86_64/x86_64-apple-darwin/release/bundle/macos/Lotse.app` (alle vom 2026-10-29, `target/` ist von Git ausgeschlossen). Behalten: `/Applications/Lotse.app` und `target/release/bundle/macos/Lotse.app`. Lotse aus `/Applications` gestartet, Prozess läuft.
+- Beobachtung: `~/Library/LaunchAgents/Lotse.plist` fehlt, Autostart ist aus.
+- Projektführung: `ENTSCHEIDUNGEN.md` (E-001 bis E-030) angelegt, Leerzeilen in der Anforderungstabelle entfernt, Planschritte 24 bis 30 ergänzt, A-010 auf „umgesetzt“ korrigiert. `arbeitsstandard.py check` ohne Befund.
+- Kein Code geändert, keine Tests neu ausgeführt.
+- Versionsbezug: Commit mit diesen IDs folgt
+
+## 2026-11-03 – Hintergrund-Wächter und Cockpit-Übersicht (A-031 bis A-034)
+
+- Hintergrund-Wächter für die laufende App (Prozess, Neustart, CPU, Speicher, Takt, Absturzberichte, Fehlerlog), seit 11:45 ohne Befund. Nicht Teil des Repositorys.
+- Auf Wunsch von Claus: Pausenuhr im Ring, „Fokus/Pause seit“ statt Lauf-Zeile, Haltungsampel als Pillen, „Entwicklung“ in „Letzte Tage“ mit Augenpausen, Lotsenregel und Feierabend; Core zählt Augenpausen.
+- TDD: 4 Core-Tests (zuerst Kompilierfehler), 11 neue UI-Tests (zuerst fehlender Export bzw. 1 Fehlschlag Lotsenregel), danach grün. Frisch: `cargo test --workspace` (60), Clippy `-D warnings`, `cargo fmt --check`, `npm run test:ui` (27), `npm run build`, Python-Tests OK.
+- Sichtprüfung: Ego-Lite-Screenshots der Designvorschau (Fokus, Pause, nur Bürostuhl, Entwicklung). Die laufende App blieb unberührt, keine zweite Instanz.
+- App-Bundle gebaut: `LOTSE_BUILD=local-fc1db62 npm run tauri -- build --no-sign --bundles app`, Exit 0, `target/release/bundle/macos/Lotse.app` (0.2.0, unsigniert). Nicht ausgeführt: Signieren und `/Applications/Lotse.app` ersetzen (Freigabe offen).
+- Versionsbezug: Commit „Cockpit-Übersicht (A-031 bis A-034)“
+- 13:2x Nachtrag: Auf Rückfrage von Claus („ich sehe es in der Oberfläche nicht“) den Build fc1db62 mit Developer ID signiert, alte App nach `target/local-backup/Lotse.app` gesichert, `/Applications/Lotse.app` ersetzt und gestartet (PID 96912). Der Tagesstand blieb erhalten (231 min aktiv). Die neuen Felder `eyes_offered` und `eyes_done` sind im Zustand vorhanden. Nicht notarisiert.
+
+## 2026-11-03 – Tagesende, A-028 live bestätigt
+
+- Anforderungs-IDs: A-028 (geprüft), A-031 bis A-034 (installiert, Sicht offen)
+- 13:51:25 „Tag beenden“ ausgelöst. `state.json` hat `day_closed_at`, Historie 2026-11-03 mit 239 min aktiv, 4 Pausen, 13 Aufgaben, Augenpausen 0/0 (Zählung erst seit 13:40). Lotse-Prozess beendet, kein Absturzbericht; der Wächter meldete „läuft nicht mehr“ um 13:51:29.
+- Wächter auf Wunsch von Claus zum Sitzungsende beendet.
+
+## 2026-11-06 – Pausenerkennung und Haltungspillen (A-035 bis A-037)
+
+- Anforderungs-IDs: A-035, A-036, A-037
+- Live-Zustand gelesen (`state.json`, Sicherung im Scratchpad der Sitzung). Befund: Die letzte Pause dauerte 26:32 min und lag damit unter 30 min, also keine lange Pause, der LongBreak-Hinweis kam bei der Rückkehr. 11 Pause-Events, Leerlauf ab 2 min. Eine Pause von 29 min war in 4 Stücke zerfallen und nicht angerechnet.
+- TDD: Core-Tests zuerst Kompilierfehler, danach mit gezielt abgeschalteter Logik als Verhaltensrot belegt (Toleranz aus: 0 statt 1 lange Pause; Lücke 0 s: 2 Tests rot). 5 UI-Tests zuerst rot (fehlende Exporte).
+- Frisch grün: `cargo test --workspace` (63), Clippy `-D warnings`, `cargo fmt --check`, `npm run test:ui` (32), `npm run build`, Python-Tests OK.
+- Ego Lite (Vorschau `?pause=1`): keine `.seg`-Buttons, 4 Pillen-Buttons mit `aria-pressed`, Tab-Fokus wandert, „Lange Pause: noch 21 min“, Sammelzeile für kurze Unterbrechungen. Screenshot `cockpit-haltung-pause.png` im Scratchpad.
+- Versionsbezug: Commit „Pausenerkennung und Haltungspillen (A-035 bis A-037)“
+- Befund nach der ersten Installation (038ae69): Die zusammengeführte Pause von 29 min wird angerechnet. Die schon vorher gezählte Pause von 26,5 min setzt `last_long_break_end` aber nicht, weil die Migration bereits gezählte Pausen übersprang. Regressionstest `loading_marks_an_already_counted_26_minute_pause_as_long` war rot (Tagesbeginn statt Pausenende) und ist nach der Korrektur grün. Frisch: 64 Rust-Tests, Clippy, fmt, 32 UI-Tests, Build.
+- Installation am Zielort: Build 7ae5052 mit Developer ID signiert (nicht notarisiert), `codesign --verify --deep --strict` grün, `/Applications/Lotse.app` ersetzt. Die vorherige App 0.2.0/fc1db62 liegt unter `target/local-backup/Lotse.app`. Live-`state.json` (0600) nach dem Neustart: 3 angerechnete Pausen (18,6 / 29,2 / 26,5 min), `last_long_break_end` 13:12:16, 8 statt 11 Pausen-Events, Tagesstand erhalten (239 min aktiv). Ein Screenshot des installierten Cockpits zeigt 3 Pausen und „+ 5 kurze Unterbrechungen unter 15 min“.
+- Nachtrag: Claus bestätigt die Schwelle von 25 min und lässt die Hinweissperre nach Pausenende übernehmen (60 s, wie nach Meetings). Test zuerst rot (LongBreak beim Anstoßen), danach grün. Frisch: 65 Rust-Tests, Clippy, fmt, 32 UI-Tests, Build.
+- Nachtrag 15:15: Nach einer bewussten Pause von 15 min kam 8 s nach der Rückkehr der Hinweis zur langen Pause. Ursache: Die letzte lange Pause lag 2 h zurück. Neue Regel: Der Hinweis kommt erst, wenn auch der Arbeitsblock pausenreif ist. Test `no_long_break_nag_right_after_a_short_break` rot → grün. Frisch: 66 Rust-Tests, Clippy, fmt, 32 UI-Tests.
+
+## Nachprüfung 2026-11-06, 16:09 · A-035 bis A-037
+
+Erneuter Auftrag gegen vorhandene Umsetzung abgeglichen: keine zusätzliche Codeänderung erforderlich. Prozess läuft aus `/Applications/Lotse.app`; installiertes Binary byteidentisch zum Bundle vom 15:19. Der gelesene Tageszustand enthält die 26:32-min-Pause als angerechnete Pause; `last_long_break_end` entspricht ihrem Ende um 13:12:16. Einstellungen weiterhin 30 min, Anrechnung ab 25 min. Keine Tagesdaten geändert.
+
+Frische Nachweise: 53 Core-Tests und 32 UI-Tests grün. Ego Lite TaskSpace 20: Vorschau zeigt „Lange Pause: noch 21 min“, vier Haltungspillen als Buttons, keine `.seg`-Auswahl, passende `posture_<id>`-Aktionen und `aria-pressed`. Vorschau ist kein nativer Klicktest; reale Haltungsdaten bewusst nicht verändert. Vorhandene Installationsbelege und Regressionstests wiederverwendet. E-035 bis E-037 gelten unverändert; Alltagsbestätigung bleibt offen. Kein Build, keine Neuinstallation, kein Push nötig.

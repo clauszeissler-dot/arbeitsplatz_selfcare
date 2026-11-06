@@ -32,6 +32,19 @@ rustup target add aarch64-apple-darwin x86_64-apple-darwin
 scripts/build-universal.sh
 ```
 
+## Lokal bauen und installieren
+
+```sh
+APPLE_SIGNING_IDENTITY="<deine Developer-ID-Identität>" scripts/build-local.sh
+```
+
+Das Skript baut die Host-Architektur, signiert mit deiner Identität, ersetzt `/Applications/Lotse.app`
+(Sicherung unter `target/local-backup/`) und startet die App. Sie zeigt „lokaler Build (<Git-Hash>)“ und
+lässt sich so nie mit einem Release verwechseln. Meldet das Skript einen abweichenden Autostart-Pfad,
+schalte in den Einstellungen „Beim Anmelden starten“ aus und wieder ein; die Autostart-Datei ändert das
+Skript nicht. Versionen ändert ausschließlich `scripts/set-version.sh`
+(Schema: [Versionierung](RELEASE.md#versionierung-a-030)).
+
 ## Eigene Builds und Veröffentlichungen
 
 Lizenz: [Apache-2.0](../LICENSE); zusätzliche Marken-/Identitätsabgrenzung:

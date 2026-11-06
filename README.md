@@ -54,6 +54,10 @@ DMG öffnen und **Lotse** in den Ordner **Programme** ziehen.
 Der aktuelle fertige Download ist weiterhin Version 0.1.0 für Apple Silicon und ist signiert sowie von Apple notarisiert. Der Quellstand bereitet Version 0.2.0 mit Universal-Build und sicheren GitHub-Updates vor. Weil 0.1.0 noch keinen Updater enthält, muss diese erste Aktualisierung einmalig manuell installiert werden; danach kann Lotse weitere Updates selbst anbieten.
 Alternativ kannst du die App selbst bauen: [Anleitung](docs/ANLEITUNG.md#installieren).
 
+## Versionen
+
+Lotse nutzt SemVer (`X.Y.Z`); jede Version steht im [Änderungsprotokoll](CHANGELOG.md). Updates bietet Lotse nur an, wenn die veröffentlichte Version höher ist als die installierte. Ob eine App ein Release oder ein lokaler Build ist, zeigen die Einstellungen. Ablauf und Regeln: [Release-Anleitung](docs/RELEASE.md#versionierung-a-030).
+
 ## Lizenz und eigene Versionen
 
 **Nutzen und teilen ist erlaubt:** Die unveränderte offizielle, signierte und notarisierte Lotse-App darfst du verwenden und weitergeben. Die beiliegenden Lizenz- und Herkunftshinweise bleiben erhalten.

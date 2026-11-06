@@ -15,6 +15,8 @@ if [[ -z "$OUTPUT_ROOT" || "$OUTPUT_ROOT" == "/" ]]; then
 fi
 
 cd "$ROOT"
+# Nur der Release-Workflow setzt LOTSE_BUILD=release; alles andere ist als Test-Build erkennbar
+export LOTSE_BUILD="${LOTSE_BUILD:-ci}"
 npm run build
 
 CARGO_TARGET_DIR="$ARM_ROOT" cargo build -p lotse --target aarch64-apple-darwin --release --locked --features custom-protocol

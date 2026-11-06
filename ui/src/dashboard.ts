@@ -7,8 +7,8 @@ import "@fontsource/space-grotesk/600.css";
 import "@fontsource/space-grotesk/700.css";
 import "./styles.css";
 import "./dashboard.css";
-import { api, listen, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
-import { focusVisual, loadDashboardData, type FocusTone } from "./dashboard-model";
+import { api, listen, type DaySummary, type Level, type Settings, type Snapshot, type StorageHealth, type TabView } from "./api";
+import { daySummaryText, developmentRows, focusVisual, formatElapsed, liveSeconds, loadDashboardData, longBreakFact, pauseList, POSTURE_CHANGE_TARGET, postureButtons, postureTraffic, runningClock, sinceFact, versionLabel, type FocusTone, type Trend } from "./dashboard-model";
 import { icons } from "./icons";
 import { updatePresentation } from "./updater-model";
 import { LotseUpdater } from "./updater";
@@ -17,6 +17,11 @@ const app = document.getElementById("app")!;
 let snap: Snapshot | null = null;
 let storageHealth: StorageHealth = { ok: true, message: null };
 let settingsOpen = false;
+let confirmDayEnd = false;
+/** Ab dieser Dauer zählt eine Unterbrechung als Pause (aus dem letzten Snapshot). */
+let currentBreakMin = 15;
+let buildLabel = "";
+const openDays = new Set<string>();
 const updater = new LotseUpdater(() => {
   const panel = document.getElementById("update-panel");
   if (panel) panel.innerHTML = updatePanelContent();
@@ -35,13 +40,19 @@ function esc(s: string): string {
 const liters = (ml: number) => (ml / 1000).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.floor(min % 60)).padStart(2, "0")}`;
 const pct = (a: number, b: number) => Math.max(0, Math.min(100, b > 0 ? (a / b) * 100 : 0));
+const nowSeconds = () => Date.now() / 1000;
+/** Laufende Uhr: zählt ab `from` (Epochensekunden) plus `offset` Sekunden und tickt im Sekundentakt. */
+function clock(from: number, offset = 0): string {
+  const text = formatElapsed(liveSeconds({ reported: offset, reportedAt: from }, nowSeconds()));
+  return `<span class="clock" data-clock-from="${from}" data-clock-offset="${offset}">${text}</span>`;
+}
 
 function updatePanelContent(): string {
   const presentation = updatePresentation(updater.state);
   const button = presentation.action
     ? `<button class="btn ghost" type="button" data-act="update-${presentation.action}" ${presentation.disabled ? "disabled" : ""}>${esc(presentation.actionLabel ?? "")}</button>`
     : "";
-  return `<legend>Updates</legend><p class="update-status" role="status">${esc(presentation.status)}</p><div class="actions">${button}</div><p class="note">Nur signierte offizielle Pakete aus GitHub Releases werden akzeptiert.</p>`;
+  return `<legend>Updates</legend><p class="update-status" role="status">${esc(presentation.status)}</p><div class="actions">${button}</div><p class="note">Nur signierte offizielle Pakete aus GitHub Releases werden akzeptiert.</p>${buildLabel ? `<p class="note build-label">Diese App: ${esc(buildLabel)}</p>` : ""}`;
 }
 
 function updateNotice(): string {
@@ -49,7 +60,7 @@ function updateNotice(): string {
   return `<button class="btn update-notice" data-act="open-update">Update ${esc(updater.state.version)}</button>`;
 }
 
-function ring(value: number, max: number, tone: FocusTone, label: string, sub: string): string {
+function ring(value: number, max: number, tone: FocusTone, label: string, sub: string, clockFrom: number | null = null): string {
   const r = 52;
   const c = 2 * Math.PI * r;
   const p = pct(value, max) / 100;
@@ -59,7 +70,7 @@ function ring(value: number, max: number, tone: FocusTone, label: string, sub: s
         <circle cx="60" cy="60" r="${r}" class="track"/>
         <circle cx="60" cy="60" r="${r}" class="bar" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p)}"/>
       </svg>
-      <div class="ring-text"><strong>${label}</strong><span>${sub}</span></div>
+      <div class="ring-text"><strong>${clockFrom === null ? label : clock(clockFrom)}</strong><span>${sub}</span></div>
     </div>`;
 }
 
@@ -74,6 +85,7 @@ function chips(s: Snapshot): string {
   const out: string[] = [];
   if (s.in_meeting) out.push(`<span class="chip cyan">${icons.meeting} Meeting – Hinweise ruhen</span>`);
   if (s.in_break) out.push(`<span class="chip cyan">${icons.pause} Pause läuft</span>`);
+  if (s.day_ended_at) out.push(`<span class="chip">Tag beendet um ${atTime(s.day_ended_at)} – läuft bei Aktivität weiter</span>`);
   if (s.snoozed_until) {
     const t = new Date(s.snoozed_until * 1000).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     out.push(`<span class="chip">Hinweise pausiert bis ${t} <button class="link" data-act="resume">fortsetzen</button></span>`);
@@ -83,18 +95,19 @@ function chips(s: Snapshot): string {
 
 function focusCard(s: Snapshot): string {
   const blockLevel = s.metrics.find((metric) => metric.key === "block")?.level ?? "green";
-  const visual = focusVisual(s.in_break, s.block_min, blockLevel);
+  const running = runningClock(s);
+  const visual = focusVisual(s.in_break, s.block_min, blockLevel, running.mode === "pause" ? running.since : null);
   const hard = 75;
-  const longLeft = Math.max(0, 120 - s.since_long_break_min);
+  const since = sinceFact(running);
   return `
     <section class="card focus-card tone-${visual.tone}">
       <div class="card-head"><span class="eyebrow">Fokus &amp; Pause</span><span class="mode-badge">${visual.mode === "pause" ? "PAUSE" : "FOKUS"}</span></div>
       <div class="split">
-        ${ring(visual.value, hard, visual.tone, visual.label, visual.mode === "pause" ? "läuft" : "am Stück")}
+        ${ring(visual.value, hard, visual.tone, visual.label, visual.mode === "pause" ? "Pause" : "am Stück", visual.clockFrom)}
         <ul class="facts">
           <li><span>Nächste Pause</span><strong>${s.in_break ? "läuft" : s.next_break_min > 0 ? `in ${s.next_break_min} min` : "jetzt"}</strong></li>
-          <li><span>Lange Pause</span><strong>${longLeft > 0 ? `in ${longLeft} min` : "fällig"}</strong></li>
-          <li><span>Pausen heute</span><strong>${s.breaks_today} · davon lang ${s.long_breaks_today}</strong></li>
+          <li><span>Lange Pause</span><strong>${longBreakFact(s, s.at - running.since)}</strong></li>
+          <li><span>${since.label}</span><strong>${atTime(since.since)}</strong></li>
         </ul>
       </div>
       <div class="row">
@@ -132,27 +145,19 @@ function waterCard(s: Snapshot): string {
 }
 
 function postureCard(s: Snapshot): string {
-  const share = s.posture_share;
-  const total = Object.values(share).reduce((sum, minutes) => sum + minutes, 0) || 1;
-  const chair = pct(share.office_chair ?? 0, total);
-  const changing = 100 - chair;
-  const today = s.postures
-    .filter((posture) => (share[posture.id] ?? 0) > 0)
-    .map((posture) => `${esc(posture.label)} ${Math.round(pct(share[posture.id] ?? 0, total))} %`)
-    .join(" · ");
+  const traffic = postureTraffic(s.posture_share, s.postures);
+  const postureWord = { green: "ausreichend", yellow: "ausbaufähig", red: "nur Bürostuhl" } as const;
   const over = s.posture_min >= s.posture_limit_min;
   return `
     <section class="card">
       <div class="card-head"><span class="eyebrow">Haltung</span>${icons.posture}</div>
       <div class="big"><strong>${esc(s.posture_label)}</strong><span>${s.posture_min} / ${s.posture_limit_min} min</span></div>
       <div class="bar-track"><div class="bar-fill ${over ? "warn" : ""}" style="width:${pct(s.posture_min, s.posture_limit_min)}%"></div></div>
-      <div class="seg" role="group" aria-label="Position">
-        ${s.postures.map((p) => `<button class="${p.id === s.posture ? "on" : ""}" data-act="posture_${p.id}">${esc(p.label)}</button>`).join("")}
+      ${s.posture_started_at > 0 ? `<p class="running"><span>${esc(s.posture_label)} seit ${atTime(s.posture_started_at)}</span>${clock(s.posture_started_at)}</p>` : ""}
+      <div class="posture-lights" role="group" aria-label="Haltung wechseln · Verteilung heute: ${postureWord[traffic.level]}, ${traffic.changePercent} % Wechsel">
+        ${postureButtons(s.posture_share, s.postures, s.posture).map((item) => `<button type="button" class="pill lvl-${item.level} ${item.current ? "on" : ""}" data-act="${item.act}" aria-pressed="${item.current}" title="${item.current ? "aktuelle Haltung" : `zu ${esc(item.label)} wechseln`} · ${item.used ? `${item.minutes} min heute` : "heute noch ungenutzt"}"><i class="dot"></i>${esc(item.label)} <b>${item.used ? `${item.percent} %` : "ungenutzt"}</b></button>`).join("")}
       </div>
-      <div class="split-bar" title="Heute: Sitzen / Stehen">
-        <span class="sit" style="width:${chair}%"></span><span class="stand" style="width:${changing}%"></span>
-      </div>
-      <p class="note">${today || "Heute noch keine Haltung erfasst."}</p>
+      <p class="note">Wechsel heute ${traffic.changePercent} % · Ziel ${POSTURE_CHANGE_TARGET} %</p>
     </section>`;
 }
 
@@ -238,7 +243,8 @@ function duration(seconds: number): string {
 
 function timeline(s: Snapshot): string {
   const tasks = [...s.tasks_today].sort((a, b) => Number(b.active) - Number(a.active) || b.started_at - a.started_at);
-  const pauses = [...s.break_timeline].sort((a, b) => b.start - a.start);
+  const list = pauseList(s.break_timeline, s.break_min);
+  const pauses = list.pauses;
   const kind = { project: "Projekt", app: "App", agent: "Agent" } as const;
   return `
     <section class="card wide timeline-card">
@@ -253,7 +259,7 @@ function timeline(s: Snapshot): string {
             <article class="timeline-item ${task.active ? "active" : ""}">
               <i class="timeline-dot"></i>
               <div><strong>${esc(task.label)}</strong><span>${kind[task.kind]} · begonnen ${atTime(task.started_at)}</span></div>
-              <div class="timeline-duration"><strong>${duration(task.active_secs)}</strong><span>${task.active ? "läuft" : `zuletzt ${atTime(task.last_active_at)}`}</span></div>
+              <div class="timeline-duration"><strong>${task.active ? clock(s.at, task.active_secs) : duration(task.active_secs)}</strong><span>${task.active ? "läuft" : `zuletzt ${atTime(task.last_active_at)}`}</span></div>
             </article>`).join("") : `<p class="empty">Heute wurde noch keine Aufgabe erkannt.</p>`}</div>
         </div>
         <div>
@@ -262,11 +268,54 @@ function timeline(s: Snapshot): string {
             <article class="timeline-item pause-item ${pause.end === null ? "active" : ""}">
               <i class="timeline-dot"></i>
               <div><strong>${pause.end === null ? "Pause läuft" : "Pause"}</strong><span>${atTime(pause.start)}${pause.end === null ? " – jetzt" : ` – ${atTime(pause.end)}`}</span></div>
-              <div class="timeline-duration"><strong>${duration(pause.duration_secs)}</strong><span>${pause.end === null ? "aktuell" : "Dauer"}</span></div>
-            </article>`).join("") : `<p class="empty">Heute wurde noch keine Pause erfasst.</p>`}</div>
+              <div class="timeline-duration"><strong>${pause.end === null ? clock(pause.start) : duration(pause.duration_secs)}</strong><span>${pause.end === null ? "aktuell" : "Dauer"}</span></div>
+            </article>`).join("") : `<p class="empty">Heute wurde noch keine Pause erfasst.</p>`}${shortNote(list)}</div>
         </div>
       </div>
     </section>`;
+}
+
+const dayLabel = (day: string) => new Date(day + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+const taskKind = { project: "Projekt", app: "App", agent: "Agent" } as const;
+
+/** Aufklappbares Tagesprotokoll: Aufgaben und Pausen mit Zeiten – bleibt über Neustarts erhalten. */
+function shortNote(list: { shortCount: number; shortSecs: number }): string {
+  if (!list.shortCount) return "";
+  return `<p class="empty short-note">+ ${list.shortCount} kurze ${list.shortCount === 1 ? "Unterbrechung" : "Unterbrechungen"} unter ${currentBreakMin} min (zusammen ${duration(list.shortSecs)}), nicht als Pause gezählt</p>`;
+}
+
+/** Pausen eines Tages nach derselben Regel wie heute: zusammengeführt, ab der Pausendauer. */
+function dayPauses(d: DaySummary) {
+  return pauseList(d.pauses.map((p) => ({ start: p.start, end: p.end, duration_secs: p.end - p.start })), currentBreakMin);
+}
+
+function dayLog(d: DaySummary): string {
+  const tasks = [...d.tasks].sort((a, b) => a.started_at - b.started_at);
+  const list = dayPauses(d);
+  return `
+    <details class="day-log" data-day="${esc(d.day)}" ${openDays.has(d.day) ? "open" : ""}>
+      <summary><strong>${dayLabel(d.day)}</strong><span>${esc(daySummaryText({ ...d, pauses: list.pauses }, atTime))}</span></summary>
+      <div class="timeline-columns">
+        <div>
+          <h3>Aufgaben</h3>
+          <div class="timeline-list">${tasks.length ? tasks.map((task) => `
+            <article class="timeline-item">
+              <i class="timeline-dot"></i>
+              <div><strong>${esc(task.label)}</strong><span>${taskKind[task.kind]} · begonnen ${atTime(task.started_at)}</span></div>
+              <div class="timeline-duration"><strong>${duration(task.active_secs)}</strong><span>bis ${atTime(task.last_active_at)}</span></div>
+            </article>`).join("") : `<p class="empty">Keine Aufgaben erfasst.</p>`}</div>
+        </div>
+        <div>
+          <h3>Pausen</h3>
+          <div class="timeline-list">${list.pauses.length ? [...list.pauses].reverse().map((pause) => `
+            <article class="timeline-item pause-item">
+              <i class="timeline-dot"></i>
+              <div><strong>Pause</strong><span>${atTime(pause.start)} – ${atTime(pause.end ?? pause.start)}</span></div>
+              <div class="timeline-duration"><strong>${duration(pause.duration_secs)}</strong><span>Dauer</span></div>
+            </article>`).join("") : `<p class="empty">Keine Pausen erfasst.</p>`}${shortNote(list)}</div>
+        </div>
+      </div>
+    </details>`;
 }
 
 function history(s: Snapshot): string {
@@ -276,24 +325,69 @@ function history(s: Snapshot): string {
     <section class="card wide">
       <div class="card-head"><span class="eyebrow">Letzte Tage</span></div>
       <table class="hist">
-        <thead><tr><th>Tag</th><th>Aktiv</th><th>Wasser</th><th>Pausen</th><th>Stehen</th><th>Rot</th><th>Max. Projekte</th></tr></thead>
+        <thead><tr><th>Tag</th><th>Zeit</th><th>Aktiv</th><th>Wasser</th><th>Pausen</th><th>Stehen</th><th>Rot</th><th>Max. Projekte</th></tr></thead>
         <tbody>
           ${days
             .map((d) => {
               const tot = Object.values(d.posture_min).reduce((sum, minutes) => sum + minutes, 0) || 1;
               const change = Math.round(100 - pct(d.posture_min.office_chair ?? 0, tot));
-              const date = new Date(d.day + "T12:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-              return `<tr><td>${date}</td><td>${hm(d.active_min)} h</td><td>${liters(d.water_ml)} l</td><td>${d.breaks} (${d.long_breaks} lang)</td><td>${change} %</td><td>${d.red_min} min</td><td>${d.max_projects}</td></tr>`;
+              const span = d.first_active && d.ended_at ? `${atTime(d.first_active)}–${atTime(d.ended_at)}` : "–";
+              return `<tr><td>${dayLabel(d.day)}</td><td>${span}</td><td>${hm(d.active_min)} h</td><td>${liters(d.water_ml)} l</td><td>${d.breaks} (${d.long_breaks} lang)</td><td>${change} %</td><td>${d.red_min} min</td><td>${d.max_projects}</td></tr>`;
             })
             .join("")}
         </tbody>
       </table>
+      ${development(s)}
+      <div class="day-logs">${days.filter((d) => d.tasks.length || d.pauses.length).map(dayLog).join("")}</div>
     </section>`;
+}
+
+/** Lokales Datum (JJJJ-MM-TT) wie im Tageszustand der Engine. */
+function localDay(epochSeconds: number): string {
+  const d = new Date(epochSeconds * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const TREND: Record<Trend, string> = { up: "↗ besser", down: "↘ nachgelassen", flat: "→ gleich" };
+const VERDICT = { green: "konsequent", yellow: "ausbaufähig", red: "inkonsequent" } as const;
+
+/** Entwicklung: wo du dich gesteigert hast und wo du noch inkonsequent bist (abgeschlossene Tage). */
+function development(s: Snapshot): string {
+  const rows = developmentRows(s.history, localDay(s.at), s.workday_min);
+  return `
+      <div class="development">
+        <h3>Entwicklung <small>letzte 7 abgeschlossene Tage</small></h3>
+        <div class="dev-grid">${rows.map((row) => `
+          <div class="dev ${row.level ? `lvl-${row.level}` : "dev-empty"}" title="${esc(row.rule)}">
+            <div class="metric-top"><span class="dot"></span><span class="mono">${esc(row.label)}</span></div>
+            <strong>${row.days ? `${row.met} von ${row.days} Tagen` : "noch keine Daten"}</strong>
+            <p>${row.level ? `${VERDICT[row.level]}${row.trend ? ` · ${TREND[row.trend]}` : ""}` : row.key === "eyes" ? `wird ab heute erfasst · heute ${s.eyes_done_today} von ${s.eyes_offered_today}` : "zu wenig aktive Tage"}</p>
+            <p class="rule">${esc(row.rule)}${row.key === "eyes" && row.days ? ` · heute ${s.eyes_done_today} von ${s.eyes_offered_today}` : ""}</p>
+          </div>`).join("")}
+        </div>
+      </div>`;
+}
+
+function dayEndPanel(s: Snapshot): string {
+  if (!confirmDayEnd) return "";
+  const pauses = pauseList(s.break_timeline, s.break_min).pauses.length;
+  return `
+    <aside class="day-end" role="alertdialog" aria-labelledby="day-end-title" aria-describedby="day-end-text">
+      <div>
+        <strong id="day-end-title">Tag beenden?</strong>
+        <p id="day-end-text">Heute ${hm(s.active_min)} h aktiv · ${pauses} ${pauses === 1 ? "Pause" : "Pausen"} · ${s.tasks_today.length} ${s.tasks_today.length === 1 ? "Aufgabe" : "Aufgaben"}. Lotse speichert das Tagesprotokoll im Verlauf und schließt sich. Beim nächsten Start geht es am selben Tag weiter.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-act="day_end">Tag beenden &amp; Lotse schließen</button>
+        <button class="btn ghost" data-act="day_end_cancel">Abbrechen</button>
+      </div>
+    </aside>`;
 }
 
 function render() {
   if (!snap) return;
   const s = snap;
+  currentBreakMin = s.break_min;
   const workPct = pct(s.active_min, s.workday_min);
   app.innerHTML = `
     <header class="top" data-tauri-drag-region>
@@ -301,12 +395,14 @@ function render() {
       <div class="chips">${chips(s)}</div>
       <div class="top-actions">
         ${updateNotice()}
+        <button class="btn ghost day-end-btn" data-act="day_end_ask" title="Tag protokollieren und Lotse beenden">Tag beenden</button>
         <button class="btn ghost" data-act="refresh" title="Jetzt aktualisieren">${icons.refresh}</button>
         <button class="btn ghost" data-act="settings" title="Einstellungen">${icons.settings}</button>
       </div>
     </header>
 
     <main>
+      ${dayEndPanel(s)}
       ${storageHealth.message ? `<aside class="storage-warning" role="alert">${esc(storageHealth.message)}</aside>` : ""}
       <section class="hero lvl-${s.level}">
         ${trafficLight(s.level)}
@@ -330,6 +426,7 @@ function render() {
       ${history(s)}
 
       <footer>
+        ${buildLabel ? `<span class="mono">Lotse ${esc(buildLabel)}</span><br />` : ""}
         <span class="mono">Grundlagen</span>
         Fluglotsen-Pausenregel (max. 2 h, dann 30 min – NATS/ICAO) · Sitz-Steh-Rhythmus 30/15 (Griffith University 2025) ·
         „AI Brain Fry“ (BCG/HBR 2026) · Parallele Projekte (Clark &amp; Wheelwright) · Wasserbedarf (EFSA) · Mikropausen (Albulescu 2022)
@@ -358,7 +455,7 @@ const FIELDS: { title: string; fields: Field[] }[] = [
       { key: "block_hard_min", label: "Pause fällig nach", unit: "min", min: 30, max: 240 },
       { key: "long_break_after_min", label: "Lange Pause spätestens nach", unit: "min", min: 60, max: 300 },
       { key: "break_min", label: "Zählt als Pause ab", unit: "min", min: 3, max: 30 },
-      { key: "long_break_min", label: "Zählt als lange Pause ab", unit: "min", min: 10, max: 60 },
+      { key: "long_break_min", label: "Lange Pause dauert (zählt ab ⅚)", unit: "min", min: 10, max: 60 },
       { key: "workday_minutes", label: "Arbeitstag", unit: "min", min: 120, max: 720, step: 15 },
     ],
   },
@@ -496,6 +593,13 @@ app.addEventListener("click", (e) => {
   if (act === "settings") {
     settingsOpen = !settingsOpen;
     render();
+  } else if (act === "day_end_ask") {
+    confirmDayEnd = true;
+    render();
+    document.querySelector<HTMLElement>('[data-act="day_end"]')?.focus();
+  } else if (act === "day_end_cancel") {
+    confirmDayEnd = false;
+    render();
   } else if (act === "refresh") {
     void api.refresh();
   } else if (act === "open-update") {
@@ -517,6 +621,10 @@ app.addEventListener("click", (e) => {
 });
 async function load() {
   renderLoading();
+  void api.buildInfo().then((info) => {
+    buildLabel = versionLabel(info);
+    if (snap && !settingsOpen) render();
+  }).catch(() => {});
   for (const delay of [0, 250, 750]) {
     if (delay) await new Promise((resolve) => window.setTimeout(resolve, delay));
     const result = await loadDashboardData(api);
@@ -546,6 +654,32 @@ void listen<StorageHealth>("storage_health", (health) => {
   storageHealth = health;
   if (!settingsOpen) render();
 }).catch(() => void api.reportUiIssue("dashboard-listener").catch(() => {}));
+window.setInterval(() => {
+  const now = nowSeconds();
+  document.querySelectorAll<HTMLElement>("[data-clock-from]").forEach((el) => {
+    el.textContent = formatElapsed(
+      liveSeconds({ reported: Number(el.dataset.clockOffset ?? 0), reportedAt: Number(el.dataset.clockFrom) }, now),
+    );
+  });
+}, 1000);
+// <details> verliert beim Neuzeichnen seinen Zustand – aufgeklappte Tage merken
+app.addEventListener(
+  "toggle",
+  (e) => {
+    const el = e.target as HTMLElement;
+    const day = el instanceof HTMLDetailsElement ? el.dataset.day : undefined;
+    if (!day) return;
+    if ((el as HTMLDetailsElement).open) openDays.add(day);
+    else openDays.delete(day);
+  },
+  true,
+);
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && confirmDayEnd) {
+    confirmDayEnd = false;
+    render();
+  }
+});
 window.addEventListener("error", () => void api.reportUiIssue("dashboard-runtime").catch(() => {}));
 window.addEventListener("unhandledrejection", () => void api.reportUiIssue("dashboard-runtime").catch(() => {}));
 void load();
