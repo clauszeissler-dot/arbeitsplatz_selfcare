@@ -1,3 +1,9 @@
+## Aktuelle Nachprüfung · A-035 bis A-037 · 2026-11-06
+
+Sichtbares Ergebnis/Zielort: laufende `/Applications/Lotse.app` erkennt die 26-min-Pause passend und zeigt anklickbare Haltungspillen ohne doppelte Auswahl. Abschlussnachweis: installierten Build mit Quellstand vergleichen, aktuelle Pausenzählung nur lesend prüfen, Core-/UI-Tests und Ego-Lite-Vorschau prüfen. Keine Änderung echter Tagesdaten durch Tests.
+
+Arbeitsbeginn/letzter Zielabgleich: 2026-11-06T16:07:35+01:00. Abgeschlossen: installierter Build identisch, 26:32-min-Pause im Tageszustand als lang angerechnet; 53 Core- und 32 UI-Tests grün, Ego-Lite-Vorschau mit vier Haltungsschaltern ohne doppelte Auswahl geprüft. Keine Codeänderung erforderlich. Alltagsbestätigung bleibt offen. Kein Push oder Release.
+
 # Aktueller Arbeitsplan
 
 ## Sichere Updates aus GitHub Releases · A-025
