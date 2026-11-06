@@ -326,3 +326,9 @@ Regeln: E-NNN gehört zu A-NNN; Änderungen als datierter Nachtrag, alter Stand 
 - Live seit: wie E-035
 - Beleg: UI-Test `postureButtons`, Ego-Lite-Prüfung (0 `.seg`, 4 Pillen-Buttons, Tab-Reihenfolge), Screenshot
 - Offen: Sichtbestätigung durch Claus
+
+### Nachtrag E-035, 2026-11-06
+- Claus hat die Schwelle von 25 min (5/6 von 30) bestätigt. Sie ist damit keine Annahme mehr.
+- Auf seinen Wunsch übernommen: Nach dem Ende einer Leerlaufpause (`idle_pause_ended`) gibt es 60 s lang keine Hinweise, analog zur Meeting-Regel. Ein kurzes Anstoßen der Maus mitten in der Pause lässt deshalb keinen Hinweis mehr aufpoppen. Wer wirklich zurück ist, bekommt fällige Hinweise nach einer Minute.
+- Beleg: Core-Test `a_brief_mouse_move_during_a_pause_does_not_pop_up_a_hint` (rot: LongBreak beim Anstoßen; grün danach)
+- Offen: keine

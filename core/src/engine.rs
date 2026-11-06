@@ -153,6 +153,8 @@ pub struct State {
     pub snooze_until: Option<i64>,
     pub mic_since: Option<i64>,
     pub meeting_ended: Option<i64>,
+    /// Ende der letzten Leerlaufpause: kurz danach keine Hinweise (Maus nur angestoßen?).
+    pub idle_pause_ended: Option<i64>,
     pub in_meeting: bool,
     pub switches: VecDeque<i64>,
     pub last_focus: Option<String>,
@@ -193,6 +195,7 @@ impl Default for State {
             snooze_until: None,
             mic_since: None,
             meeting_ended: None,
+            idle_pause_ended: None,
             in_meeting: false,
             switches: VecDeque::new(),
             last_focus: None,
@@ -622,6 +625,7 @@ impl Engine {
             self.state.idle_started.get_or_insert(now - idle);
         } else if let Some(start) = self.state.idle_started.take() {
             self.end_break(start, now - idle);
+            self.state.idle_pause_ended = Some(now);
         }
         if self.state.manual_break.is_some() && idle < 5 && gap > 0 {
             // Wer nach manueller Pause wieder tippt, ist zurück, sobald die Mindestdauer um ist
@@ -897,6 +901,16 @@ impl Engine {
         if self
             .state
             .meeting_ended
+            .map(|t| now - t < 60)
+            .unwrap_or(false)
+        {
+            return None;
+        }
+        // Wie nach Meetings: nach einer Leerlaufpause eine Minute Ruhe, damit eine
+        // angestoßene Maus mitten in der Pause keinen Hinweis aufpoppen lässt.
+        if self
+            .state
+            .idle_pause_ended
             .map(|t| now - t < 60)
             .unwrap_or(false)
         {
@@ -1755,6 +1769,28 @@ mod tests {
             "{:?}",
             hints.iter().map(|h| h.kind).collect::<Vec<_>>()
         );
+    }
+
+    #[test]
+    fn a_brief_mouse_move_during_a_pause_does_not_pop_up_a_hint() {
+        let mut e = engine();
+        e.settings.eyes_enabled = false;
+        e.settings.water_target_ml = 0;
+        run(&mut e, T0, 300, &obs(1));
+        // 10 min weg, dann Maus kurz angestoßen: Hinweise wären fällig (lange Pause)
+        let nudge = away(&mut e, T0 + 300 * 60, 600);
+        let during: Vec<_> = [nudge, nudge + 30, nudge + 59]
+            .iter()
+            .filter_map(|&t| e.tick(t, DAY, obs(1)))
+            .collect();
+        assert!(
+            during.is_empty(),
+            "{:?}",
+            during.iter().map(|h| h.kind).collect::<Vec<_>>()
+        );
+        // Wer wirklich zurück ist, bekommt den fälligen Hinweis nach einer Minute
+        let after = e.tick(nudge + 61, DAY, obs(1)).map(|h| h.kind);
+        assert_eq!(after, Some(HintKind::LongBreak));
     }
 
     #[test]
