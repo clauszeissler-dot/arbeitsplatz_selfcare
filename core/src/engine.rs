@@ -360,10 +360,12 @@ impl Engine {
                 .breaks
                 .iter()
                 .any(|b| b.start <= pause.start && b.end >= pause.end);
-            if pause.end - pause.start < break_secs || covered {
+            if pause.end - pause.start < break_secs {
                 continue;
             }
-            self.replace_overlapping_breaks(pause.start, pause.end);
+            if !covered {
+                self.replace_overlapping_breaks(pause.start, pause.end);
+            }
             if self.is_long(pause) {
                 self.state.last_long_break_end = self.state.last_long_break_end.max(pause.end);
             }
@@ -1770,6 +1772,29 @@ mod tests {
         assert_eq!(e.state.pause_events[0].start, start);
         assert_eq!(e.state.breaks.len(), 1, "{:?}", e.state.breaks);
         assert_eq!(e.state.last_long_break_end, back - 1);
+    }
+
+    #[test]
+    fn loading_marks_an_already_counted_26_minute_pause_as_long() {
+        let pause = BreakRecord {
+            start: 1_793_965_544,
+            end: 1_793_967_136,
+        };
+        let state = State {
+            day: DAY.into(),
+            last_long_break_end: 1_793_949_622,
+            block_start: pause.end,
+            breaks: vec![pause.clone()],
+            pause_events: vec![pause.clone()],
+            ..Default::default()
+        };
+        let settings = Settings {
+            long_break_min: 30,
+            ..Default::default()
+        };
+        let e = Engine::new(settings, state);
+        assert_eq!(e.state.last_long_break_end, pause.end);
+        assert_eq!(e.state.breaks, vec![pause]);
     }
 
     #[test]
